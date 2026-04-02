@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="8" fill="#2d2d44"/>
+  <circle cx="32" cy="20" r="8" fill="#4a90d9"/>
+  <rect x="28" y="28" width="8" height="20" fill="#4a90d9"/>
+  <rect x="20" y="48" width="24" height="4" rx="2" fill="#4a90d9"/>
+  <rect x="14" y="32" width="10" height="3" fill="#6ab0ff"/>
+  <rect x="40" y="32" width="10" height="3" fill="#6ab0ff"/>
+  <circle cx="44" cy="16" r="6" fill="#ff6b6b"/>
+  <path d="M42 14 L46 18 M46 14 L42 18" stroke="#fff" stroke-width="1.5"/>
+  <rect x="8" y="8" width="12" height="8" rx="2" fill="#4ade80"/>
+  <text x="14" y="15" text-anchor="middle" font-size="6" fill="#fff">AI</text>
+</svg>
