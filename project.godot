@@ -9,11 +9,12 @@ config/features=PackedStringArray("4.2", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
-GameAI="*res://addons/GameAISDK/core/ai.gd"
-ROSAI="*res://addons/GameAISDK/integrations/ros/ros_ai.gd"
+GameAI="*res://addons/GameAISDK/addons/gameai/core/ai.gd"
+ROSAI="*res://addons/GameAISDK/addons/gameai/integrations/ros/ros_ai.gd"
+GodotROS2="*res://addons/godot_ros2/addons/godot_ros2/godot_ros2.gd"
 
 [editor_plugins]
-enabled=PackedStringArray("res://addons/GameAISDK/plugin.cfg")
+enabled=PackedStringArray("res://addons/GameAISDK/addons/gameai/plugin.cfg", "res://addons/godot_ros2/addons/godot_ros2/plugin.cfg")
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
