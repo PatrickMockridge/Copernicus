@@ -1,20 +1,31 @@
 ; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
+
 config/name="Robot Design POC"
 config/description="Proof of concept: AI-powered robot design with GameAI + GodotROS2"
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.2", "GL Compatibility")
+config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
+
 GameAI="*res://addons/GameAISDK/addons/gameai/core/ai.gd"
 ROSAI="*res://addons/GameAISDK/addons/gameai/integrations/ros/ros_ai.gd"
 GodotROS2="*res://addons/godot_ros2/addons/godot_ros2/godot_ros2.gd"
 
 [editor_plugins]
+
 enabled=PackedStringArray("res://addons/GameAISDK/addons/gameai/plugin.cfg", "res://addons/godot_ros2/addons/godot_ros2/plugin.cfg")
 
 [rendering]
+
 renderer/rendering_method="gl_compatibility"
