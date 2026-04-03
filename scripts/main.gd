@@ -23,6 +23,7 @@ var _drive: DifferentialDrive
 
 # ===== ROS2 References =====
 var _bridge_connected: bool = false
+var _connected_ai: bool = false
 var _robot_spawned: bool = false
 var _sim_paused: bool = false
 
@@ -166,7 +167,7 @@ func _setup_simulation_viewport(split: HSplitContainer) -> void:
 
 	# Ground plane (visual)
 	var ground_mesh = MeshInstance3D.new()
-	ground_mesh.mesh = PrismMesh.new()
+	ground_mesh.mesh = BoxMesh.new()
 	ground_mesh.mesh.size = Vector3(10, 0.01, 10)
 	var ground_mat = StandardMaterial3D.new()
 	ground_mat.albedo_color = Color(0.2, 0.2, 0.22)
@@ -175,19 +176,23 @@ func _setup_simulation_viewport(split: HSplitContainer) -> void:
 	ground_mesh.position = Vector3(0, -0.005, 0)
 	_sim_viewport.add_child(ground_mesh)
 
-	# Grid helper
-	var grid = GridMesh.new()
-	grid.size = Vector2(10, 10)
-	grid.split = 20
-	var grid_mesh_instance = MeshInstance3D.new()
-	grid_mesh_instance.mesh = grid
+	# Grid helper — create a 10x10 line grid using ImmediateMesh3D
+	var grid_mesh = ImmediateMesh.new()
+	var grid_node = MeshInstance3D.new()
+	grid_node.mesh = grid_mesh
+	grid_node.position = Vector3(0, 0.001, 0)
 	var grid_mat = StandardMaterial3D.new()
-	grid_mat.albedo_color = Color(0.3, 0.3, 0.32, 0.5)
+	grid_mat.albedo_color = Color(0.3, 0.3, 0.4, 0.6)
 	grid_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	grid_mat.roughness = 1.0
-	grid_mesh_instance.material_override = grid_mat
-	grid_mesh_instance.position = Vector3(0, 0.001, 0)
-	_sim_viewport.add_child(grid_mesh_instance)
+	grid_node.material_override = grid_mat
+	grid_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
+	for i in range(-5, 6):
+		grid_mesh.surface_add_vertex(Vector3(i, 0, -5))
+		grid_mesh.surface_add_vertex(Vector3(i, 0, 5))
+		grid_mesh.surface_add_vertex(Vector3(-5, 0, i))
+		grid_mesh.surface_add_vertex(Vector3(5, 0, i))
+	grid_mesh.surface_end()
+	_sim_viewport.add_child(grid_node)
 
 	# Simulator (not yet added to viewport tree until robot spawns)
 	_sim = ROS2Simulator.new()
@@ -534,7 +539,7 @@ func _on_sim_play_pressed() -> void:
 
 
 func _on_sim_pause_pressed() -> void:
-	_sim_pause()
+	_on_sim_pause()
 	_status_label.text = "Simulation paused"
 
 
@@ -580,13 +585,8 @@ func _find_child_by_name(node: Node, name: String) -> Node:
 
 # ===== AI Behavior Generation =====
 
-func _on_connect_ai_pressed() -> void:
-	# Stub — connect button handled in _setup_ai_section
-	pass
-
-
 func _on_generate_pressed() -> void:
-	if not _connected:
+	if not _connected_ai:
 		_status_label.text = "Error: Not connected to AI"
 		return
 
@@ -632,11 +632,11 @@ func _on_connect_pressed() -> void:
 	var test_result = await GameAI.chat([{"role": "user", "content": "Hello"}])
 
 	if test_result.is_ok():
-		_connected = true
+		_connected_ai = true
 		_generate_btn.disabled = false
 		_status_label.text = "Connected to Claude!"
 	else:
-		_connected = false
+		_connected_ai = false
 		_status_label.text = "Connection failed"
 
 
