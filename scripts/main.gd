@@ -585,7 +585,7 @@ func _find_child_by_name(node: Node, name: String) -> Node:
 
 # ===== AI Behavior Generation =====
 
-func _on_generate_pressed() -> void:
+async async func _on_generate_pressed() -> void:
 	if not _connected_ai:
 		_status_label.text = "Error: Not connected to AI"
 		return

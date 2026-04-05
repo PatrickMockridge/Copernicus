@@ -3,7 +3,6 @@
 # Uses GameAI to generate behaviors/logic for use with GodotROS2 SDK
 
 extends Node
-
 class_name ROSAIBehavior
 
 const Result = preload("res://addons/GameAI/core/result.gd")
