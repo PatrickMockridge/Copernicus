@@ -283,7 +283,7 @@ func configure(params: Dictionary) -> void:
 		set_publish_topic(params["topic"])
 
 
-func update测量(orientation: Quaternion, angular_vel: Vector3, linear_accel: Vector3) -> void:
+func update_meas(orientation: Quaternion, angular_vel: Vector3, linear_accel: Vector3) -> void:
 	_orientation = orientation
 	_angular_velocity = angular_vel
 	_linear_acceleration = linear_accel
@@ -332,7 +332,7 @@ func configure(params: Dictionary) -> void:
 		set_origin(params["origin_lat"], params["origin_lon"])
 
 
-func update测量(position: Vector3) -> void:
+func update_meas(position: Vector3) -> void:
 	# Convert world position to lat/lon
 	_latitude = _origin_lat + position.z * 0.00001
 	_longitude = _origin_lon + position.x * 0.00001
@@ -357,7 +357,7 @@ func _init(name: String).super(name) -> void:
 	_frame_id = name
 
 
-func update测量(force: Vector3, torque: Vector3) -> void:
+func update_meas(force: Vector3, torque: Vector3) -> void:
 	_force = force
 	_torque = torque
 

@@ -34,7 +34,7 @@ func post(url: String, headers: Array, body: String) -> Result:
 	var waited = 0
 	while client.get_status() == HTTPClient.STATUS_CONNECTING and waited < max_wait:
 		client.poll()
-		OS.delay_msec(10)
+		await Engine.get_main_loop().create_timer(0.01).timeout
 		waited += 1
 
 	if client.get_status() != HTTPClient.STATUS_CONNECTED:
@@ -49,7 +49,7 @@ func post(url: String, headers: Array, body: String) -> Result:
 	waited = 0
 	while client.get_status() == HTTPClient.STATUS_REQUESTING and waited < max_wait:
 		client.poll()
-		OS.delay_msec(10)
+		await Engine.get_main_loop().create_timer(0.01).timeout
 		waited += 1
 
 	if client.get_status() != HTTPClient.STATUS_BODY:

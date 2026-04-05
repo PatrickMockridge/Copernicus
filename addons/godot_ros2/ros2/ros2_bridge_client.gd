@@ -26,10 +26,7 @@ func connect_bridge() -> bool:
 
 	# Connect TCP
 	_tcp_socket = StreamPeerTCP.new()
-	var tcp_result = _tcp_socket.connect_to_host(_host, TCP_PORT)
-	if tcp_result != OK:
-		_last_error = "Failed to connect TCP to %s:%d" % [_host, TCP_PORT]
-		return false
+	_tcp_socket.connect_to_host(_host, TCP_PORT)
 
 	# Wait for connection with timeout
 	var timeout = 5.0
