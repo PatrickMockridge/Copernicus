@@ -2,15 +2,54 @@
 
 **Proof of Concept: AI-powered robot design with GameAI + GodotROS2 + TurtleBot4**
 
-A demonstration of integrating AI code generation with robotics simulation in Godot 4, connected live to ROS 2.
+> **Status**: Development halted — Godot 4.4 compatibility issues not yet resolved. The project currently fails to open in Godot 4.4 with script parse errors.
 
-## Concept
+---
 
-This POC shows how AI can assist in robot design by:
-1. Spawning a real robot model (TurtleBot4) in a Godot 3D simulation
-2. Connecting it live to ROS 2 via a TCP/UDP bridge
-3. Using GameAI to generate GDScript behavior code for the robot
-4. Running the behavior in simulation with full sensor data flowing to/from ROS 2
+## What This Project Aims to Do
+
+1. Spawn a real robot model (TurtleBot4) in a Godot 3D simulation
+2. Connect it live to ROS 2 via a TCP/UDP bridge
+3. Use GameAI to generate GDScript behavior code for the robot
+4. Run the behavior in simulation with full sensor data flowing to/from ROS 2
+
+## Current Problems
+
+### 1. Godot 4.4 Coroutine Breaking Changes
+
+Godot 4.4 changed how `async` functions work. In Godot 4.0–4.3, writing `await` inside a non-async function silently made the function async. In Godot 4.4, this is a **parse error**.
+
+**Affected files** (at time of writing, may be more):
+- `addons/GameAI/integrations/ros/ros_ai.gd` — ~10 functions
+- `addons/GameAI/integrations/characters/character_ai.gd` — ~11 functions
+- `addons/GameAI/integrations/roblox/roblox_ai.gd` — ~16 functions
+- `addons/GameAI/demo.gd` — 1 function
+- `addons/godot_ros2/ros2/ros2_bridge_client.gd` — 1 function
+- `scripts/main.gd` — 1 function
+
+The fix is mechanical: add `async` to every function that uses `await`. But the fix cascades — callers of async functions must also be async, and their callers too.
+
+**Root cause**: This pattern was valid in Godot 4.0–4.3 and silently worked. The code was written against 4.2/4.3.
+
+### 2. `class_name` Placement in Multi-Class Files
+
+Godot 4.4 is stricter about `class_name` declarations. When a file has multiple top-level classes, each must be properly closed with `}` before the next `class_name` declaration. Inner classes should use `class X extends Y` syntax (no `class_name`).
+
+**Affected files**:
+- `addons/godot_ros2/core/actuators.gd` — Motor, Servo, Thruster, Propeller
+- `addons/godot_ros2/core/physics_bodies.gd` — RobotLink, RobotJoint, JointController, etc.
+- `addons/godot_ros2/sensors/sensors.gd` — CameraSensor, LidarSensor, ImuSensor, etc.
+- `addons/godot_ros2/core/simulator_plugins.gd` — PhysicsLogger, ContactVisualizer, etc.
+
+### 3. Method Name Conflicts with Node Built-ins
+
+`ROS2BridgeClient.is_connected()` conflicts with `Node.is_connected(StringName, Callable)` in Godot 4.4. The method was renamed to `is_bridge_connected()`.
+
+### 4. `OS.delay_msec()` Deprecation
+
+`OS.delay_msec()` is deprecated in Godot 4.4 (replaced by `Time.get_ticks_msec()` or async alternatives). It still works but emits warnings.
+
+---
 
 ## Architecture
 
@@ -42,7 +81,7 @@ This POC shows how AI can assist in robot design by:
 
 ## Requirements
 
-- Godot 4.2+ (or 4.3+ for `.uid` resource support)
+- Godot 4.2 or 4.3 (for development — 4.4 compatibility pending)
 - ROS 2 Jazzy (or Humble)
 - `godot_ros2_bridge` package built in your ROS workspace
 - TurtleBot4 ROS 2 packages (`ros-jazzy-turtlebot4-description`)
@@ -50,7 +89,7 @@ This POC shows how AI can assist in robot design by:
 - GodotROS2 SDK addon (included as submodule)
 - Anthropic API key (or OpenAI/Minimax)
 
-## Quick Start
+## Quick Start (Godot 4.2/4.3)
 
 ### 1. Build the ROS 2 bridge
 
@@ -74,7 +113,7 @@ cd Godot_4_Robotic_Design_Interface
 godot4 --headless  # or open in Godot editor
 ```
 
-### 4. In-Godoot controls
+### 4. In-Godot controls
 
 1. **Spawn TurtleBot4** — choose DAE Meshes (real robot visuals) or Primitives (Godot boxes/cylinders)
 2. **Connect Bridge** — connects Godot to the running `godot_ros2_bridge` node
@@ -122,6 +161,13 @@ Uses GameAI to generate GDScript behaviors:
 - `flee` — Escape from threats
 
 Generated code is displayed and can be copied for use in other GodotROS2 projects.
+
+## Submodules
+
+- `addons/GameAI` — GameAI SDK (AI code generation)
+- `addons/godot_ros2` — GodotROS2 SDK (ROS 2 integration)
+
+Both submodules are pinned to specific commits and modified inline for compatibility fixes. Do not update them without testing against Godot 4.4.
 
 ## License
 
