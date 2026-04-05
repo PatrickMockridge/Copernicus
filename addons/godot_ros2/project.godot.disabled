@@ -1,0 +1,24 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly.
+
+config_version=5
+
+[application]
+
+config/name="Godot ROS 2 SDK"
+config/description="ROS 2 SDK for Godot 4 - Use Godot as a robotics simulator"
+run/main_scene="res://demo.tscn"
+config/features=PackedStringArray("4.2", "GL Compliance")
+config/icon="res://icon.svg"
+
+[autoload]
+
+#GodotROS2="*res://addons/godot_ros2/godot_ros2.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray()
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"

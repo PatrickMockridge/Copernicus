@@ -1,6 +1,0 @@
-[submodule "addons/godot_ros2"]
-	path = addons/godot_ros2
-	url = git@codeberg.org:PatrickM123/Godot_4_ROS2_SDK.git
-[submodule "addons/GameAISDK"]
-	path = addons/GameAISDK
-	url = git@codeberg.org:PatrickM123/Godot_4_AI_SDK.git

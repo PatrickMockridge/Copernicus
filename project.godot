@@ -18,13 +18,13 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-GameAI="*res://addons/GameAISDK/addons/gameai/core/ai.gd"
-ROSAI="*res://addons/GameAISDK/addons/gameai/integrations/ros/ros_ai.gd"
-GodotROS2="*res://addons/godot_ros2/addons/godot_ros2/godot_ros2.gd"
+GameAI="*res://addons/GameAI/core/ai.gd"
+ROSAI="*res://addons/GameAI/integrations/ros/ros_ai.gd"
+GodotROS2="*res://addons/godot_ros2/godot_ros2.gd"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/GameAISDK/addons/gameai/plugin.cfg", "res://addons/godot_ros2/plugin.cfg")
+enabled=PackedStringArray("res://addons/GameAI/plugin.cfg", "res://addons/godot_ros2/plugin.cfg")
 
 [rendering]
 
