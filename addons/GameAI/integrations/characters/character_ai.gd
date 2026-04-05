@@ -83,7 +83,7 @@ func set_goal(character_id: String, goal: String, priority: int = 5) -> void:
 
 # === Conversation ===
 
-func talk_to(character_id: String, player_message: String) -> Result:
+async func talk_to(character_id: String, player_message: String) -> Result:
 	# Have a conversation with a character
 	if not _characters.has(character_id):
 		return Result.err({"code": -1, "message": "Character not found: " + character_id})
@@ -204,7 +204,7 @@ func create_guard(character_id: String, faction: String, personality: String) ->
 
 # === Combat Dialogue ===
 
-func combat_dialogue(character_id: String, player_action: String) -> Result:
+async func combat_dialogue(character_id: String, player_action: String) -> Result:
 	# Get character response during combat
 	if not _characters.has(character_id):
 		return Result.err({"code": -1, "message": "Character not found"})
@@ -229,7 +229,7 @@ Return ONLY the dialogue text.""" % [char.get("name", "Enemy"), char.personality
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func generate_attack_description(character_id: String, attack_name: String) -> Result:
+async func generate_attack_description(character_id: String, attack_name: String) -> Result:
 	# Generate flavor text for an attack
 	var prompt = """Generate a dramatic description of a combat attack.
 
@@ -247,7 +247,7 @@ Return ONLY the description.""" % [character_id, attack_name]
 
 # === Quest Generation ===
 
-func generate_quest_dialogue(quest_giver_id: String, quest_type: String) -> Result:
+async func generate_quest_dialogue(quest_giver_id: String, quest_type: String) -> Result:
 	# Generate quest-offering dialogue
 	if not _characters.has(quest_giver_id):
 		return Result.err({"code": -1, "message": "Character not found"})
@@ -277,7 +277,7 @@ Return ONLY the dialogue.""" % [char.get("name", "Quest Giver"), char.personalit
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func evaluate_quest_result(quest_giver_id: String, player_result: String) -> Result:
+async func evaluate_quest_result(quest_giver_id: String, player_result: String) -> Result:
 	# Evaluate how quest completion went
 	var prompt = """A player has completed a quest for you. Evaluate their result:
 
@@ -299,7 +299,7 @@ Return ONLY your response.""" % player_result
 
 # === Event Reactions ===
 
-func react_to_event(character_id: String, event: String) -> Result:
+async func react_to_event(character_id: String, event: String) -> Result:
 	# Character reacts to in-game event
 	if not _characters.has(character_id):
 		return Result.err({"code": -1, "message": "Character not found"})
@@ -323,7 +323,7 @@ Return a brief reaction (1-3 sentences).""" % [event, char.get("name", ""), char
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func react_to_player_action(character_id: String, action: String) -> Result:
+async func react_to_player_action(character_id: String, action: String) -> Result:
 	# Character reacts to player's action
 	if not _characters.has(character_id):
 		return Result.err({"code": -1, "message": "Character not found"})
@@ -369,7 +369,7 @@ func character_knows(character_id: String, topic: String) -> bool:
 	return false
 
 
-func ask_about_lore(character_id: String, lore_topic: String) -> Result:
+async func ask_about_lore(character_id: String, lore_topic: String) -> Result:
 	# Character shares lore about a topic
 	if not _characters.has(character_id):
 		return Result.err({"code": -1, "message": "Character not found"})
@@ -394,7 +394,7 @@ Return ONLY the lore text.""" % [lore_topic, char.get("name", ""), char.personal
 
 # === Ambient Behavior ===
 
-func generate_ambient_action(character_id: String) -> Result:
+async func generate_ambient_action(character_id: String) -> Result:
 	# Generate what character does when idle
 	if not _characters.has(character_id):
 		return Result.err({"code": -1, "message": "Character not found"})
@@ -417,7 +417,7 @@ Keep it to 1-2 sentences. Return ONLY the action description.""" % [char.get("na
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func should_initiate_interaction(character_id: String, player_context: String) -> Result:
+async func should_initiate_interaction(character_id: String, player_context: String) -> Result:
 	# Decide if character should start a conversation
 	if not _characters.has(character_id):
 		return Result.err({"code": -1, "message": "Character not found"})
@@ -447,7 +447,7 @@ Return ONLY your decision.""" % [player_context, char.get("name", ""), char.pers
 
 # === Complete Character Generation ===
 
-func generate_full_character(character_type: String, name: String, template: String = "") -> Dictionary:
+async func generate_full_character(character_type: String, name: String, template: String = "") -> Dictionary:
 	# Generate a complete character with backstory, personality, and behavior
 	var result = {
 		"success": false,

@@ -38,7 +38,10 @@ func physics_update(delta: float) -> void:
 
 # ===== Motor =====
 
-class Motor extends Actuator
+}  # close Actuator
+
+class_name Motor
+extends Actuator
 
 enum MotorType { BRUSHED, BRUSHLESS }
 enum ControlMode { PWM, VELOCITY, POSITION, TORQUE }
@@ -96,7 +99,10 @@ func physics_update(delta: float) -> void:
 
 # ===== Servo =====
 
-class Servo extends Actuator
+}  # close Motor
+
+class_name Servo
+extends Actuator
 
 var _angle: float = 0.0
 var _target_angle: float = 0.0
@@ -133,7 +139,10 @@ func get_angle() -> float:
 
 # ===== Thruster =====
 
-class Thruster extends Actuator
+}  # close Servo
+
+class_name Thruster
+extends Actuator
 
 enum ThrusterType { FIXED_PITCH, VARIABLE_PITCH }
 enum ThrustModel { SIMPLE, KKT, MUNK }
@@ -158,7 +167,6 @@ func set_direction(dir: Vector3) -> void:
 
 
 func set_thrust_level(level: float) -> void:
-	# level from -1.0 to 1.0
 	_current_thrust = clamp(level, -1.0, 1.0) * _max_thrust
 
 
@@ -168,7 +176,10 @@ func get_thrust_vector() -> Vector3:
 
 # ===== Propeller =====
 
-class Propeller extends Thruster
+}  # close Thruster
+
+class_name Propeller
+extends Thruster
 
 var _prop_diameter: float = 0.3
 var _prop_pitch: float = 0.2
@@ -190,17 +201,13 @@ func set_pitch(p: float) -> void:
 
 
 func physics_update(delta: float) -> void:
-	# Simple thrust model: T = Kt * rho * n^2 * D^4
-	# where n is revs per second, D is diameter
 	match _model:
 		ThrustModel.SIMPLE:
 			var thrust = _thrust_coefficient * _current_thrust * _current_thrust * _prop_diameter * _prop_diameter
 			_current_thrust = sign(_current_thrust) * thrust
 		ThrustModel.KKT:
-			# Kutta-Joukowski theorem based
 			pass
 		ThrustModel.MUNK:
-			# Munk's momentum theory
 			pass
 
 

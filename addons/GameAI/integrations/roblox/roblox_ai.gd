@@ -31,7 +31,7 @@ func set_game_project(project_data: Dictionary) -> void:
 
 # === Script Generation for Game Objects ===
 
-func generate_object_script(object_type: String, behavior: String, params: Dictionary = {}) -> Result:
+async func generate_object_script(object_type: String, behavior: String, params: Dictionary = {}) -> Result:
 	# Generate a script for a specific game object type
 	# object_type: "part", "npc", "tool", "gui", "vehicle", "building"
 	# behavior: What the object should do
@@ -66,7 +66,7 @@ Return ONLY GDScript code, no explanations.""" % [object_type, behavior]
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func generate_npc_script(npc_type: String, personality: String) -> Result:
+async func generate_npc_script(npc_type: String, personality: String) -> Result:
 	# Generate NPC behavior script
 	var prompt = """Create a GDScript NPC (Non-Player Character) for Godot 4.
 
@@ -93,7 +93,7 @@ Return ONLY GDScript code.""" % [npc_type, personality]
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func generate_tool_script(tool_name: String, tool_type: String) -> Result:
+async func generate_tool_script(tool_name: String, tool_type: String) -> Result:
 	# Generate equippable tool/weapon script
 	var prompt = """Create a GDScript tool/weapon for Godot 4.
 
@@ -123,7 +123,7 @@ Return ONLY GDScript code.""" % [tool_name, tool_type]
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func generate_gui_script(gui_type: String, purpose: String) -> Result:
+async func generate_gui_script(gui_type: String, purpose: String) -> Result:
 	# Generate UI/GUI script
 	var prompt = """Create a GDScript for a Godot 4 UI element.
 
@@ -154,7 +154,7 @@ Return ONLY GDScript code.""" % [gui_type, purpose]
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func generate_vehicle_script(vehicle_type: String) -> Result:
+async func generate_vehicle_script(vehicle_type: String) -> Result:
 	# Generate vehicle controller script
 	var prompt = """Create a GDScript vehicle controller for Godot 4.
 
@@ -183,7 +183,7 @@ Return ONLY GDScript code.""" % vehicle_type
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func generate_building_script(building_type: String) -> Result:
+async func generate_building_script(building_type: String) -> Result:
 	# Generate building/structure script
 	var prompt = """Create a GDScript for a placeable building/structure in Godot 4.
 
@@ -205,7 +205,7 @@ Return ONLY GDScript code.""" % building_type
 
 # === Game Mechanics ===
 
-func generate_mechanic(mechanic_type: String, description: String) -> Result:
+async func generate_mechanic(mechanic_type: String, description: String) -> Result:
 	# Generate a complete game mechanic
 	var prompt = """Create a complete game mechanic in GDScript for Godot 4.
 
@@ -234,7 +234,7 @@ Return ONLY GDScript code.""" % [mechanic_type, description]
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func generate_puzzle(puzzle_type: String) -> Result:
+async func generate_puzzle(puzzle_type: String) -> Result:
 	# Generate puzzle logic
 	var prompt = """Create a GDScript puzzle for Godot 4.
 
@@ -264,7 +264,7 @@ Return ONLY GDScript code.""" % puzzle_type
 
 # === Multiplayer Scripts ===
 
-func generate_multiplayer_script(feature: String) -> Result:
+async func generate_multiplayer_script(feature: String) -> Result:
 	# Generate multiplayer-related script
 	var prompt = """Create a GDScript for multiplayer functionality in Godot 4.
 
@@ -295,7 +295,7 @@ Return ONLY GDScript code.""" % feature
 
 # === Code Modification ===
 
-func modify_script(existing_code: String, change_request: String) -> Result:
+async func modify_script(existing_code: String, change_request: String) -> Result:
 	# Modify existing script based on request
 	var prompt = """Modify this GDScript code:
 
@@ -314,7 +314,7 @@ Return the complete modified code.""" % [existing_code, change_request]
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func add_feature_to_script(existing_code: String, new_feature: String) -> Result:
+async func add_feature_to_script(existing_code: String, new_feature: String) -> Result:
 	# Add a feature to existing script
 	var prompt = """Add this feature to the GDScript code:
 
@@ -336,7 +336,7 @@ Return the complete modified code.""" % [new_feature, existing_code]
 
 # === Code Explanation & Debugging ===
 
-func explain_script(code: String) -> Result:
+async func explain_script(code: String) -> Result:
 	# Explain what a script does
 	var prompt = """Explain this GDScript code in simple terms:
 
@@ -351,7 +351,7 @@ What does it do? How does it work? Is there anything that could be improved?""" 
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func debug_script(code: String, error: String) -> Result:
+async func debug_script(code: String, error: String) -> Result:
 	# Debug a script with error
 	var prompt = """Debug this GDScript code. There's an error: %s
 
@@ -369,7 +369,7 @@ Return the corrected code.""" % [error, code]
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func optimize_script(code: String) -> Result:
+async func optimize_script(code: String) -> Result:
 	# Optimize script performance
 	var prompt = """Optimize this GDScript code for better performance:
 
@@ -394,7 +394,7 @@ Return the optimized code with comments explaining changes.""" % code
 
 # === Complete Game Templates ===
 
-func generate_game_template(game_type: String) -> Dictionary:
+async func generate_game_template(game_type: String) -> Dictionary:
 	# Generate a complete mini-game template
 	var result = {
 		"success": false,
@@ -439,7 +439,7 @@ Return ONLY the JSON structure, no markdown code blocks.""" % game_type
 
 # === Tutorial Generation ===
 
-func generate_tutorial(tutorial_topic: String) -> Result:
+async func generate_tutorial(tutorial_topic: String) -> Result:
 	# Generate an interactive tutorial
 	var prompt = """Create a tutorial for learning GDScript game development in Godot 4.
 

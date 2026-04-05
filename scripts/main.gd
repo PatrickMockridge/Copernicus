@@ -416,13 +416,13 @@ func _on_mesh_source_selected(index: int) -> void:
 	_mesh_source = index
 
 
-func _on_connect_bridge_pressed() -> void:
+async func _on_connect_bridge_pressed() -> void:
 	if GodotROS2.is_initialized():
 		_status_label.text = "Already connected"
 		return
 
 	_status_label.text = "Connecting to bridge..."
-	var ok = GodotROS2.initialize("turtlebot4_godot", "/turtlebot4", "127.0.0.1")
+	var ok = await GodotROS2.initialize("turtlebot4_godot", "/turtlebot4", "127.0.0.1")
 
 	if GodotROS2.is_bridge_connected():
 		_bridge_connected = true

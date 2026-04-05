@@ -32,7 +32,7 @@ func set_ai(ai_node: Node) -> void:
 
 # === Behavior Generation for GodotROS2 ===
 
-func generate_behavior(behavior_type: String, params: Dictionary = {}) -> Result:
+async func generate_behavior(behavior_type: String, params: Dictionary = {}) -> Result:
 	# Generate robot behavior code for GodotROS2
 	# behavior_type: "wall_follow", "line_follow", "obstacle_avoid", "patrol", "chase", "flee"
 
@@ -66,7 +66,7 @@ Return ONLY the GDScript code, no explanations."""
 	return Result.err({"code": -1, "message": "AI not configured. Call set_ai(GameAI) first."})
 
 
-func generate_sensor_processor(sensor_type: String) -> Result:
+async func generate_sensor_processor(sensor_type: String) -> Result:
 	# Generate code to process specific sensor data
 	var system_prompt = """You are a Godot ROS 2 expert. Generate GDScript code that processes %s data from GodotROS2 sensors.
 
@@ -84,7 +84,7 @@ Use Godot's signals for clean architecture.""" % sensor_type
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func generate_controller(controller_type: String) -> Result:
+async func generate_controller(controller_type: String) -> Result:
 	# Generate motion controller code
 	var system_prompt = """Generate a GDScript motion controller for GodotROS2 robots.
 
@@ -111,7 +111,7 @@ Use Vector3 for 3D vectors and Godot's physics engine."""
 
 # === Debugging & Explanation ===
 
-func explain_ros_topic(topic_name: String, message_type: String) -> Result:
+async func explain_ros_topic(topic_name: String, message_type: String) -> Result:
 	# Explain a ROS topic/message
 	var prompt = """Explain this GodotROS2 / ROS topic:
 
@@ -125,7 +125,7 @@ What data does it contain? How often is it published? What would you use it for?
 	return Result.err({"code": -1, "message": "AI not configured"})
 
 
-func diagnose_behavior_issue(symptoms: Array) -> Result:
+async func diagnose_behavior_issue(symptoms: Array) -> Result:
 	# Debug why a behavior isn't working
 	var prompt = """My robot behavior isn't working correctly. Symptoms:
 
@@ -147,7 +147,7 @@ Provide diagnosis and fix suggestions in GDScript.""" % str(symptoms)
 
 # === State Machines & AI ===
 
-func generate_state_machine(states: Array, transitions: Dictionary) -> Result:
+async func generate_state_machine(states: Array, transitions: Dictionary) -> Result:
 	# Generate behavior state machine
 	var prompt = """Create a GDScript state machine for a robot using GodotROS2.
 
@@ -171,7 +171,7 @@ Return ONLY GDScript code.""" % [str(states), str(transitions)]
 
 # === Vision Processing ===
 
-func generate_vision_pipeline(task: String) -> Result:
+async func generate_vision_pipeline(task: String) -> Result:
 	# Generate computer vision pipeline
 	var prompt = """Generate a GDScript vision processing pipeline for Godot + GodotROS2.
 
@@ -194,7 +194,7 @@ Return GDScript code.""" % task
 
 # === Navigation ===
 
-func generate_waypoint_controller(waypoints: Array) -> Result:
+async func generate_waypoint_controller(waypoints: Array) -> Result:
 	# Generate waypoint navigation
 	var prompt = """Generate GDScript code for waypoint navigation in GodotROS2.
 
@@ -218,7 +218,7 @@ Return GDScript code.""" % str(waypoints)
 
 # === Multi-Robot Coordination ===
 
-func generate_multi_robot_logic(robot_count: int, task: String) -> Result:
+async func generate_multi_robot_logic(robot_count: int, task: String) -> Result:
 	# Generate multi-robot coordination logic
 	var prompt = """Generate GDScript for coordinating %d robots in GodotROS2.
 
@@ -242,7 +242,7 @@ Return GDScript code.""" % [robot_count, task]
 
 # === Complete Robot Brain ===
 
-func generate_robot_brain(robot_config: Dictionary) -> Result:
+async func generate_robot_brain(robot_config: Dictionary) -> Result:
 	# Generate complete AI brain for a robot
 	var prompt = """Generate a complete "robot brain" GDScript class for GodotROS2.
 

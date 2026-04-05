@@ -115,7 +115,10 @@ func apply_noise(value: float, param_name: String) -> float:
 
 # ===== Camera Sensor =====
 
-class CameraSensor extends Sensor
+}  # close Sensor
+
+class_name CameraSensor
+extends Sensor
 
 var _fov: float = 1.047  # ~60 degrees
 var _near: float = 0.1
@@ -167,7 +170,6 @@ func configure(params: Dictionary) -> void:
 
 func get_projection_matrix() -> Projection:
 	return Projection.new()
-	# Would compute perspective projection
 
 
 func render_viewport(camera: Camera3D) -> Image:
@@ -179,7 +181,10 @@ func render_viewport(camera: Camera3D) -> Image:
 
 # ===== LIDAR Sensor =====
 
-class LidarSensor extends Sensor
+}  # close CameraSensor
+
+class_name LidarSensor
+extends Sensor
 
 var _angle_min: float = -PI
 var _angle_max: float = PI
@@ -247,18 +252,19 @@ func get_scan_message(header: Dictionary) -> Dictionary:
 
 
 func _get_ranges() -> Array:
-	# Returns range measurements
 	return []
 
 
 func _get_intensities() -> Array:
-	# Returns intensity measurements
 	return []
 
 
 # ===== IMU Sensor =====
 
-class ImuSensor extends Sensor
+}  # close LidarSensor
+
+class_name ImuSensor
+extends Sensor
 
 var _publish_topic: String = "imu"
 var _orientation: Quaternion = Quaternion.IDENTITY
@@ -297,7 +303,10 @@ func get_imu_message(header: Dictionary) -> Dictionary:
 
 # ===== GPS Sensor =====
 
-class GPSSensor extends Sensor
+}  # close ImuSensor
+
+class_name GPSSensor
+extends Sensor
 
 var _publish_topic: String = "gps"
 var _latitude: float = 0.0
@@ -329,7 +338,6 @@ func configure(params: Dictionary) -> void:
 
 
 func update_meas(position: Vector3) -> void:
-	# Convert world position to lat/lon
 	_latitude = _origin_lat + position.z * 0.00001
 	_longitude = _origin_lon + position.x * 0.00001
 	_altitude = position.y
@@ -341,7 +349,10 @@ func get_gps_message(header: Dictionary) -> Dictionary:
 
 # ===== Force Torque Sensor =====
 
-class ForceTorqueSensor extends Sensor
+}  # close GPSSensor
+
+class_name ForceTorqueSensor
+extends Sensor
 
 var _publish_topic: String = "ft"
 var _force: Vector3 = Vector3.ZERO
@@ -366,7 +377,10 @@ func get_wrench_message(header: Dictionary) -> Dictionary:
 
 # ===== Contact Sensor =====
 
-class ContactSensor extends Sensor
+}  # close ForceTorqueSensor
+
+class_name ContactSensor
+extends Sensor
 
 var _publish_topic: String = "contact"
 var _contacts: Array = []

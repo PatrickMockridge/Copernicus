@@ -26,7 +26,7 @@ func _on_npc_chat_pressed() -> void:
 	GameAI.npc_say("guard", "What brings you to this gate?")
 
 
-func _on_generate_code_pressed() -> void:
+async func _on_generate_code_pressed() -> void:
 	var result = await GameAI.generate_code("a function that calculates fibonacci numbers", "gdscript")
 	if result.is_ok():
 		$Panel/VBox/Output.text = result.ok_value().content

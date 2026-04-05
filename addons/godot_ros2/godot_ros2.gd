@@ -26,7 +26,7 @@ func initialize(node_name: String, ns: String = "", bridge_host: String = "127.0
 	"""Initialize the ROS 2 node and connect to the bridge."""
 	_node = ROS2Node.new(node_name, ns)
 	_bridge_client = ROS2BridgeClient.new(bridge_host)
-	var bridge_ok = _bridge_client.connect_bridge()
+	var bridge_ok = await _bridge_client.connect_bridge()
 	if bridge_ok:
 		_node.set_bridge_client(_bridge_client)
 		print("GodotROS2: Bridge connected to %s" % bridge_host)
@@ -50,7 +50,7 @@ func is_initialized() -> bool:
 
 func is_bridge_connected() -> bool:
 	if _bridge_client:
-		return _bridge_client.is_connected()
+		return _bridge_client.is_bridge_connected()
 	return false
 
 

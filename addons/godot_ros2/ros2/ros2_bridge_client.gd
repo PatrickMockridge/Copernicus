@@ -20,7 +20,7 @@ func _init(remote_host: String = "127.0.0.1") -> void:
 	_host = remote_host
 
 
-func connect_bridge() -> bool:
+async func connect_bridge() -> bool:
 	"""Connect to the ROS2 bridge via TCP and UDP."""
 	_connected = false
 
@@ -60,7 +60,7 @@ func disconnect_bridge() -> void:
 	_connected = false
 
 
-func is_connected() -> bool:
+func is_bridge_connected() -> bool:
 	return _connected
 
 

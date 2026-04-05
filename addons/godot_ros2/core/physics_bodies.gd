@@ -85,7 +85,7 @@ func get_collision_shape() -> Shape3D:
 
 # ===== RobotJoint =====
 
-class RobotJoint
+class_name RobotJoint
 
 enum JointType { REVOLUTE, CONTINUOUS, PRISMATIC, FIXED, PLANAR, FLOATING }
 
@@ -194,7 +194,7 @@ func physics_update(dt: float) -> void:
 
 # ===== JointController =====
 
-class JointController
+class_name JointController
 
 var _joint: RobotJoint
 var _target_position: float = 0.0
@@ -248,7 +248,7 @@ func update(dt: float) -> void:
 
 # ===== ContactManager =====
 
-class ContactManager
+class_name ContactManager
 
 var _contacts: Array = []
 
@@ -284,7 +284,7 @@ func get_contacts_for_body(body: String) -> Array:
 
 # ===== DifferentialDrive =====
 
-class DifferentialDrive
+class_name DifferentialDrive
 
 var _wheel_separation: float = 0.5
 var _wheel_radius: float = 0.1
@@ -333,7 +333,7 @@ func update(dt: float) -> void:
 
 # ===== GroundTruth =====
 
-class GroundTruth
+class_name GroundTruth
 
 var _robot_name: String
 var _publisher: Publisher
