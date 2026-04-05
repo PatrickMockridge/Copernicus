@@ -52,19 +52,21 @@ Godot 4.4 is stricter about `class_name` declarations. When a file has multiple 
 | ✅ | `actuators.gd` | Inner classes closed with `}` |
 | ✅ | `physics_bodies.gd` | Inner classes closed with `}` |
 | ✅ | `simulator_plugins.gd` | Inner classes closed with `}` |
+| ✅ | `main.gd` | `_on_generate_pressed` async; fixed duplicate `async async` |
+| ✅ | `godot_ros2.gd` | `initialize` async |
 
 ### In Progress 🔄
 
 | Todo | File | Issue |
 |------|------|-------|
-| 🔄 | `scripts/main.gd` | `_on_generate_pressed` (line 588) needs `async` |
-| 🔄 | `godot_ros2.gd` | `initialize` (line 25) needs `async` |
+| 🔄 | `ros_ai.gd` | "Unexpected identifier async in class body" at line 34 — root cause unknown, simple async test also fails |
+| 🔄 | `ros_ai.gd` | **Proposed simplification**: detach AI from ROS — `ros_ai.gd` calls `_ai.chat_system()` which is complex. May split into `ai.gd` (AI-only, no async issues) and `ros_ai.gd` (ROS behavior generation) |
 
 ### Not Started ⬜
 
 | Todo | File | Issue |
 |------|------|-------|
-| ⬜ | `ros_ai.gd` | "Unexpected identifier async in class body" at line 35 — file may have encoding issue, needs investigation |
+| ⬜ | TODO-4 | Fix any additional files found above |
 
 ---
 
