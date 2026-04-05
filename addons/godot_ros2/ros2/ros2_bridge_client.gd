@@ -199,7 +199,3 @@ func pop_message(topic: String) -> Dictionary:
 	if queue and not queue.is_empty():
 		return queue.pop_front()
 	return {}
-
-
-func get_last_error() -> String:
-	return _last_error

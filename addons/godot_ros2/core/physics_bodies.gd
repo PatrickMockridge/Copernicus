@@ -83,7 +83,10 @@ func get_collision_shape() -> Shape3D:
 	return _collision_shape
 
 
-class_name RobotJoint
+# ===== RobotJoint =====
+
+class RobotJoint
+
 enum JointType { REVOLUTE, CONTINUOUS, PRISMATIC, FIXED, PLANAR, FLOATING }
 
 var _name: String
@@ -135,12 +138,12 @@ func get_parent_link() -> String:
 	return _parent_link
 
 
-func set_child_link(link: String) -> void:
-	_child_link = link
-
-
 func get_child_link() -> String:
 	return _child_link
+
+
+func set_child_link(link: String) -> void:
+	_child_link = link
 
 
 func set_axis(axis: Vector3) -> void:
@@ -189,7 +192,9 @@ func physics_update(dt: float) -> void:
 	pass
 
 
-class_name JointController
+# ===== JointController =====
+
+class JointController
 
 var _joint: RobotJoint
 var _target_position: float = 0.0
@@ -241,7 +246,9 @@ func update(dt: float) -> void:
 	_joint.set_effort(min(effort, _joint._effort_limit))
 
 
-class_name ContactManager
+# ===== ContactManager =====
+
+class ContactManager
 
 var _contacts: Array = []
 
@@ -275,7 +282,9 @@ func get_contacts_for_body(body: String) -> Array:
 	return result
 
 
-class_name DifferentialDrive
+# ===== DifferentialDrive =====
+
+class DifferentialDrive
 
 var _wheel_separation: float = 0.5
 var _wheel_radius: float = 0.1
@@ -322,7 +331,9 @@ func update(dt: float) -> void:
 	_robot.set_transform(t)
 
 
-class_name GroundTruth
+# ===== GroundTruth =====
+
+class GroundTruth
 
 var _robot_name: String
 var _publisher: Publisher

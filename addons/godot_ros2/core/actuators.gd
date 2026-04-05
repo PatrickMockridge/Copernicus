@@ -38,8 +38,7 @@ func physics_update(delta: float) -> void:
 
 # ===== Motor =====
 
-class_name Motor
-extends Actuator
+class Motor extends Actuator
 
 enum MotorType { BRUSHED, BRUSHLESS }
 enum ControlMode { PWM, VELOCITY, POSITION, TORQUE }
@@ -97,8 +96,7 @@ func physics_update(delta: float) -> void:
 
 # ===== Servo =====
 
-class_name Servo
-extends Actuator
+class Servo extends Actuator
 
 var _angle: float = 0.0
 var _target_angle: float = 0.0
@@ -135,8 +133,7 @@ func get_angle() -> float:
 
 # ===== Thruster =====
 
-class_name Thruster
-extends Actuator
+class Thruster extends Actuator
 
 enum ThrusterType { FIXED_PITCH, VARIABLE_PITCH }
 enum ThrustModel { SIMPLE, KKT, MUNK }
@@ -171,8 +168,7 @@ func get_thrust_vector() -> Vector3:
 
 # ===== Propeller =====
 
-class_name Propeller
-extends Thruster
+class Propeller extends Thruster
 
 var _prop_diameter: float = 0.3
 var _prop_pitch: float = 0.2

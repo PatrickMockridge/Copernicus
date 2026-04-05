@@ -115,8 +115,7 @@ func apply_noise(value: float, param_name: String) -> float:
 
 # ===== Camera Sensor =====
 
-class_name CameraSensor
-extends Sensor
+class CameraSensor extends Sensor
 
 var _fov: float = 1.047  # ~60 degrees
 var _near: float = 0.1
@@ -180,8 +179,7 @@ func render_viewport(camera: Camera3D) -> Image:
 
 # ===== LIDAR Sensor =====
 
-class_name LidarSensor
-extends Sensor
+class LidarSensor extends Sensor
 
 var _angle_min: float = -PI
 var _angle_max: float = PI
@@ -260,8 +258,7 @@ func _get_intensities() -> Array:
 
 # ===== IMU Sensor =====
 
-class_name ImuSensor
-extends Sensor
+class ImuSensor extends Sensor
 
 var _publish_topic: String = "imu"
 var _orientation: Quaternion = Quaternion.IDENTITY
@@ -300,8 +297,7 @@ func get_imu_message(header: Dictionary) -> Dictionary:
 
 # ===== GPS Sensor =====
 
-class_name GPSSensor
-extends Sensor
+class GPSSensor extends Sensor
 
 var _publish_topic: String = "gps"
 var _latitude: float = 0.0
@@ -345,8 +341,7 @@ func get_gps_message(header: Dictionary) -> Dictionary:
 
 # ===== Force Torque Sensor =====
 
-class_name ForceTorqueSensor
-extends Sensor
+class ForceTorqueSensor extends Sensor
 
 var _publish_topic: String = "ft"
 var _force: Vector3 = Vector3.ZERO
@@ -371,8 +366,7 @@ func get_wrench_message(header: Dictionary) -> Dictionary:
 
 # ===== Contact Sensor =====
 
-class_name ContactSensor
-extends Sensor
+class ContactSensor extends Sensor
 
 var _publish_topic: String = "contact"
 var _contacts: Array = []

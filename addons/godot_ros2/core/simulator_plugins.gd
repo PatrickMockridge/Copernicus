@@ -41,7 +41,8 @@ func on_physics_step(delta: float) -> void:
 
 # ===== Built-in Plugins =====
 
-class PhysicsLogger extends SimulatorPlugin:
+
+class PhysicsLogger extends SimulatorPlugin
 
 	var _log_file: FileAccess
 	var _log_path: String = ""
@@ -78,7 +79,7 @@ class PhysicsLogger extends SimulatorPlugin:
 			_log_file.close()
 
 
-class ContactVisualizer extends SimulatorPlugin:
+class ContactVisualizer extends SimulatorPlugin
 
 	var _contact_markers: Array = []
 
@@ -99,7 +100,7 @@ class ContactVisualizer extends SimulatorPlugin:
 		pass
 
 
-class TrajectoryRecorder extends SimulatorPlugin:
+class TrajectoryRecorder extends SimulatorPlugin
 
 	var _trajectories: Dictionary = {}
 	var _recording: bool = false
@@ -134,7 +135,7 @@ class TrajectoryRecorder extends SimulatorPlugin:
 			})
 
 
-class PerformanceMonitor extends SimulatorPlugin:
+class PerformanceMonitor extends SimulatorPlugin
 
 	var _fps_history: Array = []
 	var _physics_step_times: Array = []
