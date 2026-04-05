@@ -417,7 +417,7 @@ func _on_mesh_source_selected(index: int) -> void:
 
 
 func _on_connect_bridge_pressed() -> void:
-	if GodotROS2.is_connected():
+	if GodotROS2.is_initialized():
 		_status_label.text = "Already connected"
 		return
 
@@ -484,7 +484,7 @@ func _on_spawn_turtlebot_pressed() -> void:
 	)
 
 	# Auto-connect bridge if not already
-	if GodotROS2.is_connected() and not _bridge_connected:
+	if GodotROS2.is_initialized() and not _bridge_connected:
 		_setup_ros2_topics()
 
 
@@ -492,7 +492,7 @@ func _setup_ros2_topics() -> void:
 	if not _robot_spawned or not GodotROS2.is_bridge_connected():
 		return
 
-	var node = GodotROS2.get_node()
+	var node = GodotROS2.get_ros_node()
 
 	# Publishers
 	_odom_pub = node.create_publisher("/turtlebot4/odom", "nav_msgs/Odometry")
@@ -660,7 +660,7 @@ func _on_apply_pressed() -> void:
 
 func _process(delta: float) -> void:
 	# ROS2 spin — process subscription callbacks
-	if GodotROS2 and GodotROS2.is_connected():
+	if GodotROS2 and GodotROS2.is_initialized():
 		GodotROS2.get_executor().spin_some(delta)
 
 		# Publish sensor data if robot is spawned
