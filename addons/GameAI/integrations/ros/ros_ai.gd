@@ -1,22 +1,27 @@
 # ros_ai.gd
-# GameAI + GodotROS2 Integration - AI for robotics in Godot
-# Uses GameAI to generate behaviors/logic for use with GodotROS2 SDK
+# ROSAIBehavior - AI Code Agent for Robotics in Godot
+# Like Claude in VS Code, but for robot design — embedded AI that helps you
+# write, debug, and architect GDScript for your GodotROS2 robots
 
 extends Node
 class_name ROSAIBehavior
 
 const Result = preload("res://addons/GameAI/core/result.gd")
 
-## ROSAIBehavior - AI Assistant for GodotROS2
+## ROSAIBehavior - AI Coding Assistant for GodotROS2
 ##
-## Generate behaviors, debug issues, and extend your robots with AI
-## Works WITH GodotROS2 SDK (doesn't replace it)
+## Acts as an AI code agent for robotics in Godot. Generate behaviors,
+## debug issues, explain sensor math, and architect control systems.
+## Works WITH GodotROS2 SDK (doesn't replace it).
 ##
-## Usage:
-## var ros_ai = ROSAIBehavior.new()
-## ros_ai.set_ai(GameAI)
-## ros_ai.generate_behavior("obstacle_avoid")
-## ros_ai.behavior_generated.connect(_on_behavior_ready)
+## Example usage:
+##   ros_ai.set_ai(GameAI)
+##   ros_ai.generate_behavior("obstacle_avoid")   # returns code via signal
+##   ros_ai.diagnose_behavior_issue(["robot drifts left", "odometry noisy"])
+##   ros_ai.explain_ros_topic("/turtlebot4/scan", "sensor_msgs/LaserScan")
+##
+## All methods emit signals with generated code/text. Connect to the
+## appropriate signal to receive results asynchronously.
 
 var _ros2_path: String = ""
 var _ai: Node = null

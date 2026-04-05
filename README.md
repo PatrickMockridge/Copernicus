@@ -2,16 +2,28 @@
 
 **Proof of Concept: AI-powered robot design with GameAI + GodotROS2 + TurtleBot4**
 
-> **Status**: Godot 4.3 headless runs without script errors. All 3 autoloads (GameAI, ROSAI, GodotROS2) load successfully. Rebuilding UI next.
+> **Status**: Async fixes committed. Headless runs clean. UI rebuild blocked — main.gd can't reference autoloads (Godot parses main.gd before autoloads register). Need to investigate Godot initialization order or use deferred connections.
 
 ---
 
-## What This Project Aims to Do
+## What This Project Is
 
-1. Spawn a real robot model (TurtleBot4) in a Godot 3D simulation
-2. Connect it live to ROS 2 via a TCP/UDP bridge
-3. Use GameAI to generate GDScript behavior code for the robot
-4. Run the behavior in simulation with full sensor data flowing to/from ROS 2
+**An AI code agent for robot design** — like the Claude plugin in VS Code, but for robotics in Godot.
+
+The AI is a **coding assistant embedded in the Godot editor** that helps you:
+- **Write GDScript behaviors** for your robot (obstacle avoidance, wall following, patrol, etc.)
+- **Debug issues** — "robot drifts left when moving forward, why?"
+- **Architect robot systems** — state machines, sensor processing pipelines, controller logic
+- **Reason about complex math** — PID tuning, coordinate transforms, kinematics, sensor models
+
+Think: you select your robot in the Godot scene tree, type a request like "add obstacle avoidance using LIDAR", and the AI generates and explains the GDScript code for you. The AI understands your robot's context — its sensors, actuators, and existing code.
+
+### The Core Loop
+
+1. **Build** — Spawn a TurtleBot4 in Godot's 3D simulator (real meshes or primitive shapes)
+2. **Connect** — Bridge to ROS 2 via TCP/UDP for live sensor data
+3. **Ask AI** — Describe what you want: "generate obstacle avoidance behavior" or "explain this sensor math"
+4. **Run** — Generated code runs in simulation with real sensor feedback from ROS 2
 
 ---
 
@@ -61,15 +73,52 @@ Godot loads all scripts at startup. If any script references a type from another
 
 | Todo | File | Issue |
 |------|------|-------|
-| 🔄 | `main.gd` | Rebuild full UI with signal-connected GodotROS2/GameAI integration |
+| 🔄 | `main.gd` | **BLOCKED**: Godot parses main.gd at scene load time, before autoloads register. Autoload singletons (GameAI, ROSAI, GodotROS2) are not visible in main.gd's scope at parse time. Need deferred signal connections or different architecture. |
 | 🔄 | Editor mode | Other SDK files still have `async` / structural issues (character_ai.gd, actuators.gd, physics_bodies.gd, etc.) — only affect editor code completion, not runtime |
 
-### Not Started ⬜
+---
 
-| Todo | File | Issue |
-|------|------|-------|
-| ⬜ | README | Update after full restore (this update) |
-| ⬜ | Commit + Push | Commit current progress |
+## AI Code Agent Architecture
+
+The AI integration is a **code agent** — like Claude in VS Code, embedded in the Godot editor.
+
+**Principle**: The AI helps you write scripts, architect robot systems, and reason about complex math involved in robot design. It doesn't just generate text — it's an interactive coding assistant that understands your robot's context.
+
+### How it works
+
+- **GameAI (ai.gd)** — Generic AI provider wrapper for Claude, OpenAI, Minimax. Provides `chat()`, `generate_code()`, `explain_code()`.
+- **ROSAI (ros_ai.gd)** — Robotics-specific AI code agent built on GameAI. Generates GDScript for behaviors, controllers, state machines; debugs issues; explains ROS topics.
+- **Signals** — All AI operations are async via signals. Connect to `behavior_generated`, `diagnosis_completed`, etc.
+
+### Design Decision: Signals over async/await
+
+Godot 4.3 rejects `async func` declarations with "Unexpected identifier in class body". All async operations use **Thread + Signal pattern**:
+
+```gdscript
+var _thread: Thread
+signal bridge_connection_completed(success: bool)
+
+func connect_bridge() -> void:
+    _thread = Thread.new()
+    _thread.start(callable(self, "_connect_thread"))
+
+func _connect_thread():
+    # blocking work
+    call_deferred("emit_bridge_connection_completed", true)
+```
+
+---
+
+## Tomorrow's Tasks
+
+1. **Fix main.gd autoload reference** — Godot parses main.gd before autoloads register. Try:
+   - Move signal connections to `_enter_tree()` instead of `_ready()`
+   - Use `call_deferred()` for autoload access
+   - Or: make main.gd an autoload itself
+
+2. **Editor mode fixes** — Fix remaining `async` in non-essential SDK files (character_ai.gd, demo.gd, roblox_ai.gd, actuators.gd, physics_bodies.gd, sensors.gd, simulator_plugins.gd)
+
+3. **Full UI rebuild** — AI code agent panel with context display, task input, code output, action buttons
 
 ---
 

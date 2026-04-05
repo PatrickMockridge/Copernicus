@@ -1,6 +1,12 @@
 # ai.gd
-# GameAI SDK - AI integration for Godot 4
+# GameAI SDK - AI Code Agent for Godot 4
+# Acts as a coding assistant embedded in the Godot editor — like Claude in VS Code
 # Supports Anthropic Claude, OpenAI, Minimax, and custom AI providers
+#
+# Usage:
+#   AI.chat([{"role": "user", "content": "generate obstacle avoidance code"}])
+#   AI.generate_code("write a PID controller for differential drive")
+#   AI.explain_code(my_script_code)
 
 extends Node
 
