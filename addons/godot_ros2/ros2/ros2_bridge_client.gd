@@ -20,33 +20,44 @@ func _init(remote_host: String = "127.0.0.1") -> void:
 	_host = remote_host
 
 
-async func connect_bridge() -> bool:
-	"""Connect to the ROS2 bridge via TCP and UDP."""
+signal bridge_connection_completed(success: bool)
+var _connection_thread: Thread
+
+func connect_bridge() -> void:
+	"""Connect to the ROS2 bridge via TCP and UDP (async via thread)."""
+	_connection_thread = Thread.new()
+	_connection_thread.start(callable(self, "_connect_thread"))
+
+func _connect_thread() -> void:
+	"""Worker thread for bridge connection."""
 	_connected = false
 
 	# Connect TCP
 	_tcp_socket = StreamPeerTCP.new()
 	_tcp_socket.connect_to_host(_host, TCP_PORT)
 
-	# Wait for connection with timeout
-	var timeout = 5.0
-	var elapsed = 0.0
-	while elapsed < timeout:
-		if _tcp_socket.get_status() == StreamPeerTCP.STATUS_CONNECTED:
-			break
-		elapsed += 0.1
-		await Engine.get_main_loop().process_frame
+	# Wait for connection with timeout using ticks-based polling
+	var timeout_ms = 5000
+	var start_ms = OS.get_ticks_msec()
+	var connected = false
 
-	if _tcp_socket.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+	while OS.get_ticks_msec() - start_ms < timeout_ms:
+		if _tcp_socket.get_status() == StreamPeerTCP.STATUS_CONNECTED:
+			connected = true
+			break
+		OS.delay_msec(50)
+
+	if not connected:
 		_last_error = "TCP connection timeout"
-		return false
+		call_deferred("emit_bridge_connection_completed", false)
+		return
 
 	# Setup UDP
 	_udp_socket = PacketPeerUDP.new()
 	_udp_socket.set_dest_address(_host, UDP_PORT)
 
 	_connected = true
-	return true
+	call_deferred("emit_bridge_connection_completed", true)
 
 
 func disconnect_bridge() -> void:

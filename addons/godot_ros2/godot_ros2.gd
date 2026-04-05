@@ -9,6 +9,7 @@ var _node: ROS2Node
 var _executor: ROS2Executor
 var _bridge_client: ROS2BridgeClient
 var _connected: bool = false
+var _pending_init: bool = false
 
 
 func _init() -> void:
@@ -22,18 +23,30 @@ func _process(delta: float) -> void:
 		_executor.spin_some(delta)
 
 
-func initialize(node_name: String, ns: String = "", bridge_host: String = "127.0.0.1") -> bool:
-	"""Initialize the ROS 2 node and connect to the bridge."""
+signal initialization_completed(success: bool)
+
+func initialize(node_name: String, ns: String = "", bridge_host: String = "127.0.0.1") -> void:
+	"""Initialize the ROS 2 node and connect to the bridge (async via signals)."""
+	if _pending_init:
+		return
+	_pending_init = true
 	_node = ROS2Node.new(node_name, ns)
 	_bridge_client = ROS2BridgeClient.new(bridge_host)
-	var bridge_ok = await _bridge_client.connect_bridge()
-	if bridge_ok:
+	_bridge_client.bridge_connection_completed.connect(_on_bridge_connection_completed)
+	_bridge_client.connect_bridge()
+
+
+func _on_bridge_connection_completed(success: bool) -> void:
+	if success:
 		_node.set_bridge_client(_bridge_client)
-		print("GodotROS2: Bridge connected to %s" % bridge_host)
+		print("GodotROS2: Bridge connected")
+		_connected = true
+		initialization_completed.emit(true)
 	else:
 		print("GodotROS2: Bridge connection failed: " + _bridge_client.get_last_error())
-	_connected = true
-	return true
+		_connected = true
+		initialization_completed.emit(false)
+	_pending_init = false
 
 
 func get_ros_node() -> ROS2Node:
