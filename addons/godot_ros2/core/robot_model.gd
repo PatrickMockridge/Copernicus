@@ -475,3 +475,145 @@ func get_state() -> Dictionary:
 		"joints": _joints.keys(),
 		"pose": get_pose()
 	}
+
+
+# ===== Manifest (for ARIADNE export) =====
+
+## Serialize robot design for export to ARIADNE / trade
+## Returns a manifest dictionary suitable for JSON serialization
+func to_manifest() -> Dictionary:
+	var links_data: Array = []
+	for link in _links.values():
+		links_data.append({
+			"name": link.get_name(),
+			"mass": link.get_mass(),
+			"inertia": link.get_inertia(),
+			"mesh_path": "",  # TODO: extract mesh path
+			"collision_type": "",  # TODO: extract collision type
+		})
+
+	var joints_data: Array = []
+	for joint in _joints.values():
+		joints_data.append({
+			"name": joint.get_name(),
+			"type": joint.get_type(),
+			"parent": joint.get_parent_link(),
+			"child": joint.get_child_link(),
+			"axis": joint.get_axis(),
+			"limits": {
+				"lower": joint._limit_lower,
+				"upper": joint._limit_upper,
+				"effort": joint._effort_limit,
+				"velocity": joint._velocity_limit
+			}
+		})
+
+	return {
+		"format_version": "1.0",
+		"name": _name,
+		"mode": "simple" if _mode == Mode.SIMPLE else "advanced",
+		"control_mode": _control_mode,
+		"links": links_data,
+		"joints": joints_data,
+		"pose": get_pose(),
+		"mesh_tx_ids": []  # Populated after upload to Arweave
+	}
+
+
+## Load robot design from a manifest dictionary
+func from_manifest(manifest: Dictionary) -> void:
+	_name = manifest.get("name", _name)
+
+	var mode_str = manifest.get("mode", "simple")
+	_mode = Mode.SIMPLE if mode_str == "simple" else Mode.ADVANCED
+
+	var control_str = manifest.get("control_mode", "velocity")
+	match control_str:
+		"position":
+			_control_mode = ControlMode.POSITION
+		"velocity":
+			_control_mode = ControlMode.VELOCITY
+		"effort":
+			_control_mode = ControlMode.EFFORT
+
+	# TODO: Reconstruct links and joints from manifest
+	# This requires the link/joint classes to have proper serialization
+
+	# Load pose if present
+	var pose = manifest.get("pose")
+	if pose:
+		var pos = pose.get("position", Vector3.ZERO)
+		var quat = pose.get("orientation", Quaternion.IDENTITY)
+		set_global_transform(Transform3D(Basis(quat), pos))
+
+
+## Export to ARIADNE-compatible git repo structure
+## Returns { urdf_content, files: [{path, content}] }
+func export_to_ariadne() -> Dictionary:
+	var urdf_content = _generate_urdf()
+
+	var files: Array = []
+	files.append({
+		"path": _name + ".urdf",
+		"content": urdf_content,
+		"type": "application/xml"
+	})
+
+	# Add manifest
+	files.append({
+		"path": "manifest.json",
+		"content": JSON.stringify(to_manifest(), "\t"),
+		"type": "application/json"
+	})
+
+	return {
+		"urdf_content": urdf_content,
+		"files": files,
+		"mesh_tx_ids": []
+	}
+
+
+## Generate URDF string from current robot state
+func _generate_urdf() -> String:
+	var urdf = '<?xml version="1.0"?>\n'
+	urdf += '<robot name="' + _name + '">\n\n'
+
+	# Generate links
+	for link in _links.values():
+		urdf += '  <link name="' + link.get_name() + '">\n'
+		urdf += '    <inertial>\n'
+		urdf += '      <mass value="' + str(link.get_mass()) + '"/>\n'
+		var inertia = link.get_inertia()
+		urdf += '      <inertia ixx="' + str(inertia.x) + '" ixy="0" ixz="0" iyy="' + str(inertia.y) + '" iyz="0" izz="' + str(inertia.z) + '"/>\n'
+		urdf += '    </inertial>\n'
+		urdf += '  </link>\n\n'
+
+	# Generate joints
+	for joint in _joints.values():
+		urdf += '  <joint name="' + joint.get_name() + '" type="' + _joint_type_to_urdf(joint.get_type()) + '">\n'
+		urdf += '    <parent link="' + joint.get_parent_link() + '"/>\n'
+		urdf += '    <child link="' + joint.get_child_link() + '"/>\n'
+		urdf += '    <axis xyz="' + _vector3_to_urdf(joint.get_axis()) + '"/>\n'
+		urdf += '    <limit lower="' + str(joint._limit_lower) + '" upper="' + str(joint._limit_upper) + '"/>\n'
+		urdf += '  </joint>\n\n'
+
+	urdf += '</robot>\n'
+	return urdf
+
+
+func _joint_type_to_urdf(joint_type: RobotJoint.JointType) -> String:
+	match joint_type:
+		RobotJoint.JointType.REVOLUTE:
+			return "revolute"
+		RobotJoint.JointType.CONTINUOUS:
+			return "continuous"
+		RobotJoint.JointType.PRISMATIC:
+			return "prismatic"
+		RobotJoint.JointType.FIXED:
+			return "fixed"
+		_:
+			return "fixed"
+
+
+func _vector3_to_urdf(v: Vector3) -> String:
+	return str(v.x) + " " + str(v.y) + " " + str(v.z)
