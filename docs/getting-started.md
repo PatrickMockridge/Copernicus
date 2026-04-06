@@ -1,35 +1,37 @@
 # Getting Started
 
-A Godot 4.x robotics simulator with ROS 2 integration and blockchain-backed design sharing.
-
 ## Requirements
 
-- **Godot 4.4+** (recommended)
-- **Node.js 22+** (for ARIADNE blockchain features)
-- **Arweave wallet** (optional, for blockchain features)
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Godot | 4.4+ | |
+| ROS 2 | Jazzy or Humble | |
+| Node.js | 22+ | For blockchain features |
+| Git | Any recent | |
 
-## Quick Start
+## Installation
 
-### 1. Clone and Open
+### 1. Clone the Repository
 
 ```bash
 git clone https://codeberg.org/PatrickM123/Godot_4__Robotic_Design_Interface.git
 cd Godot_4__Robotic_Design_Interface
-godot
 ```
 
-### 2. Run Headless
+### 2. Build ROS 2 Bridge
 
 ```bash
+cd ~/ros2_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select godot_ros2_bridge
+source install/setup.sh
+```
+
+### 3. Run Godot
+
+```bash
+cd Godot_4__Robotic_Design_Interface
 godot --headless --quit
-```
-
-### 3. Install ARIADNE (Optional)
-
-For blockchain design sharing:
-
-```bash
-npm install ariadne-cli
 ```
 
 ## Project Structure
@@ -38,42 +40,60 @@ npm install ariadne-cli
 .
 ├── addons/
 │   ├── godot_ros2/          # ROS 2 simulator SDK
-│   │   ├── core/           # Core classes (actuators, sensors, physics)
-│   │   ├── sensors/        # Sensor implementations
-│   │   ├── ros2/           # ROS 2 bridge client
-│   │   └── arweave/        # Blockchain integration
+│   │   ├── arweave/        # Blockchain integration
+│   │   └── core/           # Robot models, sensors, actuators
 │   └── GameAI/             # AI code agent (EXPERIMENTAL)
-├── docs/                   # This documentation
-├── scripts/                # Main scripts
-└── scenes/                # Robot scene files
+├── docs/                   # Documentation
+├── scenes/                 # Robot scene files
+└── scripts/                # Main scripts
 ```
 
-## What's Next?
+## Running the Simulator
 
-### Learn ROS 2 Simulation
-See [godot-ros2/README](godot-ros2/README.md) for creating robots with sensors and actuators.
+### 1. Start the ROS 2 Bridge
 
-### Share on Blockchain
-See [arweave/README](../arweave/README.md) for publishing robot designs permanently.
+```bash
+export ROS_DOMAIN_ID=0
+ros2 run godot_ros2_bridge godot_bridge_node
+```
 
-### Code Patterns
-See [development/code-patterns](development/code-patterns.md) for Godot 4.x compatibility patterns.
+### 2. Open Godot
+
+```bash
+godot
+```
+
+### 3. In-Godot Controls
+
+1. **Spawn TurtleBot4** — Choose DAE Meshes (real robot) or Primitives (Godot shapes)
+2. **Connect Bridge** — Connects to the running `godot_ros2_bridge` node
+3. **Play / Pause / Reset** — Control the simulation
+4. **Generate Behavior** — Use AI to generate robot behaviors
 
 ## Troubleshooting
 
 ### Parse Errors in Editor
-If you see "Parse Error" in Godot editor:
+
 ```bash
 rm -rf .godot
 godot -e --headless --quit
 ```
-This regenerates the Godot cache.
-
-### Godot 4.3 vs 4.4
-Godot 4.4 is recommended. Some type-checking features may differ in 4.3.
 
 ### ARIADNE Requires Node 22
-If `ariadne` commands fail, ensure Node.js 22+ is installed:
+
 ```bash
 node --version  # Should be v22+
 ```
+
+### ROS Domain ID Mismatch
+
+If you see "topic does not appear to be published yet", ensure `ROS_DOMAIN_ID` is set:
+
+```bash
+export ROS_DOMAIN_ID=0
+```
+
+## Next Steps
+
+- [ROS 2 Simulation](simulation.md) — Learn about sensors, actuators, and robot models
+- [Blockchain](blockchain.md) — Publish robot designs to Arweave

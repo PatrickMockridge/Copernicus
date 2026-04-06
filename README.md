@@ -1,312 +1,106 @@
-# Robot Design POC
+# Robot Design Interface
 
-**Proof of Concept: AI-powered robot design with GameAI + GodotROS2 + TurtleBot4**
+AI-powered robotics simulator in Godot 4 with ROS 2 integration and blockchain design sharing.
 
-> **Status**: Godot 4.4 runs clean. Full AI code agent UI working. Uses `preload` + `new()` instead of autoloads. Robot designs can now be published to Arweave via ARIADNE and tracked as tradeable AO Hyperobjects.
+## Status
 
----
+- **Godot 4.4** — Runs clean
+- **ROS 2** — Bridge connection working
+- **Blockchain** — ARIADNE + AO Hyperobjects integrated
+- **AI Agent** — Experimental
 
-## What This Project Is
+## Quick Start
 
-**An AI code agent for robot design** — like the Claude plugin in VS Code, but for robotics in Godot.
+### 1. Clone and Open
 
-The AI is a **coding assistant embedded in the Godot editor** that helps you:
-- **Write GDScript behaviors** for your robot (obstacle avoidance, wall following, patrol, etc.)
-- **Debug issues** — "robot drifts left when moving forward, why?"
-- **Architect robot systems** — state machines, sensor processing pipelines, controller logic
-- **Reason about complex math** — PID tuning, coordinate transforms, kinematics, sensor models
-
-**New: Tradeable Robot Designs** — Robot designs can be published to Arweave via ARIADNE and tracked as tradeable assets using AO Hyperobjects. Robot designs become transferable across games and tradeable NFTs.
-
-### The Core Loop
-
-1. **Build** — Spawn a TurtleBot4 in Godot's 3D simulator (real meshes or primitive shapes)
-2. **Connect** — Bridge to ROS 2 via TCP/UDP for live sensor data
-3. **Ask AI** — Describe what you want: "generate obstacle avoidance behavior" or "explain this sensor math"
-4. **Run** — Generated code runs in simulation with real sensor feedback from ROS 2
-5. **Publish** — Share robot designs on Arweave via ARIADNE, trade via AO Hyperobjects
-
----
-
-## Tradeable Robot Designs
-
-Robot designs can now be published to Arweave and traded as assets:
-
-```
-Robot Design (RobotModel)
-    │
-    ├─► ARIADNE.push() ─► Arweave TX ID (permanent storage, repo)
-    │
-    └─► AO Hyperobject ─► AO Process (ownership, transfer, trade)
+```bash
+git clone https://codeberg.org/PatrickM123/Godot_4__Robotic_Design_Interface.git
+cd Godot_4__Robotic_Design_Interface
+godot
 ```
 
-### Key Components
-
-- **ARIADNE** — Decentralized git hosting on Arweave (robot design versioning/storage)
-- **AO Hyperobjects** — Actor-Oriented compute framework (ownership/transfer via AO processes)
-- **WalletService** — Single source of truth for wallet across all blockchain operations
-
-### Publishing a Robot
-
-```gdscript
-# Load wallet once
-WalletService.get_instance().load_wallet("res://wallet.json")
-
-# Create robot hyperobject
-var robot = RobotHyperobject.from_robot_model(robot_model, ariadne, ao)
-var result = robot.publish()
-# result = { repo_id: "...", process_id: "..." }
-```
-
-### Trading Robots
-
-```gdscript
-# List for sale
-trade_manager.list_for_sale(repo_id, price)
-
-# Purchase
-trade_manager.purchase(repo_id)  # Uses WalletService wallet
-```
-
----
-
-## Architecture Notes
-
-### Signals + Thread Pattern
-
-All `async func` / `await` replaced with Thread + Signal pattern:
-
-```gdscript
-var _thread: Thread
-signal bridge_connection_completed(success: bool)
-
-func connect_bridge() -> void:
-    _thread = Thread.new()
-    _thread.start(callable(self, "_connect_thread"))
-
-func _connect_thread():
-    # blocking work
-    call_deferred("emit_bridge_connection_completed", true)
-```
-
-### Autoload Singleton Workaround
-
-Godot headless doesn't register autoloads as `Engine.get_singleton()` — they return null. Solution: use `preload` + `new()` instead:
-
-```gdscript
-const GameAI = preload("res://addons/GameAI/core/ai.gd")
-const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
-
-func _ready() -> void:
-    _gameai = GameAI.new()
-    _rosai = ROSAI.new()
-    add_child(_gameai)
-    add_child(_rosai)
-```
-
----
-
-## AI Code Agent Architecture
-
-The AI integration is a **code agent** — like Claude in VS Code, embedded in the Godot editor.
-
-**Principle**: The AI helps you write scripts, architect robot systems, and reason about complex math involved in robot design. It doesn't just generate text — it's an interactive coding assistant that understands your robot's context.
-
-### How it works
-
-- **GameAI (ai.gd)** — Generic AI provider wrapper for Claude, OpenAI, Minimax. Provides `chat()`, `generate_code()`, `explain_code()`.
-- **ROSAI (ros_ai.gd)** — Robotics-specific AI code agent built on GameAI. Generates GDScript for behaviors, controllers, state machines; debugs issues; explains ROS topics.
-- **Signals** — All AI operations are async via signals. Connect to `behavior_generated`, `diagnosis_completed`, etc.
-
-### Design Decision: Signals over async/await
-
-Godot 4.x uses **Thread + Signal pattern** for async operations (no `async`/`await` keywords):
-
-```gdscript
-var _thread: Thread
-signal bridge_connection_completed(success: bool)
-
-func connect_bridge() -> void:
-    _thread = Thread.new()
-    _thread.start(callable(self, "_connect_thread"))
-
-func _connect_thread():
-    # blocking work
-    call_deferred("emit_bridge_connection_completed", true)
-```
-
----
-
-## Tomorrow's Tasks
-
-1. **Test ARIADNE publishing** — Test robot design publishing to Arweave with real wallet
-2. **Test AO Hyperobject trading** — Test ownership transfer via AO processes
-3. **Test with real AI** — Configure API key and test behavior generation end-to-end
-
----
-
-## Execution Rule
-
-1. **Test after every single fix** — open Godot headless, check errors, close before next
-2. **Commit after every passing test** — each fix is independently reversible
-3. If errors persist after applying fix, the fix was wrong — do NOT move to next file
-4. **Break circular dependencies first** — a minimal stub that does nothing is better than a complex file that won't load
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Robot Design POC                          │
-├─────────────────────────────────────────────────────────────┤
-│  UI Layer (Godot Controls — split panel)                   │
-│  ├── ROS2 Bridge controls                                   │
-│  ├── Robot spawner (TurtleBot4, mesh/primitive toggle)      │
-│  ├── Simulation controls (play/pause/reset)                  │
-│  ├── AI behavior generation                                  │
-│  └── Generated code display                                  │
-├─────────────────────────────────────────────────────────────┤
-│  3D Viewport (right panel)                                  │
-│  └── TurtleBot4 simulation running live                       │
-├─────────────────────────────────────────────────────────────┤
-│  GameAI SDK                                                 │
-│  ├── AI Provider Integration (Claude, OpenAI, etc.)          │
-│  └── ROSAI Module — Behavior Generation                     │
-├─────────────────────────────────────────────────────────────┤
-│  GodotROS2 SDK                                              │
-│  ├── ROS2Simulator (physics, sensors)                       │
-│  ├── TurtleBot4Loader (real DAE meshes or primitives)        │
-│  ├── DifferentialDrive (wheel kinematics)                    │
-│  └── ROS2BridgeClient → godot_ros2_bridge (ROS 2 node)     │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Signals + Thread Pattern
-
-All `async func` / `await` is being replaced with:
-
-```gdscript
-var _thread: Thread
-signal completed(result: Variant)
-
-func do_async_work():
-    _thread = Thread.new()
-    _thread.start(callable(self, "_worker_thread").bind(args))
-
-func _worker_thread():
-    var result = blocking_work()
-    call_deferred("emit_signal", "completed", result)
-```
-
-This achieves the same async behavior without the `async` keyword.
-
----
-
-## Requirements
-
-- Godot 4.4 (for development — 4.4 compatibility with async/await)
-- ROS 2 Jazzy (or Humble)
-- `godot_ros2_bridge` package built in your ROS workspace
-- TurtleBot4 ROS 2 packages (`ros-jazzy-turtlebot4-description`)
-- GameAI SDK addon (included as submodule)
-- GodotROS2 SDK addon (included as submodule)
-- Anthropic API key (or OpenAI/Minimax)
-
-## Quick Start (Godot 4.3)
-
-### 1. Build the ROS 2 bridge
+### 2. Build ROS 2 Bridge
 
 ```bash
 cd ~/ros2_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select godot_ros2_bridge
 source install/setup.sh
-```
-
-### 2. Start the bridge
-
-```bash
+export ROS_DOMAIN_ID=0
 ros2 run godot_ros2_bridge godot_bridge_node
 ```
 
-### 3. Open Godot
+### 3. Run Godot
 
 ```bash
-cd Godot_4_Robotic_Design_Interface
-godot4.3 --headless --quit
-# Or open in Godot 4.3 editor
+cd Godot_4__Robotic_Design_Interface
+godot --headless --quit
 ```
 
-### 4. In-Godot controls (after full rebuild)
+## Features
 
-1. **Spawn TurtleBot4** — choose DAE Meshes (real robot visuals) or Primitives (Godot boxes/cylinders)
-2. **Connect Bridge** — connects Godot to the running `godot_ros2_bridge` node
-3. **Play / Pause / Reset** — control the simulation
-4. Enter your **AI API key** and click **Connect AI**
-5. Select a behavior and click **Generate with AI**
+- **ROS 2 Simulation** — Simulate robots with realistic sensor data from ROS 2
+- **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, wall following, patrol)
+- **Blockchain Publishing** — Publish robot designs permanently to Arweave via ARIADNE
+- **Tradeable Designs** — Robot designs become transferable via AO Hyperobjects
+- **TurtleBot4 Ready** — Real meshes and physics from ROS 2 packages
 
----
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Robot Design Interface                      │
+├─────────────────────────────────────────────────────────────┤
+│  UI Layer (Godot Controls)                                   │
+│  ├── ROS2 Bridge controls                                   │
+│  ├── Robot spawner (TurtleBot4)                              │
+│  ├── Simulation controls (play/pause/reset)                   │
+│  └── AI behavior generation                                  │
+├─────────────────────────────────────────────────────────────┤
+│  3D Viewport                                                 │
+│  └── TurtleBot4 simulation running live                       │
+├─────────────────────────────────────────────────────────────┤
+│  GameAI SDK (EXPERIMENTAL)                                   │
+│  └── AI Code Agent — Behavior generation                     │
+├─────────────────────────────────────────────────────────────┤
+│  GodotROS2 SDK                                              │
+│  ├── ROS2Simulator (physics, sensors)                       │
+│  ├── TurtleBot4Loader (meshes or primitives)                 │
+│  ├── DifferentialDrive (wheel kinematics)                    │
+│  └── ROS2BridgeClient ← TCP/UDP → ROS 2                     │
+├─────────────────────────────────────────────────────────────┤
+│  Blockchain Layer                                            │
+│  ├── ARIADNE — Git-on-Arweave (permanent storage)           │
+│  └── AO Hyperobjects — Ownership and trading                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](docs/getting-started.md) | Setup, installation, first robot |
+| [ROS 2 Simulation](docs/simulation.md) | Sensors, actuators, robot models |
+| [Blockchain](docs/blockchain.md) | ARIADNE + AO Hyperobjects |
+| [Development](docs/development/code-patterns.md) | Godot 4.x patterns |
+
+## Requirements
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Godot | 4.4+ | |
+| ROS 2 | Jazzy or Humble | |
+| Node.js | 22+ | For ARIADNE CLI |
+| Arweave Wallet | JWK | Optional, for blockchain |
 
 ## ROS 2 Topics
 
 | Topic | Type | Direction | Description |
 |-------|------|-----------|-------------|
 | `/turtlebot4/odom` | `nav_msgs/Odometry` | Godot → ROS | Ground-truth odometry |
-| `/turtlebot4/scan` | `sensor_msgs/LaserScan` | Godot → ROS | 360° lidar scan (640 samples) |
+| `/turtlebot4/scan` | `sensor_msgs/LaserScan` | Godot → ROS | 360° lidar scan |
 | `/turtlebot4/imu` | `sensor_msgs/Imu` | Godot → ROS | IMU data |
-| `/turtlebot4/cmd_vel` | `geometry_msgs/Twist` | ROS → Godot | Velocity command — drives the robot |
-
----
-
-## TurtleBot4 Model
-
-The simulator loads the real TurtleBot4 geometry from the ROS 2 packages:
-
-- **Base**: Create3 — cylinder (r=0.164m, h=0.06m), mass 2.3kg
-- **Wheels**: Differential drive, separation 0.233m, radius 0.0419m
-- **Shell**: 0.390kg box on top
-- **RPLidar A1**: 360° scan, 640 samples, range 0.164–12m, 62Hz
-- **Oak-D Pro camera**: Forward-facing RGB-D
-- **IMU**: In Create3 base
-
-Meshes are loaded from `/opt/ros/jazzy/share/turtlebot4_description/meshes/` and `/opt/ros/jazzy/share/irobot_create_description/meshes/`. Select **Primitives** mode to build from Godot geometry instead.
-
----
-
-## Bridge Protocol
-
-The bridge uses:
-- **TCP port 8765** — JSON control commands (create/destroy publishers/subscriptions, spin)
-- **UDP port 8766** — High-frequency message data (sensor readings, odometry)
-
-The `godot_ros2_bridge` Python package must be running as a ROS 2 node on the same machine.
-
----
-
-## AI Behavior Generation
-
-Uses GameAI to generate GDScript behaviors:
-- `obstacle_avoid` — Lidar-based collision avoidance
-- `wall_follow` — Maintain distance from walls
-- `patrol` — Navigate between waypoints
-- `chase` — Follow a moving target
-- `flee` — Escape from threats
-
-Generated code is displayed and can be copied for use in other GodotROS2 projects.
-
----
-
-## Submodules
-
-- `addons/GameAI` — GameAI SDK (AI code generation)
-- `addons/godot_ros2` — GodotROS2 SDK (ROS 2 integration)
-
-Both submodules are pinned to specific commits and modified inline for compatibility fixes. Do not update them without testing against Godot 4.3.
-
----
+| `/turtlebot4/cmd_vel` | `geometry_msgs/Twist` | ROS → Godot | Velocity command |
 
 ## License
 
