@@ -504,6 +504,106 @@ Bridge logs are written to `/tmp/bridge.log` when started with `nohup`:
 tail -f /tmp/bridge.log
 ```
 
+---
+
+## Blockchain Integration (Arweave + AO Hyperobjects)
+
+The SDK includes support for publishing robot designs to Arweave and trading them as AO Hyperobjects.
+
+### Architecture
+
+```
+Robot Design (RobotModel)
+    │
+    ├─► ARIADNE.push() ─► Arweave TX ID (permanent storage)
+    │
+    └─► AO Hyperobject ─► AO Process (ownership, transfer)
+```
+
+### Components
+
+| Class | Purpose |
+|-------|---------|
+| `AriadneInterface` | Wrapper for ariadne-cli (git-on-Arweave) |
+| `RobotHyperobject` | Bridge class linking ARIADNE repos with AO processes |
+| `TradeManager` | Registry and trading operations for robot designs |
+| `WalletService` | Single source of truth for wallet (autoload) |
+| `ArweaveWallet` | JWK wallet wrapper for Arweave/AO operations |
+| `AOSDK` | AO Hyperobject SDK (spawn processes, schedule messages) |
+| `Storage` | Arweave upload/download helpers |
+
+### Setup
+
+1. **Install ariadne-cli** (Node 22+):
+```bash
+npm install -g ariadne-cli
+```
+
+2. **Create wallet** or use existing JWK wallet file:
+```json
+{
+  "kty": "RSA",
+  "n": "...",
+  "e": "AQAB",
+  "kid": "your_address_here"
+}
+```
+
+3. **Load wallet in Godot**:
+```gdscript
+WalletService.get_instance().load_wallet("res://wallet.json")
+```
+
+### Publishing a Robot Design
+
+```gdscript
+# Initialize ARIADNE in your project directory
+var ariadne = AriadneInterface.new()
+ariadne.initialize("", true)  # --create flag
+
+# Create robot hyperobject
+var robot = RobotHyperobject.from_robot_model(robot_model, ariadne, ao)
+var result = robot.publish()
+
+# result = {
+#   "exit_code": 0,
+#   "output": "Published",
+#   "repo_id": "arweave_tx_id_here",
+#   "process_id": "ao_process_id_here"
+# }
+```
+
+### Trading Robots
+
+```gdscript
+var trade_manager = TradeManager.new(ao, ariadne)
+
+# List for sale
+trade_manager.list_for_sale(repo_id, price.0)
+
+# Remove from sale
+trade_manager.unlist(repo_id)
+
+# Transfer ownership
+trade_manager.transfer(repo_id, new_owner_address)
+
+# Purchase (uses WalletService wallet)
+trade_manager.purchase(repo_id)
+```
+
+### Querying Robots
+
+```gdscript
+# Get robots owned by address
+var owned = trade_manager.get_robots_by_owner(wallet_address)
+
+# Get all robots for sale
+var for_sale = trade_manager.get_robots_for_sale()
+
+# Search by name
+var results = trade_manager.search_by_name("turtlebot")
+```
+
 ## License
 
 MIT

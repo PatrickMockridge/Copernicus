@@ -22,11 +22,9 @@ var _robot_type: RobotType = RobotType.CUSTOM
 
 ## ARIADNE references
 var _ariadne: AriadneInterface
-var _wallet: Wallet
 
 ## AO Hyperobject references
 var _ao: AOSDK
-var _hyperobject: Hyperobject
 
 ## Core IDs
 var _repo_id: String = ""        # ARIADNE repo TX ID (becomes asset_tx_id)
@@ -48,19 +46,18 @@ var _sale_price: float = 0.0     # 0 = not for sale
 func _init(
 	name: String,
 	ariadne: AriadneInterface,
-	ao: AOSDK,
-	wallet: Wallet
+	ao: AOSDK
 ) -> void:
 	_name = name
 	_robot_name = name
 	_ariadne = ariadne
 	_ao = ao
-	_wallet = wallet
 
 	# Create base hyperobject
 	_hyperobject = Hyperobject.new(name, Hyperobject.Type.ITEM)
 
-	# Set owner if wallet available
+	# Get wallet from service
+	var wallet = WalletService.get_instance().get_wallet()
 	if wallet:
 		_owner = wallet.get_address()
 		_creator = _owner
@@ -73,15 +70,18 @@ func _init(
 static func from_repo(
 	repo_id: String,
 	ariadne: AriadneInterface,
-	ao: AOSDK,
-	wallet: Wallet
+	ao: AOSDK
 ) -> RobotHyperobject:
-	var robot = RobotHyperobject.new(repo_id, ariadne, ao, wallet)
+	var robot = RobotHyperobject.new(repo_id, ariadne, ao)
 	robot._repo_id = repo_id
 	robot._hyperobject.set_asset_tx_id(repo_id)
 
+	# Get wallet from service
+	var wallet = WalletService.get_instance().get_wallet()
+	var wallet_addr = wallet.get_address() if wallet else ""
+
 	# Clone the repo locally
-	var clone_result = ariadne.clone(repo_id, wallet.get_address() if wallet else "")
+	var clone_result = ariadne.clone(repo_id, wallet_addr)
 	if clone_result["exit_code"] != 0:
 		push_error("RobotHyperobject: Failed to clone repo: " + clone_result["output"])
 		return robot
@@ -95,10 +95,9 @@ static func from_repo(
 static func from_robot_model(
 	robot_model: RobotModel,
 	ariadne: AriadneInterface,
-	ao: AOSDK,
-	wallet: Wallet
+	ao: AOSDK
 ) -> RobotHyperobject:
-	var robot = RobotHyperobject.new(robot_model.get_name(), ariadne, ao, wallet)
+	var robot = RobotHyperobject.new(robot_model.get_name(), ariadne, ao)
 	robot._robot_name = robot_model.get_name()
 
 	# Serialize the robot
@@ -117,7 +116,8 @@ func initialize_repo(create_new: bool = true, private_repo: bool = false) -> Dic
 	if not _ariadne:
 		return {"exit_code": -1, "output": "No ARIADNE interface"}
 
-	var wallet_path = _wallet.get_address() if _wallet else ""
+	var wallet = WalletService.get_instance().get_wallet()
+	var wallet_path = wallet.get_wallet_path() if wallet else ""
 
 	# Initialize or just set up tracking
 	var args = ["init"]
@@ -138,9 +138,12 @@ func publish() -> Dictionary:
 	if not _ariadne:
 		return {"exit_code": -1, "output": "No ARIADNE interface"}
 
+	var wallet = WalletService.get_instance().get_wallet()
+	var wallet_path = wallet.get_wallet_path() if wallet else ""
+
 	# Push via ARIADNE
 	var push_result = _ariadne.push(
-		_wallet.get_address() if _wallet else "",
+		wallet_path,
 		false  # Not private for MVP
 	)
 
@@ -175,7 +178,10 @@ func download() -> Dictionary:
 	if not _ariadne or _repo_id.is_empty():
 		return {"exit_code": -1, "output": "No repo_id set"}
 
-	var clone_result = _ariadne.clone(_repo_id, _wallet.get_address() if _wallet else "")
+	var wallet = WalletService.get_instance().get_wallet()
+	var wallet_path = wallet.get_wallet_path() if wallet else ""
+
+	var clone_result = _ariadne.clone(_repo_id, wallet_path)
 	return clone_result
 
 

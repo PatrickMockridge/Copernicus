@@ -2,7 +2,7 @@
 
 **Proof of Concept: AI-powered robot design with GameAI + GodotROS2 + TurtleBot4**
 
-> **Status**: Headless runs clean. Full AI code agent UI working. Uses `preload` + `new()` instead of autoloads (Godot headless doesn't register autoloads as singletons). Editor mode has pre-existing parse errors in non-essential SDK files.
+> **Status**: Godot 4.4 runs clean. Full AI code agent UI working. Uses `preload` + `new()` instead of autoloads. Robot designs can now be published to Arweave via ARIADNE and tracked as tradeable AO Hyperobjects.
 
 ---
 
@@ -16,7 +16,7 @@ The AI is a **coding assistant embedded in the Godot editor** that helps you:
 - **Architect robot systems** — state machines, sensor processing pipelines, controller logic
 - **Reason about complex math** — PID tuning, coordinate transforms, kinematics, sensor models
 
-Think: you select your robot in the Godot scene tree, type a request like "add obstacle avoidance using LIDAR", and the AI generates and explains the GDScript code for you. The AI understands your robot's context — its sensors, actuators, and existing code.
+**New: Tradeable Robot Designs** — Robot designs can be published to Arweave via ARIADNE and tracked as tradeable assets using AO Hyperobjects. Robot designs become transferable across games and tradeable NFTs.
 
 ### The Core Loop
 
@@ -24,6 +24,49 @@ Think: you select your robot in the Godot scene tree, type a request like "add o
 2. **Connect** — Bridge to ROS 2 via TCP/UDP for live sensor data
 3. **Ask AI** — Describe what you want: "generate obstacle avoidance behavior" or "explain this sensor math"
 4. **Run** — Generated code runs in simulation with real sensor feedback from ROS 2
+5. **Publish** — Share robot designs on Arweave via ARIADNE, trade via AO Hyperobjects
+
+---
+
+## Tradeable Robot Designs
+
+Robot designs can now be published to Arweave and traded as assets:
+
+```
+Robot Design (RobotModel)
+    │
+    ├─► ARIADNE.push() ─► Arweave TX ID (permanent storage, repo)
+    │
+    └─► AO Hyperobject ─► AO Process (ownership, transfer, trade)
+```
+
+### Key Components
+
+- **ARIADNE** — Decentralized git hosting on Arweave (robot design versioning/storage)
+- **AO Hyperobjects** — Actor-Oriented compute framework (ownership/transfer via AO processes)
+- **WalletService** — Single source of truth for wallet across all blockchain operations
+
+### Publishing a Robot
+
+```gdscript
+# Load wallet once
+WalletService.get_instance().load_wallet("res://wallet.json")
+
+# Create robot hyperobject
+var robot = RobotHyperobject.from_robot_model(robot_model, ariadne, ao)
+var result = robot.publish()
+# result = { repo_id: "...", process_id: "..." }
+```
+
+### Trading Robots
+
+```gdscript
+# List for sale
+trade_manager.list_for_sale(repo_id, price)
+
+# Purchase
+trade_manager.purchase(repo_id)  # Uses WalletService wallet
+```
 
 ---
 
@@ -61,34 +104,6 @@ func _ready() -> void:
     add_child(_rosai)
 ```
 
-### Editor Mode Notes
-
-Editor mode (`-e`) shows parse errors in non-essential SDK files (character_ai.gd, demo.gd, roblox_ai.gd, actuators.gd, physics_bodies.gd, sensors.gd). These only affect editor code completion — headless runtime is fully functional.
-
----
-
-## Fix Progress — Incremental Todos
-
-**Goal**: Full robot simulation with AI behavior generation working in Godot 4.3.
-
-### Completed ✅
-
-| Todo | File | Fix |
-|------|------|-----|
-| ✅ | `result.gd` | Remove static `ok()`/`err()` methods — circular reference at class definition time |
-| ✅ | `http_client.gd` | Added `const Result = preload(...)` for type resolution; replaced `Result.ok()`/`Result.err()` calls |
-| ✅ | `ai.gd` | Convert all `Result.ok()`/`Result.err()` to `Result.new()` pattern |
-| ✅ | `ros_ai.gd` | Converted all 10 async functions to sync + signal emit |
-| ✅ | `ros2_bridge_client.gd` | `async func connect_bridge()` → Thread + signal |
-| ✅ | `godot_ros2.gd` | `async func initialize()` → signal-based callback |
-| ✅ | `main.gd` | Full AI code agent UI rebuilt with `preload` + `new()` pattern |
-
-### In Progress 🔄
-
-| Todo | File | Issue |
-|------|------|-------|
-| 🔄 | Editor mode | Fix remaining SDK files (character_ai, demo, roblox_ai, actuators, physics_bodies) — only affects code completion, not runtime |
-
 ---
 
 ## AI Code Agent Architecture
@@ -105,7 +120,7 @@ The AI integration is a **code agent** — like Claude in VS Code, embedded in t
 
 ### Design Decision: Signals over async/await
 
-Godot 4.3 rejects `async func` declarations with "Unexpected identifier in class body". All async operations use **Thread + Signal pattern**:
+Godot 4.x uses **Thread + Signal pattern** for async operations (no `async`/`await` keywords):
 
 ```gdscript
 var _thread: Thread
@@ -124,11 +139,9 @@ func _connect_thread():
 
 ## Tomorrow's Tasks
 
-1. **Editor mode fixes** — Fix remaining `async`/structural issues in non-essential SDK files (character_ai.gd, demo.gd, roblox_ai.gd, actuators.gd, physics_bodies.gd, sensors.gd, simulator_plugins.gd). These only affect editor code completion, not headless runtime.
-
-2. **GodotROS2 SDK fixes** — Fix structural issues (braces, class_name placement) in core simulator files if needed for full simulation features.
-
-3. **Test with real AI** — Configure API key and test behavior generation end-to-end.
+1. **Test ARIADNE publishing** — Test robot design publishing to Arweave with real wallet
+2. **Test AO Hyperobject trading** — Test ownership transfer via AO processes
+3. **Test with real AI** — Configure API key and test behavior generation end-to-end
 
 ---
 
@@ -138,20 +151,6 @@ func _connect_thread():
 2. **Commit after every passing test** — each fix is independently reversible
 3. If errors persist after applying fix, the fix was wrong — do NOT move to next file
 4. **Break circular dependencies first** — a minimal stub that does nothing is better than a complex file that won't load
-
----
-
-## Last Godot 4.3 Output
-
-```
-Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
-
-WARNING: res://scenes/main.tscn:3 - ext_resource, invalid UID: uid://rns1mio6uock - using text path instead: res://scripts/main.gd
-```
-
-Headless mode (`godot4.3 --headless --quit`) runs with no script errors. All 3 autoloads (GameAI, ROSAI, GodotROS2) load successfully.
-
-**Note**: Editor mode (`-e`) shows additional parse errors in non-essential SDK files (character_ai.gd, roblox_ai.gd, demo.gd, actuators.gd, physics_bodies.gd, sensors.gd, simulator_plugins.gd). These only affect editor code completion — the headless runtime is fully functional.
 
 ---
 
@@ -208,7 +207,7 @@ This achieves the same async behavior without the `async` keyword.
 
 ## Requirements
 
-- Godot 4.3 (for development — 4.4 compatibility pending async rebuild)
+- Godot 4.4 (for development — 4.4 compatibility with async/await)
 - ROS 2 Jazzy (or Humble)
 - `godot_ros2_bridge` package built in your ROS workspace
 - TurtleBot4 ROS 2 packages (`ros-jazzy-turtlebot4-description`)

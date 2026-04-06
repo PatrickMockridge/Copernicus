@@ -13,7 +13,6 @@ extends RefCounted
 
 var _ao: AOSDK
 var _ariadne: AriadneInterface
-var _wallet: Wallet
 
 ## Registry: repo_id -> RobotHyperobject
 var _robots: Dictionary = {}
@@ -25,12 +24,10 @@ var _for_sale_index: Array = []  # repo_ids that are for sale
 
 func _init(
 	ao: AOSDK,
-	ariadne: AriadneInterface,
-	wallet: Wallet
+	ariadne: AriadneInterface
 ) -> void:
 	_ao = ao
 	_ariadne = ariadne
-	_wallet = wallet
 
 
 ## ===== Registry Operations =====
@@ -136,7 +133,8 @@ func list_for_sale(repo_id: String, price: float) -> Result:
 	var robot = _robots[repo_id]
 
 	# Only owner can list
-	if _wallet and robot.get_owner() != _wallet.get_address():
+	var wallet = WalletService.get_instance().get_wallet()
+	if wallet and robot.get_owner() != wallet.get_address():
 		return Result.err("Only the owner can list this robot for sale")
 
 	robot.list_for_sale(price)
@@ -153,7 +151,8 @@ func unlist(repo_id: String) -> Result:
 	var robot = _robots[repo_id]
 
 	# Only owner can unlist
-	if _wallet and robot.get_owner() != _wallet.get_address():
+	var wallet = WalletService.get_instance().get_wallet()
+	if wallet and robot.get_owner() != wallet.get_address():
 		return Result.err("Only the owner can unlist this robot")
 
 	robot.unlist()
@@ -186,7 +185,7 @@ func transfer(repo_id: String, new_owner: String) -> Result:
 
 
 ## Purchase a robot (calls transfer after payment - future: escrow)
-func purchase(repo_id: String, buyer_wallet: Wallet) -> Result:
+func purchase(repo_id: String) -> Result:
 	if not _robots.has(repo_id):
 		return Result.err("Robot not found: " + repo_id)
 
@@ -196,10 +195,15 @@ func purchase(repo_id: String, buyer_wallet: Wallet) -> Result:
 	if not robot.is_for_sale():
 		return Result.err("Robot is not for sale")
 
+	# Get buyer address from wallet service
+	var wallet = WalletService.get_instance().get_wallet()
+	if not wallet:
+		return Result.err("No wallet loaded")
+
 	# TODO: Payment / escrow logic
 	# For now, just do direct transfer
 
-	return transfer(repo_id, buyer_wallet.get_address())
+	return transfer(repo_id, wallet.get_address())
 
 
 ## ===== Network Sync =====
@@ -239,16 +243,6 @@ func sync_robot(repo_id: String) -> Result:
 	return Result.ok(info)
 
 
-## ===== Wallet Management =====
-
-func set_wallet(wallet: Wallet) -> void:
-	_wallet = wallet
-
-
-func get_wallet() -> Wallet:
-	return _wallet
-
-
 ## ===== Serialization =====
 
 func to_dictionary() -> Dictionary:
@@ -270,9 +264,10 @@ func from_dictionary(data: Dictionary) -> void:
 
 	var robots_data = data.get("robots", [])
 	for robot_data in robots_data:
-		var robot = RobotHyperobject.new("", _ariadne, _ao, _wallet)
+		var robot = RobotHyperobject.new("", _ariadne, _ao)
 		robot.from_dictionary(robot_data)
 		_robots[robot.get_repo_id()] = robot
 
 	_owner_index = data.get("owner_index", {})
+	_for_sale_index = data.get("for_sale_index", [])
 	_for_sale_index = data.get("for_sale_index", [])

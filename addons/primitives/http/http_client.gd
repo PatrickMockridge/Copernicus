@@ -1,5 +1,6 @@
 # http_client.gd
 # Unified HTTP client for all SDKs
+# Uses Thread + Signal pattern for Godot 4.x compatibility (no async/await)
 
 class_name HttpClient
 
@@ -9,10 +10,21 @@ signal progress(downloaded: int, total: int)
 var _base_url: String = ""
 var _timeout: float = 30.0
 var _headers: Dictionary = {}
+var _thread: Thread
 
 
 func _init(base_url: String = "") -> void:
 	_base_url = base_url
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_EXIT_TREE:
+		_wait_for_thread()
+
+
+func _wait_for_thread() -> void:
+	if _thread and _thread.is_started():
+		_thread.wait_to_finish()
 
 
 func set_base_url(url: String) -> void:
@@ -41,6 +53,39 @@ func put(url: String, body: Variant = null, headers: Dictionary = {}) -> Result:
 
 func delete(url: String, headers: Dictionary = {}) -> Result:
 	return _sync_request("DELETE", url, headers)
+
+
+# ===== Async Versions (Thread + Signal) =====
+
+func get_async(url: String, headers: Dictionary = {}) -> void:
+	_start_thread(_thread_request.bind("GET", url, headers))
+
+
+func post_async(url: String, body: Variant = null, headers: Dictionary = {}) -> void:
+	_start_thread(_thread_request.bind("POST", url, body, headers))
+
+
+func put_async(url: String, body: Variant = null, headers: Dictionary = {}) -> void:
+	_start_thread(_thread_request.bind("PUT", url, body, headers))
+
+
+func delete_async(url: String, headers: Dictionary = {}) -> void:
+	_start_thread(_thread_request.bind("DELETE", url, headers))
+
+
+func _start_thread(callable: Callable) -> void:
+	_wait_for_thread()
+	_thread = Thread.new()
+	_thread.start(callable)
+
+
+func _thread_request(method: String, url: String, body: Variant = null, headers: Dictionary = {}) -> void:
+	var result = _sync_request(method, url, headers, body)
+	call_deferred("_emit_completed", result)
+
+
+func _emit_completed(result: Result) -> void:
+	completed.emit(result)
 
 
 func _build_url(path: String) -> String:
@@ -92,12 +137,12 @@ func _sync_request(method: String, url: String, headers: Dictionary, body: Varia
 	if err != OK:
 		return Result.err("Connection failed: %s" % err)
 
-	# Wait for connection
+	# Poll until connected (busy-wait in thread context)
 	var max_wait = _timeout * 100  # tenths of second
 	var waited = 0
 	while client.get_status() == HTTPClient.STATUS_CONNECTING and waited < max_wait:
 		client.poll()
-		await Engine.get_main_loop().create_timer(0.01).timeout
+		Thread.sleep(0.01)
 		waited += 1
 
 	if client.get_status() != HTTPClient.STATUS_CONNECTED:
@@ -112,7 +157,7 @@ func _sync_request(method: String, url: String, headers: Dictionary, body: Varia
 	waited = 0
 	while client.get_status() == HTTPClient.STATUS_REQUESTING and waited < max_wait:
 		client.poll()
-		await Engine.get_main_loop().create_timer(0.01).timeout
+		Thread.sleep(0.01)
 		waited += 1
 
 	if client.get_status() != HTTPClient.STATUS_BODY:
@@ -151,15 +196,3 @@ func _parse_response_headers(client: HTTPClient) -> Dictionary:
 		if parts.size() >= 2:
 			headers[parts[0]] = parts[1]
 	return headers
-
-
-# ===== Async Versions =====
-
-func get_async(url: String, headers: Dictionary = {}) -> void:
-	var result = get(url, headers)
-	completed.emit(result)
-
-
-func post_async(url: String, body: Variant = null, headers: Dictionary = {}) -> void:
-	var result = post(url, body, headers)
-	completed.emit(result)
