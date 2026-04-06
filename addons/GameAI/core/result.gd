@@ -14,17 +14,6 @@ func _init(ok: bool, value: Variant = null, error: Variant = null):
 	_error = error
 
 
-static func ok(value: Variant = null) -> Result:
-	return Result.new(true, value)
-
-
-static func err(error: Variant) -> Result:
-	var err_dict = {"code": -1, "message": str(error)}
-	if error is Dictionary:
-		err_dict = error
-	return Result.new(false, null, err_dict)
-
-
 func is_ok() -> bool:
 	return _ok
 

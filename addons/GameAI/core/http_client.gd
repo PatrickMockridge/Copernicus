@@ -5,6 +5,8 @@ extends Node
 
 class_name HttpClient
 
+const Result = preload("res://addons/GameAI/core/result.gd")
+
 var _timeout: float = 30.0
 
 
@@ -27,7 +29,7 @@ func post(url: String, headers: Array, body: String) -> Result:
 	var client = HTTPClient.new()
 	var err = client.connect_to_host(host, 443)  # HTTPS — TLSOptions omitted for compatibility
 	if err != OK:
-		return Result.err({"code": -1, "message": "Connection failed: " + str(err)})
+		return Result.new(false, null, {"code": -1, "message": "Connection failed: " + str(err)})
 
 	# Wait for connection
 	var max_wait = _timeout * 100
@@ -38,12 +40,12 @@ func post(url: String, headers: Array, body: String) -> Result:
 		waited += 1
 
 	if client.get_status() != HTTPClient.STATUS_CONNECTED:
-		return Result.err({"code": -2, "message": "Connection timeout"})
+		return Result.new(false, null, {"code": -2, "message": "Connection timeout"})
 
 	# Make request
 	err = client.request(HTTPClient.METHOD_POST, path, headers, body)
 	if err != OK:
-		return Result.err({"code": -3, "message": "Request failed: " + str(err)})
+		return Result.new(false, null, {"code": -3, "message": "Request failed: " + str(err)})
 
 	# Wait for response
 	waited = 0
@@ -53,7 +55,7 @@ func post(url: String, headers: Array, body: String) -> Result:
 		waited += 1
 
 	if client.get_status() != HTTPClient.STATUS_BODY:
-		return Result.err({"code": -4, "message": "Request status: " + str(client.get_status())})
+		return Result.new(false, null, {"code": -4, "message": "Request status: " + str(client.get_status())})
 
 	# Read body
 	var response_body = PackedByteArray()
@@ -68,9 +70,9 @@ func post(url: String, headers: Array, body: String) -> Result:
 	var body_string = response_body.get_string_from_utf8()
 
 	if response_code >= 200 and response_code < 300:
-		return Result.ok(body_string)
+		return Result.new(true, body_string)
 	else:
-		return Result.err({"code": response_code, "message": body_string})
+		return Result.new(false, null, {"code": response_code, "message": body_string})
 
 
 func post_stream(url: String, headers: Array, body: String) -> Result:

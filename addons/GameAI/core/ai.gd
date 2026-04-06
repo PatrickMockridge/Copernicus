@@ -76,7 +76,7 @@ func _send_chat(provider: String, messages: Array, params: Dictionary) -> Result
 		"minimax":
 			return _minimax_chat(messages, params)
 		_:
-			return Result.err({"code": -1, "message": "Unknown provider: " + provider})
+			return Result.new(false, null, {"code": -1, "message": "Unknown provider: " + provider})
 
 
 # === Anthropic Claude ===
@@ -84,7 +84,7 @@ func _send_chat(provider: String, messages: Array, params: Dictionary) -> Result
 func _anthropic_chat(messages: Array, params: Dictionary) -> Result:
 	var api_key = _config.get_provider_key("anthropic")
 	if api_key == "":
-		return Result.err({"code": -2, "message": "Anthropic API key not configured"})
+		return Result.new(false, null, {"code": -2, "message": "Anthropic API key not configured"})
 
 	var endpoint = "https://api.anthropic.com/v1/messages"
 	var headers = [
@@ -121,11 +121,11 @@ func _filter_anthropic_messages(messages: Array) -> Array:
 func _parse_anthropic_response(response_text: String) -> Result:
 	var json = JSON.parse_string(response_text)
 	if json == null:
-		return Result.err({"code": -3, "message": "Failed to parse Anthropic response"})
+		return Result.new(false, null, {"code": -3, "message": "Failed to parse Anthropic response"})
 	if json.has("error"):
-		return Result.err({"code": -4, "message": json.error.message})
+		return Result.new(false, null, {"code": -4, "message": json.error.message})
 	var content = json.content[0].text if json.has("content") else ""
-	return Result.ok({
+	return Result.new(true, {
 		"content": content,
 		"provider": "anthropic",
 		"model": json.model if json.has("model") else ""
@@ -137,7 +137,7 @@ func _parse_anthropic_response(response_text: String) -> Result:
 func _openai_chat(messages: Array, params: Dictionary) -> Result:
 	var api_key = _config.get_provider_key("openai")
 	if api_key == "":
-		return Result.err({"code": -2, "message": "OpenAI API key not configured"})
+		return Result.new(false, null, {"code": -2, "message": "OpenAI API key not configured"})
 
 	var endpoint = "https://api.openai.com/v1/chat/completions"
 	var headers = [
@@ -165,11 +165,11 @@ func _openai_chat(messages: Array, params: Dictionary) -> Result:
 func _parse_openai_response(response_text: String) -> Result:
 	var json = JSON.parse_string(response_text)
 	if json == null:
-		return Result.err({"code": -3, "message": "Failed to parse OpenAI response"})
+		return Result.new(false, null, {"code": -3, "message": "Failed to parse OpenAI response"})
 	if json.has("error"):
-		return Result.err({"code": -4, "message": json.error.message})
+		return Result.new(false, null, {"code": -4, "message": json.error.message})
 	var content = json.choices[0].message.content if json.has("choices") else ""
-	return Result.ok({
+	return Result.new(true, {
 		"content": content,
 		"provider": "openai",
 		"model": json.model if json.has("model") else ""
@@ -181,7 +181,7 @@ func _parse_openai_response(response_text: String) -> Result:
 func _minimax_chat(messages: Array, params: Dictionary) -> Result:
 	var api_key = _config.get_provider_key("minimax")
 	if api_key == "":
-		return Result.err({"code": -2, "message": "Minimax API key not configured"})
+		return Result.new(false, null, {"code": -2, "message": "Minimax API key not configured"})
 
 	var endpoint = "https://api.minimax.chat/v1/text/chatcompletion_v2"
 	var headers = [
@@ -207,12 +207,12 @@ func _minimax_chat(messages: Array, params: Dictionary) -> Result:
 func _parse_minimax_response(response_text: String) -> Result:
 	var json = JSON.parse_string(response_text)
 	if json == null:
-		return Result.err({"code": -3, "message": "Failed to parse Minimax response"})
+		return Result.new(false, null, {"code": -3, "message": "Failed to parse Minimax response"})
 	if json.has("base_resp") and json.base_resp.has("status_code"):
 		if json.base_resp.status_code != 0:
-			return Result.err({"code": -4, "message": json.base_resp.status_msg})
+			return Result.new(false, null, {"code": -4, "message": json.base_resp.status_msg})
 	var content = json.choices[0].messages[0].text if json.has("choices") else ""
-	return Result.ok({
+	return Result.new(true, {
 		"content": content,
 		"provider": "minimax",
 		"model": json.model if json.has("model") else ""
@@ -254,7 +254,7 @@ func npc_init(npc_id: String, personality: String, lore: String = "") -> void:
 func npc_say(npc_id: String, player_message: String) -> Result:
 	# Get NPC response to player message
 	if not _npc_contexts.has(npc_id):
-		return Result.err({"code": -1, "message": "NPC not initialized: " + npc_id})
+		return Result.new(false, null, {"code": -1, "message": "NPC not initialized: " + npc_id})
 
 	var ctx = _npc_contexts[npc_id]
 	var system = "You are a game NPC with this personality: " + ctx.personality
@@ -338,13 +338,13 @@ func chat_stream(messages: Array, params: Dictionary = {}) -> Result:
 		"anthropic":
 			return _anthropic_stream(messages, params)
 		_:
-			return Result.err({"code": -1, "message": "Streaming not supported for " + provider})
+			return Result.new(false, null, {"code": -1, "message": "Streaming not supported for " + provider})
 
 
 func _anthropic_stream(messages: Array, params: Dictionary) -> Result:
 	var api_key = _config.get_provider_key("anthropic")
 	if api_key == "":
-		return Result.err({"code": -2, "message": "Anthropic API key not configured"})
+		return Result.new(false, null, {"code": -2, "message": "Anthropic API key not configured"})
 
 	var endpoint = "https://api.anthropic.com/v1/messages"
 	var headers = [
