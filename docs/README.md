@@ -1,25 +1,27 @@
-# Robot Design POC — Documentation
+# Robot Design Interface — Documentation
 
 ## Overview
 
-An AI-powered robot design tool built in Godot 4.3. The AI acts as a **code agent** — like Claude in VS Code — helping you write GDScript behaviors, debug issues, and architect robot systems.
+A Godot 4.x robotics simulator with ROS 2 integration and blockchain-backed design sharing via ARIADNE.
+
+**Status: In Development** — Core ROS 2 simulation is functional. AI code agent features are experimental.
 
 ---
 
 ## Contents
 
-### [AI Code Agent](ai-code-agent.md)
-What the AI does and how to use it. Covers behavior generation, debugging, topic explanation, and all available ROSAI methods.
+### [godot_ros2 SDK](addons/godot_ros2/README.md)
+ROS 2 simulator plugin for Godot. Sensors, actuators, robot models, physics simulation.
+
+### [ARIADNE Blockchain Interface](addons/godot_ros2/arweave/README.md)
+Decentralized robot design hosting on Arweave/AO blockchain. Share designs permanently without a central server.
 
 ### [Code Patterns](code-patterns.md)
-Correct patterns for Godot 4.3 compatibility:
+Correct patterns for Godot 4.x compatibility:
 - **Signals + Thread** — replacing `async`/`await`
-- **preload + new()** — accessing AI classes
-- **Result.new()** — returning success/failure values
+- **preload + new()** — accessing classes
+- **Result type** — returning success/failure values
 - **Signal-based callbacks** — async communication without coroutines
-
-### [API Reference](api-reference.md)
-Detailed API for ROSAIBehavior, GameAI, and Result type.
 
 ---
 
@@ -27,18 +29,11 @@ Detailed API for ROSAIBehavior, GameAI, and Result type.
 
 ```bash
 # Run headless
-godot4.3 --headless --quit
+godot --headless --quit
 
 # Open in editor
-godot4.3
+godot
 ```
-
-In the Robot AI Assistant panel:
-1. Enter your API key (Claude/OpenAI/Minimax)
-2. Click "Connect AI"
-3. Select a behavior type (obstacle_avoid, patrol, etc.)
-4. Click "Generate Behavior"
-5. Copy the generated code or view it in the output panel
 
 ---
 
@@ -46,19 +41,36 @@ In the Robot AI Assistant panel:
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  UI Layer (main.gd — Robot AI Assistant panel)   │
-│  - API key input, behavior selector, task input  │
-│  - Code output, action buttons                  │
+│  Robot Design Interface                          │
+│  ├── scripts/main.gd — UI Panel                  │
+│  └── scenes/ — Robot scene files                 │
 ├──────────────────────────────────────────────────┤
-│  AI Code Agent (preload + new())               │
-│  ├── GameAI — HTTP wrapper for AI providers      │
-│  └── ROSAI — Robotics-specific generation       │
-│      - generate_behavior(), diagnose_issue()    │
-│      - explain_ros_topic(), generate_controller()│
+│  godot_ros2 (addons/godot_ros2/)                │
+│  ├── core/ — Robot bodies, physics, plugins      │
+│  │   ├── actuator.gd, motor.gd, servo.gd        │
+│  │   ├── thruster.gd, propeller.gd               │
+│  │   ├── robot_model.gd, robot_link.gd          │
+│  │   ├── robot_joint.gd, joint_controller.gd   │
+│  │   ├── contact_manager.gd, differential_drive │
+│  │   └── simulator_plugins/                     │
+│  ├── sensors/ — Sensor classes                    │
+│  │   ├── sensor.gd (base)                       │
+│  │   ├── lidar_sensor.gd, camera_sensor.gd     │
+│  │   ├── imu_sensor.gd, gps_sensor.gd          │
+│  │   └── force_torque_sensor.gd, contact_sensor │
+│  └── ros2/ — ROS 2 bridge client               │
 ├──────────────────────────────────────────────────┤
-│  GodotROS2 (signals + thread)                  │
-│  - ROS2Node, ROS2BridgeClient                 │
-│  - connect_bridge() via thread                 │
-│  - initialization_completed via signal          │
+│  arweave/ — Blockchain integration               │
+│  ├── ariadne_interface.gd — CLI wrapper         │
+│  └── wallet_manager.gd — Wallet handling        │
 └──────────────────────────────────────────────────┘
 ```
+
+## Current Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| godot_ros2 core | Working | Sensors, actuators, robot models |
+| ROS 2 bridge | Working | TCP/UDP connection to godot_ros2_bridge |
+| ARIADNE interface | New | Blockchain design sharing |
+| AI code agent | Experimental | GameAI/ROSAI not yet verified |

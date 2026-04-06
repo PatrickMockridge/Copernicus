@@ -1,5 +1,7 @@
 # API Reference
 
+> **⚠️ EXPERIMENTAL** — GameAI and ROSAI APIs may not be verified to work. The core godot_ros2 and ARIADNE interfaces are functional.
+
 ## Result
 
 Result type for success/failure values. No static constructors — use `Result.new()` directly.

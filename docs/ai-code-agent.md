@@ -1,5 +1,7 @@
 # AI Code Agent
 
+> **⚠️ EXPERIMENTAL** — This feature is not yet verified to work. The GameAI addon may require fixes before the AI code agent is functional.
+
 The AI in this project functions as a **code agent** — like the Claude plugin in VS Code, but for robotics in Godot. It helps you write GDScript behaviors, debug issues, and architect robot systems.
 
 ## How It Works
