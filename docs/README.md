@@ -10,18 +10,17 @@ A Godot 4.x robotics simulator with ROS 2 integration and blockchain-backed desi
 
 ## Contents
 
-### [godot_ros2 SDK](addons/godot_ros2/README.md)
+### [Getting Started](getting-started.md)
+Quick start guide for new users.
+
+### [godot_ros2 SDK](godot-ros2/README.md)
 ROS 2 simulator plugin for Godot. Sensors, actuators, robot models, physics simulation.
 
-### [ARIADNE Blockchain Interface](addons/godot_ros2/arweave/README.md)
-Decentralized robot design hosting on Arweave/AO blockchain. Share designs permanently without a central server.
+### [ARIADNE Blockchain](arweave/README.md)
+Decentralized robot design hosting on Arweave/AO blockchain.
 
-### [Code Patterns](code-patterns.md)
-Correct patterns for Godot 4.x compatibility:
-- **Signals + Thread** — replacing `async`/`await`
-- **preload + new()** — accessing classes
-- **Result type** — returning success/failure values
-- **Signal-based callbacks** — async communication without coroutines
+### [Development](development/)
+Coding standards, contributing guidelines, and code patterns.
 
 ---
 
