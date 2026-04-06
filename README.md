@@ -2,7 +2,7 @@
 
 **Proof of Concept: AI-powered robot design with GameAI + GodotROS2 + TurtleBot4**
 
-> **Status**: Async fixes committed. Headless runs clean. UI rebuild blocked — main.gd can't reference autoloads (Godot parses main.gd before autoloads register). Need to investigate Godot initialization order or use deferred connections.
+> **Status**: Headless runs clean. Full AI code agent UI working. Uses `preload` + `new()` instead of autoloads (Godot headless doesn't register autoloads as singletons). Editor mode has pre-existing parse errors in non-essential SDK files.
 
 ---
 
@@ -27,33 +27,49 @@ Think: you select your robot in the Godot scene tree, type a request like "add o
 
 ---
 
-## Current Problems
+## Architecture Notes
 
-### 1. Godot 4.4 Coroutine Breaking Changes
+### Signals + Thread Pattern
 
-Godot 4.4 requires explicit `async` keyword on any function using `await`. In 4.0-4.3 this was implicit — the function silently became async. In 4.4, `await` in a non-async function is a **parse error**.
+All `async func` / `await` replaced with Thread + Signal pattern:
 
-**Additionally**: `async func` itself is rejected with "Unexpected identifier in class body" even in Godot 4.3 — this appears to be a Godot build/environment issue affecting even minimal test files. This blocks both 4.3 and 4.4.
+```gdscript
+var _thread: Thread
+signal bridge_connection_completed(success: bool)
 
-**Workaround**: Signals + Thread pattern replaces `async`/`await` entirely. Thread.start() + call_deferred() + emit_signal() achieves the same async behavior without the `async` keyword.
+func connect_bridge() -> void:
+    _thread = Thread.new()
+    _thread.start(callable(self, "_connect_thread"))
 
-### 2. `class_name` Placement in Multi-Class Files
+func _connect_thread():
+    # blocking work
+    call_deferred("emit_bridge_connection_completed", true)
+```
 
-Godot 4.4 is stricter about `class_name` declarations. When a file has multiple top-level classes, each must be properly closed with `}` before the next `class_name` declaration. Inner classes should use `class X extends Y` syntax (no `class_name`).
+### Autoload Singleton Workaround
 
-### 3. `OS.delay_msec()` Deprecation
+Godot headless doesn't register autoloads as `Engine.get_singleton()` — they return null. Solution: use `preload` + `new()` instead:
 
-`OS.delay_msec()` is deprecated in Godot 4.4. It still works but emits deprecation warnings.
+```gdscript
+const GameAI = preload("res://addons/GameAI/core/ai.gd")
+const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
 
-### 4. Cross-File Dependency Cascade
+func _ready() -> void:
+    _gameai = GameAI.new()
+    _rosai = ROSAI.new()
+    add_child(_gameai)
+    add_child(_rosai)
+```
 
-Godot loads all scripts at startup. If any script references a type from another file that failed to load, the referencing script also fails. This means fixes must be applied in dependency order or circular dependencies must be broken.
+### Editor Mode Notes
+
+Editor mode (`-e`) shows parse errors in non-essential SDK files (character_ai.gd, demo.gd, roblox_ai.gd, actuators.gd, physics_bodies.gd, sensors.gd). These only affect editor code completion — headless runtime is fully functional.
 
 ---
 
 ## Fix Progress — Incremental Todos
 
-**Goal**: Full robot simulation with AI behavior generation working in Godot 4.3. Each fix is a success.
+**Goal**: Full robot simulation with AI behavior generation working in Godot 4.3.
 
 ### Completed ✅
 
@@ -61,20 +77,17 @@ Godot loads all scripts at startup. If any script references a type from another
 |------|------|-----|
 | ✅ | `result.gd` | Remove static `ok()`/`err()` methods — circular reference at class definition time |
 | ✅ | `http_client.gd` | Added `const Result = preload(...)` for type resolution; replaced `Result.ok()`/`Result.err()` calls |
-| ✅ | `ai.gd` | No changes needed — already synchronous, returns `Result` directly |
+| ✅ | `ai.gd` | Convert all `Result.ok()`/`Result.err()` to `Result.new()` pattern |
 | ✅ | `ros_ai.gd` | Converted all 10 async functions to sync + signal emit |
-| ✅ | `ros2_bridge_client.gd` | `async func connect_bridge()` → Thread + `bridge_connection_completed` signal |
-| ✅ | `godot_ros2.gd` | `async func initialize()` → signal-based callback chain |
-| ✅ | `project.godot` | All 3 autoloads re-enabled (GameAI, ROSAI, GodotROS2) |
-| ✅ | `main.gd` | Minimal stub for now — UI rebuild next |
-| ✅ | **Headless test** | `godot4.3 --headless --quit` — no script errors, all autoloads load |
+| ✅ | `ros2_bridge_client.gd` | `async func connect_bridge()` → Thread + signal |
+| ✅ | `godot_ros2.gd` | `async func initialize()` → signal-based callback |
+| ✅ | `main.gd` | Full AI code agent UI rebuilt with `preload` + `new()` pattern |
 
 ### In Progress 🔄
 
 | Todo | File | Issue |
 |------|------|-------|
-| 🔄 | `main.gd` | **BLOCKED**: Godot parses main.gd at scene load time, before autoloads register. Autoload singletons (GameAI, ROSAI, GodotROS2) are not visible in main.gd's scope at parse time. Need deferred signal connections or different architecture. |
-| 🔄 | Editor mode | Other SDK files still have `async` / structural issues (character_ai.gd, actuators.gd, physics_bodies.gd, etc.) — only affect editor code completion, not runtime |
+| 🔄 | Editor mode | Fix remaining SDK files (character_ai, demo, roblox_ai, actuators, physics_bodies) — only affects code completion, not runtime |
 
 ---
 
@@ -111,14 +124,11 @@ func _connect_thread():
 
 ## Tomorrow's Tasks
 
-1. **Fix main.gd autoload reference** — Godot parses main.gd before autoloads register. Try:
-   - Move signal connections to `_enter_tree()` instead of `_ready()`
-   - Use `call_deferred()` for autoload access
-   - Or: make main.gd an autoload itself
+1. **Editor mode fixes** — Fix remaining `async`/structural issues in non-essential SDK files (character_ai.gd, demo.gd, roblox_ai.gd, actuators.gd, physics_bodies.gd, sensors.gd, simulator_plugins.gd). These only affect editor code completion, not headless runtime.
 
-2. **Editor mode fixes** — Fix remaining `async` in non-essential SDK files (character_ai.gd, demo.gd, roblox_ai.gd, actuators.gd, physics_bodies.gd, sensors.gd, simulator_plugins.gd)
+2. **GodotROS2 SDK fixes** — Fix structural issues (braces, class_name placement) in core simulator files if needed for full simulation features.
 
-3. **Full UI rebuild** — AI code agent panel with context display, task input, code output, action buttons
+3. **Test with real AI** — Configure API key and test behavior generation end-to-end.
 
 ---
 
