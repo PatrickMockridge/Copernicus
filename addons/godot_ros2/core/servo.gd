@@ -1,6 +1,7 @@
 # servo.gd
 # Servo actuator
 
+class_name Servo
 extends Actuator
 
 var _angle: float = 0.0

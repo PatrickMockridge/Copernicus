@@ -1,6 +1,7 @@
 # imu_sensor.gd
 # IMU sensor
 
+class_name ImuSensor
 extends Sensor
 
 var _publish_topic: String = "imu"
@@ -10,7 +11,7 @@ var _linear_acceleration: Vector3 = Vector3.ZERO
 
 
 func _init(name: String) -> void:
-	 super(name)
+	super(name)
 	_frame_id = name
 
 

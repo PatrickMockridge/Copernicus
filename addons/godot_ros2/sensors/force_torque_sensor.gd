@@ -1,6 +1,7 @@
 # force_torque_sensor.gd
 # Force Torque sensor
 
+class_name ForceTorqueSensor
 extends Sensor
 
 var _publish_topic: String = "ft"
@@ -9,7 +10,7 @@ var _torque: Vector3 = Vector3.ZERO
 
 
 func _init(name: String) -> void:
-	 super(name)
+	super(name)
 	_frame_id = name
 
 

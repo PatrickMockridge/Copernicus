@@ -1,6 +1,7 @@
 # camera_sensor.gd
 # Camera sensor
 
+class_name CameraSensor
 extends Sensor
 
 var _fov: float = 1.047  # ~60 degrees
@@ -53,7 +54,7 @@ func configure(params: Dictionary) -> void:
 
 
 func get_projection_matrix() -> Projection:
-	return Projection.new()
+	return Projection()
 
 
 func render_viewport(camera: Camera3D) -> Image:

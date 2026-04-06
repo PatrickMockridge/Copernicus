@@ -28,7 +28,7 @@ func on_load(simulator: ROS2Simulator) -> void:
 
 func on_physics_step(delta: float) -> void:
 	if _log_file:
-		var data = {"time": simulator.get_sim_time(), "bodies": {}}
+		var data = {"time": _simulator.get_sim_time(), "bodies": {}}
 		_log_file.store_line(JSON.stringify(data))
 		_log_file.flush()
 

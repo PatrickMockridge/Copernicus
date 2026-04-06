@@ -1,6 +1,7 @@
 # lidar_sensor.gd
 # LIDAR sensor
 
+class_name LidarSensor
 extends Sensor
 
 var _angle_min: float = -PI
@@ -15,7 +16,7 @@ var _hits: Array = []
 
 
 func _init(name: String) -> void:
-	 super(name)
+	super(name)
 	_frame_id = name
 
 

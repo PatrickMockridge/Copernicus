@@ -1,6 +1,7 @@
 # gps_sensor.gd
 # GPS sensor
 
+class_name GPSSensor
 extends Sensor
 
 var _publish_topic: String = "gps"
@@ -12,7 +13,7 @@ var _origin_lon: float = 0.0
 
 
 func _init(name: String) -> void:
-	 super(name)
+	super(name)
 	_frame_id = name
 
 

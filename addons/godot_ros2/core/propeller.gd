@@ -1,6 +1,7 @@
 # propeller.gd
 # Propeller actuator
 
+class_name Propeller
 extends Thruster
 
 var _prop_diameter: float = 0.3

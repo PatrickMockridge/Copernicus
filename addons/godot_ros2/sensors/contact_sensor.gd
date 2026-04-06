@@ -1,6 +1,7 @@
 # contact_sensor.gd
 # Contact sensor
 
+class_name ContactSensor
 extends Sensor
 
 var _publish_topic: String = "contact"
@@ -8,7 +9,7 @@ var _contacts: Array = []
 
 
 func _init(name: String) -> void:
-	 super(name)
+	super(name)
 	_frame_id = name
 
 

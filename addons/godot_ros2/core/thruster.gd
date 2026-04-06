@@ -1,6 +1,7 @@
 # thruster.gd
 # Thruster actuator
 
+class_name Thruster
 extends Actuator
 
 enum ThrusterType { FIXED_PITCH, VARIABLE_PITCH }

@@ -1,6 +1,7 @@
 # motor.gd
 # Motor actuator
 
+class_name Motor
 extends Actuator
 
 enum MotorType { BRUSHED, BRUSHLESS }

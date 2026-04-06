@@ -5,6 +5,7 @@ class_name SimulatorPlugin
 
 var _name: String
 var _enabled: bool = true
+var _simulator: ROS2Simulator
 
 
 func _init(name: String) -> void:
@@ -24,7 +25,7 @@ func set_enabled(enabled: bool) -> void:
 
 
 func on_load(simulator: ROS2Simulator) -> void:
-	pass
+	_simulator = simulator
 
 
 func on_unload() -> void:
