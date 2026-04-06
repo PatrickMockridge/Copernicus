@@ -46,7 +46,7 @@ func _receive_message(message: Dictionary) -> void:
 
 func has_new_message() -> bool:
 	# Check bridge for new messages
-	if _bridge_client and _bridge_client.is_connected():
+	if _bridge_client and _bridge_client.is_bridge_connected():
 		var messages = _bridge_client.receive_messages()
 		if _topic_name in messages:
 			var msg = messages[_topic_name]

@@ -50,7 +50,7 @@ func publish_raw(message: Dictionary) -> void:
 
 func _send_to_ros(message: Dictionary) -> void:
 	# Send via bridge if connected, otherwise queue
-	if _bridge_client and _bridge_client.is_connected():
+	if _bridge_client and _bridge_client.is_bridge_connected():
 		if _use_udp:
 			_bridge_client.publish_udp(_topic_name, message)
 		else:

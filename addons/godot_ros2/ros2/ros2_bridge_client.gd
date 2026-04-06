@@ -26,7 +26,7 @@ var _connection_thread: Thread
 func connect_bridge() -> void:
 	"""Connect to the ROS2 bridge via TCP and UDP (async via thread)."""
 	_connection_thread = Thread.new()
-	_connection_thread.start(callable(self, "_connect_thread"))
+	_connection_thread.start(Callable(self, "_connect_thread"))
 
 func _connect_thread() -> void:
 	"""Worker thread for bridge connection."""
@@ -38,10 +38,10 @@ func _connect_thread() -> void:
 
 	# Wait for connection with timeout using ticks-based polling
 	var timeout_ms = 5000
-	var start_ms = OS.get_ticks_msec()
+	var start_ms = Time.get_ticks_msec()
 	var connected = false
 
-	while OS.get_ticks_msec() - start_ms < timeout_ms:
+	while Time.get_ticks_msec() - start_ms < timeout_ms:
 		if _tcp_socket.get_status() == StreamPeerTCP.STATUS_CONNECTED:
 			connected = true
 			break
