@@ -84,12 +84,17 @@ Robot Design Interface
 | `/turtlebot4/imu` | sensor_msgs/Imu | IMU data |
 | `/turtlebot4/cmd_vel` | geometry_msgs/Twist | Velocity command |
 
+## Testing
+
+See [Testing](docs/testing.md) for test procedures and known issues.
+
 ## Documentation
 
 - [Getting Started](docs/getting-started.md)
 - [AI Code Agent](docs/ai-codegen.md)
 - [Blockchain](docs/blockchain.md)
 - [ROS 2 Simulation](docs/simulation.md)
+- [Testing](docs/testing.md)
 
 ## Requirements
 
