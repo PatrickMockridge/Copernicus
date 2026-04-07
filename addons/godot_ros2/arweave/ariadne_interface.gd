@@ -15,31 +15,29 @@ var _last_exit_code: int = 0
 
 
 func _init() -> void:
-	# Find ariadne-cli relative to this addon
-	var addon_dir = _get_addon_dir()
-	_cli_path = addon_dir + "../../node_modules/ariadne-cli/cli/index.js"
+	# Find ariadne-cli relative to project root
+	_cli_path = "res://node_modules/ariadne-cli/cli/index.js"
 
 
-func _get_addon_dir() -> String:
-	# Get the directory containing this script
-	var script = get_script() as Script
-	if script:
-		var path = script.resource_path
-		if path.begins_with("res://"):
-			path = path.replace("res://", "")
-			var slash_pos = path.find("/")
-			if slash_pos > 0:
-				path = path.substr(0, slash_pos)
-			return path
-	return ""
+func _resolve_path(path: String) -> String:
+	# Convert res:// paths to absolute filesystem paths
+	if path.begins_with("res://"):
+		return ProjectSettings.globalize_path(path)
+	return path
 
 
 func _get_node_path() -> String:
-	# Find node executable
-	var nvm_node = OS.get_environment("USERPROFILE") + "/.nvm/versions/node/v22.22.2/bin/node"
-	if FileAccess.file_exists(nvm_node):
-		return nvm_node
-	# Fallback to system node
+	# Try to find node in common locations
+	var candidates = [
+		"/usr/bin/node",
+		"/usr/local/bin/node",
+		OS.get_environment("HOME") + "/.nvm/versions/node/v22.22.2/bin/node",
+		"/opt/node/bin/node"
+	]
+	for path in candidates:
+		if FileAccess.file_exists(path):
+			return path
+	# Fallback to assuming node is in PATH
 	return "node"
 
 
@@ -72,10 +70,11 @@ func _execute_command_blocking(args: Array) -> Dictionary:
 	_last_exit_code = 0
 
 	var node_path = _get_node_path()
-	var cmd = node_path + " " + _cli_path + " " + " ".join(args)
+	var cli_abs = _resolve_path(_cli_path)
+	var full_cmd = node_path + " " + cli_abs + " " + " ".join(args)
 
 	var output = []
-	var exit_code = OS.execute(cmd, [], output, true)
+	var exit_code = OS.execute("bash", ["-c", full_cmd], output, true)
 	_last_exit_code = exit_code
 
 	if output.size() > 0:
