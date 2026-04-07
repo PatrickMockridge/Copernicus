@@ -5,10 +5,9 @@
 extends Control
 
 # Preload AI classes instead of using autoloads
-# GameAI temporarily disabled - requires Godot 4.4 fixes
-# const GameAI = preload("res://addons/GameAI/core/ai.gd")
-# const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
-# const Result = preload("res://addons/GameAI/core/result.gd")
+const GameAI = preload("res://addons/GameAI/core/ai.gd")
+const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
+const GameAIResult = preload("res://addons/GameAI/core/result.gd")
 
 # ===== UI References =====
 var _main_vbox: VBoxContainer
@@ -29,8 +28,8 @@ var _copy_btn: Button
 var _add_to_scene_btn: Button
 
 # ===== AI Instances =====
-# var _gameai: Node  # GameAI disabled
-# var _rosai: Node   # GameAI disabled
+var _gameai: Node
+var _rosai: Node
 var _api_configured: bool = false
 
 # ===== Constants =====
@@ -43,13 +42,11 @@ func _ready() -> void:
 	_update_ai_status(false, "Not connected")
 
 func _init_ai_instances() -> void:
-	# GameAI temporarily disabled - needs Godot 4.4 fixes
-	# _gameai = GameAI.new()
-	# _rosai = ROSAI.new()
-	# add_child(_gameai)
-	# add_child(_rosai)
-	# _rosai.set_ai(_gameai)
-	pass
+	_gameai = GameAI.new()
+	_rosai = ROSAI.new()
+	add_child(_gameai)
+	add_child(_rosai)
+	_rosai.set_ai(_gameai)
 
 func _setup_ui() -> void:
 	_main_vbox = VBoxContainer.new()
@@ -161,10 +158,9 @@ func _setup_ui() -> void:
 	action_hbox.add_child(_add_to_scene_btn)
 
 func _connect_signals() -> void:
-	# GameAI signals temporarily disabled
-	# _rosai.behavior_generated.connect(_on_behavior_generated)
-	# etc.
-	pass
+	_rosai.behavior_generated.connect(_on_behavior_generated)
+	_rosai.topic_explained.connect(_on_topic_explained)
+	_rosai.diagnosis_completed.connect(_on_diagnosis_completed)
 
 func _update_ai_status(configured: bool, message: String) -> void:
 	_api_configured = configured
@@ -178,42 +174,61 @@ func _update_ai_status(configured: bool, message: String) -> void:
 # ===== AI Connection =====
 
 func _on_connect_ai() -> void:
-	_update_ai_status(false, "GameAI disabled - needs Godot 4.4 fixes")
-	# var api_key = _api_key_input.text.strip_edges()
-	# if api_key.is_empty():
-	# 	_update_ai_status(false, "Error: API key required")
-	# 	return
-	# etc.
+	# First try to get key from .env file (EnvService singleton), then fall back to UI input
+	var api_key = EnvService.get_minimax_key()
+	if api_key.is_empty():
+		api_key = _api_key_input.text.strip_edges()
+
+	if api_key.is_empty():
+		_update_ai_status(false, "Error: API key required (use .env or enter manually)")
+		return
+
+	# Configure AI with the API key - default to minimax since that's what user provided
+	_gameai.configure({"minimax": {"api_key": api_key}, "default": "minimax"})
+	_update_ai_status(true, "Connected to Minimax")
 
 # ===== AI Generation =====
 
 func _on_generate_behavior() -> void:
-	_code_output.text = "GameAI disabled - needs Godot 4.4 fixes"
-	_update_ai_status(false, "GameAI disabled")
+	if not _api_configured:
+		_code_output.text = "Error: Not connected to AI"
+		return
+	var behavior = BEHAVIOR_TYPES[_behavior_select.get_selected_id()]
+	_code_output.text = "Generating " + behavior + " behavior..."
+	var result = _rosai.generate_behavior(behavior)
+	# Result comes via signal - _on_behavior_generated will be called
 
 func _on_explain_topic() -> void:
-	_code_output.text = "GameAI disabled - needs Godot 4.4 fixes"
-	_update_ai_status(false, "GameAI disabled")
+	if not _api_configured:
+		_code_output.text = "Error: Not connected to AI"
+		return
+	_code_output.text = "Explaining topic..."
+	var task = _task_input.text if not _task_input.text.is_empty() else "Explain PID control math"
+	_rosai.explain_ros_topic(task, "")
 
 func _on_debug_issue() -> void:
-	_code_output.text = "GameAI disabled - needs Godot 4.4 fixes"
-	_update_ai_status(false, "GameAI disabled")
+	if not _api_configured:
+		_code_output.text = "Error: Not connected to AI"
+		return
+	_code_output.text = "Diagnosing issue..."
+	var issue = _task_input.text if not _task_input.text.is_empty() else "robot drifts left"
+	_rosai.diagnose_behavior_issue([issue])
 
 # ===== Signal Handlers (AI Responses) =====
 
-func _on_behavior_generated(result) -> void:
+func _on_behavior_generated(result: GameAIResult) -> void:
 	_display_result(result, "behavior")
 
-func _on_sensor_processor_generated(result) -> void:
+func _on_sensor_processor_generated(result: GameAIResult) -> void:
 	_display_result(result, "sensor processor")
 
-func _on_controller_generated(result) -> void:
+func _on_controller_generated(result: GameAIResult) -> void:
 	_display_result(result, "controller")
 
-func _on_topic_explained(result) -> void:
+func _on_topic_explained(result: GameAIResult) -> void:
 	_display_result(result, "topic explanation")
 
-func _on_diagnosis_completed(result) -> void:
+func _on_diagnosis_completed(result: GameAIResult) -> void:
 	_display_result(result, "diagnosis")
 
 func _on_state_machine_generated(result) -> void:

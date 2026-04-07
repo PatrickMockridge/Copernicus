@@ -3,3 +3,7 @@ fix_gameai_prompt.md
 # Godot build artifacts
 .godot/
 *.uid
+
+# Environment / API keys
+.env
+.env.local
