@@ -17,8 +17,8 @@ const COMMON_WALLET_PATHS = [
 ]
 
 
-func _init(key_type: String = "rsa").super(key_type) -> void:
-	pass
+func _init() -> void:
+	super._init("rsa")
 
 
 ## Load wallet from JWK file

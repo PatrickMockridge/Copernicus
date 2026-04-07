@@ -113,7 +113,7 @@ func to_dictionary() -> Dictionary:
 	}
 
 
-class_name HyperobjectManager
+class HyperobjectManager:
 
 var _hyperobjects: Dictionary = {}
 
