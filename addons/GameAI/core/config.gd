@@ -28,6 +28,12 @@ func get_provider_key(provider: String) -> String:
 	return ""
 
 
+func get_provider_base_url(provider: String) -> String:
+	if _providers.has(provider):
+		return _providers[provider].get("base_url", "")
+	return ""
+
+
 func has_provider(provider: String) -> bool:
 	return _providers.has(provider) and _providers[provider].has("api_key")
 

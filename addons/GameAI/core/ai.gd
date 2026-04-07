@@ -24,7 +24,7 @@ var _active_provider: String = ""
 func _init() -> void:
 	_config = AIConfig.new()
 	_http = GameAIHttpClient.new()
-	add_child(_http)
+	# Note: GameAIHttpClient doesn't extend Node, just a utility class
 
 
 func configure(config: Dictionary) -> void:
@@ -86,16 +86,21 @@ func _anthropic_chat(messages: Array, params: Dictionary) -> GameAIResult:
 	if api_key == "":
 		return GameAIResult.new(false, null, {"code": -2, "message": "Anthropic API key not configured"})
 
-	var endpoint = "https://api.anthropic.com/v1/messages"
+	# Use custom base_url if set, otherwise default to Minimax endpoint
+	var base_url = _config.get_provider_base_url("anthropic")
+	if base_url.is_empty():
+		base_url = "https://api.minimax.io/anthropic"
+	var endpoint = base_url + "/v1/messages"
+
 	var headers = [
-		"x-api-key: " + api_key,
+		"Authorization: Bearer " + api_key,
 		"anthropic-version: 2023-06-01",
 		"content-type: application/json"
 	]
 
 	var body = {
 		"messages": _filter_anthropic_messages(messages),
-		"model": params.get("model", "claude-3-5-sonnet-20241022"),
+		"model": params.get("model", "MiniMax-M2.7"),
 		"max_tokens": params.get("max_tokens", 1024)
 	}
 
@@ -105,7 +110,7 @@ func _anthropic_chat(messages: Array, params: Dictionary) -> GameAIResult:
 	var response = _http.post(endpoint, headers, JSON.stringify(body))
 	if response.is_err():
 		return response
-	return _parse_anthropic_response(response.ok_value)
+	return _parse_anthropic_response(response.ok_value())
 
 
 func _filter_anthropic_messages(messages: Array) -> Array:
@@ -124,7 +129,14 @@ func _parse_anthropic_response(response_text: String) -> GameAIResult:
 		return GameAIResult.new(false, null, {"code": -3, "message": "Failed to parse Anthropic response"})
 	if json.has("error"):
 		return GameAIResult.new(false, null, {"code": -4, "message": json.error.message})
-	var content = json.content[0].text if json.has("content") else ""
+	# Handle both Anthropic format (text) and Minimax format (thinking)
+	var content = ""
+	if json.has("content") and json.content.size() > 0:
+		var c0 = json.content[0]
+		if c0.has("text"):
+			content = c0.text
+		elif c0.has("thinking"):
+			content = c0.thinking
 	return GameAIResult.new(true, {
 		"content": content,
 		"provider": "anthropic",

@@ -1,7 +1,6 @@
 # http_client.gd
 # Simple HTTP client for GameAI SDK
-
-extends Node
+# Uses curl via OS.execute for reliable HTTPS support
 
 class_name GameAIHttpClient
 
@@ -10,72 +9,44 @@ const GameAIResult = preload("res://addons/GameAI/core/result.gd")
 var _timeout: float = 30.0
 
 
-func _init() -> void:
-	pass
-
-
 func set_timeout(seconds: float) -> void:
 	_timeout = seconds
 
 
 func post(url: String, headers: Array, body: String) -> GameAIResult:
-	# Parse URL
-	var parsed = url.replace("https://", "").replace("http://", "")
-	var host = parsed.split("/")[0]
-	var path_parts = Array(parsed.split("/").slice(1))
-	var path = "/" + path_parts.join("/")
+	# Write body to temp file
+	var body_file = "/tmp/http_body_" + str(Time.get_ticks_msec()) + ".json"
+	var script_file = "/tmp/http_script_" + str(Time.get_ticks_msec()) + ".sh"
 
-	# Use Godot's HTTPClient
-	var client = HTTPClient.new()
-	var err = client.connect_to_host(host, 443)  # HTTPS — TLSOptions omitted for compatibility
-	if err != OK:
-		return GameAIResult.new(false, null, {"code": -1, "message": "Connection failed: " + str(err)})
+	var f = FileAccess.open(body_file, FileAccess.WRITE)
+	if f:
+		f.store_string(body)
+		f.close()
 
-	# Wait for connection
-	var max_wait = _timeout * 100
-	var waited = 0
-	while client.get_status() == HTTPClient.STATUS_CONNECTING and waited < max_wait:
-		client.poll()
-		OS.delay_msec(10)
-		waited += 1
+	# Build shell script
+	var script = "LD_LIBRARY_PATH='' /usr/bin/curl -s --max-time %d -X POST '%s'" % [int(_timeout), url]
+	for h in headers:
+		script += " -H '%s'" % h
+	script += " --data-binary @%s" % body_file
 
-	if client.get_status() != HTTPClient.STATUS_CONNECTED:
-		return GameAIResult.new(false, null, {"code": -2, "message": "Connection timeout"})
+	f = FileAccess.open(script_file, FileAccess.WRITE)
+	if f:
+		f.store_string(script)
+		f.close()
 
-	# Make request
-	err = client.request(HTTPClient.METHOD_POST, path, headers, body)
-	if err != OK:
-		return GameAIResult.new(false, null, {"code": -3, "message": "Request failed: " + str(err)})
+	var output = []
+	var exit_code = OS.execute("bash", [script_file], output, true)
 
-	# Wait for response
-	waited = 0
-	while client.get_status() == HTTPClient.STATUS_REQUESTING and waited < max_wait:
-		client.poll()
-		OS.delay_msec(10)
-		waited += 1
+	DirAccess.remove_absolute(body_file)
+	DirAccess.remove_absolute(script_file)
 
-	if client.get_status() != HTTPClient.STATUS_BODY:
-		return GameAIResult.new(false, null, {"code": -4, "message": "Request status: " + str(client.get_status())})
+	var result = output[0] if output.size() > 0 else ""
 
-	# Read body
-	var response_body = PackedByteArray()
-	while client.get_status() == HTTPClient.STATUS_BODY:
-		client.poll()
-		var chunk = client.read_response_body_chunk()
-		if chunk.size() == 0:
-			break
-		response_body.append_array(chunk)
+	if exit_code != 0:
+		return GameAIResult.new(false, null, {"code": exit_code, "message": result})
 
-	var response_code = client.get_response_code()
-	var body_string = response_body.get_string_from_utf8()
-
-	if response_code >= 200 and response_code < 300:
-		return GameAIResult.new(true, body_string)
-	else:
-		return GameAIResult.new(false, null, {"code": response_code, "message": body_string})
+	return GameAIResult.new(true, result)
 
 
 func post_stream(url: String, headers: Array, body: String) -> GameAIResult:
-	# For streaming - returns the raw response for now
-	# In production, you'd want to handle SSE parsing
 	return post(url, headers, body)
