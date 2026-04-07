@@ -1,108 +1,90 @@
 # Robot Design Interface
 
-AI-powered robotics simulator in Godot 4 with ROS 2 integration and blockchain design sharing.
+AI-powered robotics simulator in Godot 4 with ROS 2, blockchain publishing, and AI code generation.
 
-## Status
+## Features
 
-- **Godot 4.4** — Runs clean
-- **ROS 2** — Bridge connection working
-- **Blockchain** — ARIADNE + AO Hyperobjects integrated
-- **AI Agent** — Minimax API working
+- **ROS 2 Simulation** — Simulate TurtleBot4 with realistic sensor data
+- **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, wall following, patrol) via Minimax/Claude
+- **Blockchain Publishing** — Publish robot designs permanently to Arweave
+- **Tradeable Designs** — Robot designs become transferable via AO Hyperobjects
 
 ## Quick Start
-
-### 1. Clone and Open
 
 ```bash
 git clone https://codeberg.org/PatrickM123/Godot_4__Robotic_Design_Interface.git
 cd Godot_4__Robotic_Design_Interface
+cp .env.example .env
+# Add your Minimax API key to .env
 godot
 ```
 
-### 2. Build ROS 2 Bridge
+## AI Setup
+
+The AI code agent uses Minimax (same API as Claude Code in VS Code).
+
+1. Copy `.env.example` to `.env`
+2. Add your API key:
+   ```
+   ANTHROPIC_API_KEY=your_key_here
+   ANTHROPIC_BASE_URL=https://api.minimax.io/anthropic
+   ```
+3. Run Godot and use the AI panel to generate robot behaviors
+
+## ROS 2 Bridge
 
 ```bash
+# Build the bridge
 cd ~/ros2_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --packages-select godot_ros2_bridge
 source install/setup.sh
+
+# Run
 export ROS_DOMAIN_ID=0
 ros2 run godot_ros2_bridge godot_bridge_node
-```
 
-### 3. Run Godot
-
-```bash
+# In another terminal
 cd Godot_4__Robotic_Design_Interface
-godot --headless --quit
+godot
 ```
-
-## Features
-
-- **ROS 2 Simulation** — Simulate robots with realistic sensor data from ROS 2
-- **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, wall following, patrol) via Minimax/Claude
-- **Blockchain Publishing** — Publish robot designs permanently to Arweave via ARIADNE
-- **Tradeable Designs** — Robot designs become transferable via AO Hyperobjects
-- **TurtleBot4 Ready** — Real meshes and physics from ROS 2 packages
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Robot Design Interface                      │
-├─────────────────────────────────────────────────────────────┤
-│  UI Layer (Godot Controls)                                   │
-│  ├── ROS2 Bridge controls                                   │
-│  ├── Robot spawner (TurtleBot4)                              │
-│  ├── Simulation controls (play/pause/reset)                   │
-│  └── AI behavior generation                                  │
-├─────────────────────────────────────────────────────────────┤
-│  3D Viewport                                                 │
-│  └── TurtleBot4 simulation running live                       │
-├─────────────────────────────────────────────────────────────┤
-│  GameAI SDK (EXPERIMENTAL)                                   │
-│  └── AI Code Agent — Behavior generation                     │
-├─────────────────────────────────────────────────────────────┤
-│  GodotROS2 SDK                                              │
-│  ├── ROS2Simulator (physics, sensors)                       │
-│  ├── TurtleBot4Loader (meshes or primitives)                 │
-│  ├── DifferentialDrive (wheel kinematics)                    │
-│  └── ROS2BridgeClient ← TCP/UDP → ROS 2                     │
-├─────────────────────────────────────────────────────────────┤
-│  Blockchain Layer                                            │
-│  ├── ARIADNE — Git-on-Arweave (permanent storage)           │
-│  └── AO Hyperobjects — Ownership and trading                │
-└─────────────────────────────────────────────────────────────┘
+Robot Design Interface
+├── AI Layer
+│   ├── GameAI — Chat/behavior generation via Minimax
+│   └── ROSAI — ROS-specific prompts
+├── Simulation Layer
+│   ├── GodotROS2 SDK — Sensors, actuators, physics
+│   └── TurtleBot4 — Real robot models
+├── Blockchain Layer
+│   ├── ARIADNE — Git-on-Arweave (permanent storage)
+│   └── AO Hyperobjects — Ownership and trading
+└── ROS 2 Bridge — TCP/UDP communication
 ```
-
-## Documentation
-
-| Guide | Description |
-|-------|-------------|
-| [Getting Started](docs/getting-started.md) | Setup, installation, first robot |
-| [ROS 2 Simulation](docs/simulation.md) | Sensors, actuators, robot models |
-| [Blockchain](docs/blockchain.md) | ARIADNE + AO Hyperobjects |
-| [AI Code Agent](docs/ai-codegen.md) | Generate robot behaviors with AI |
-| [Development](docs/development/code-patterns.md) | Godot 4.x patterns |
-
-## Requirements
-
-| Component | Version | Notes |
-|-----------|---------|-------|
-| Godot | 4.4+ | |
-| ROS 2 | Jazzy or Humble | |
-| Node.js | 22+ | For ARIADNE CLI |
-| Arweave Wallet | JWK | Optional, for blockchain |
 
 ## ROS 2 Topics
 
-| Topic | Type | Direction | Description |
-|-------|------|-----------|-------------|
-| `/turtlebot4/odom` | `nav_msgs/Odometry` | Godot → ROS | Ground-truth odometry |
-| `/turtlebot4/scan` | `sensor_msgs/LaserScan` | Godot → ROS | 360° lidar scan |
-| `/turtlebot4/imu` | `sensor_msgs/Imu` | Godot → ROS | IMU data |
-| `/turtlebot4/cmd_vel` | `geometry_msgs/Twist` | ROS → Godot | Velocity command |
+| Topic | Type | Description |
+|-------|------|-------------|
+| `/turtlebot4/odom` | nav_msgs/Odometry | Ground-truth odometry |
+| `/turtlebot4/scan` | sensor_msgs/LaserScan | 360° lidar |
+| `/turtlebot4/imu` | sensor_msgs/Imu | IMU data |
+| `/turtlebot4/cmd_vel` | geometry_msgs/Twist | Velocity command |
 
-## License
+## Documentation
 
-MIT
+- [Getting Started](docs/getting-started.md)
+- [AI Code Agent](docs/ai-codegen.md)
+- [Blockchain](docs/blockchain.md)
+- [ROS 2 Simulation](docs/simulation.md)
+
+## Requirements
+
+| Component | Version |
+|-----------|---------|
+| Godot | 4.4+ |
+| ROS 2 | Jazzy or Humble |
+| Node.js | 18+ (for ARIADNE CLI) |
