@@ -7,7 +7,7 @@ AI-powered robotics simulator in Godot 4 with ROS 2 integration and blockchain d
 - **Godot 4.4** — Runs clean
 - **ROS 2** — Bridge connection working
 - **Blockchain** — ARIADNE + AO Hyperobjects integrated
-- **AI Agent** — Experimental
+- **AI Agent** — Minimax API working
 
 ## Quick Start
 
@@ -40,7 +40,7 @@ godot --headless --quit
 ## Features
 
 - **ROS 2 Simulation** — Simulate robots with realistic sensor data from ROS 2
-- **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, wall following, patrol)
+- **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, wall following, patrol) via Minimax/Claude
 - **Blockchain Publishing** — Publish robot designs permanently to Arweave via ARIADNE
 - **Tradeable Designs** — Robot designs become transferable via AO Hyperobjects
 - **TurtleBot4 Ready** — Real meshes and physics from ROS 2 packages
@@ -82,6 +82,7 @@ godot --headless --quit
 | [Getting Started](docs/getting-started.md) | Setup, installation, first robot |
 | [ROS 2 Simulation](docs/simulation.md) | Sensors, actuators, robot models |
 | [Blockchain](docs/blockchain.md) | ARIADNE + AO Hyperobjects |
+| [AI Code Agent](docs/ai-codegen.md) | Generate robot behaviors with AI |
 | [Development](docs/development/code-patterns.md) | Godot 4.x patterns |
 
 ## Requirements
