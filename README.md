@@ -53,16 +53,26 @@ godot
 
 ```
 Robot Design Interface
-├── AI Layer
-│   ├── GameAI — Chat/behavior generation via Minimax
-│   └── ROSAI — ROS-specific prompts
-├── Simulation Layer
-│   ├── GodotROS2 SDK — Sensors, actuators, physics
-│   └── TurtleBot4 — Real robot models
-├── Blockchain Layer
-│   ├── ARIADNE — Git-on-Arweave (permanent storage)
-│   └── AO Hyperobjects — Ownership and trading
-└── ROS 2 Bridge — TCP/UDP communication
+├─────────────────────────────────────────────────────────────┐
+│  UI Layer (Godot Controls)                                   │
+│  ├── AI behavior generation (GameAI SDK)                      │
+│  ├── Robot spawner (TurtleBot4)                              │
+│  ├── Simulation controls (play/pause/reset)                   │
+│  └── ROS 2 Bridge controls                                   │
+├─────────────────────────────────────────────────────────────┤
+│  AI Layer                                                   │
+│  ├── GameAI — Chat/completion via Minimax                   │
+│  └── ROSAI — ROS-specific behavior prompts                  │
+├─────────────────────────────────────────────────────────────┤
+│  Simulation Layer                                            │
+│  ├── GodotROS2 SDK — Sensors, actuators, physics            │
+│  ├── TurtleBot4 — Real robot models                         │
+│  └── ROS 2 Bridge — TCP/UDP communication                   │
+├─────────────────────────────────────────────────────────────┤
+│  Blockchain Layer                                            │
+│  ├── ARIADNE — Git-on-Arweave (permanent storage)           │
+│  └── AO Hyperobjects — Ownership and trading                │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## ROS 2 Topics
