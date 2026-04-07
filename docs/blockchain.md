@@ -20,7 +20,7 @@ Robot Design (RobotModel)
 | Component | Notes |
 |-----------|-------|
 | Godot | 4.4+ |
-| Node.js | 18+ (ariadne-cli) |
+| Node.js | 22+ (ariadne-cli) |
 | Arweave Wallet | JWK format |
 
 ## Testing

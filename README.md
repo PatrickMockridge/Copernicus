@@ -97,4 +97,4 @@ Robot Design Interface
 |-----------|---------|
 | Godot | 4.4+ |
 | ROS 2 | Jazzy or Humble |
-| Node.js | 18+ (for ARIADNE CLI) |
+| Node.js | 22+ (for ARIADNE CLI) |
