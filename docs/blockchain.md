@@ -19,20 +19,72 @@ Robot Design (RobotModel)
 
 | Component | Notes |
 |-----------|-------|
-| Node.js | 22+ |
+| Godot | 4.4+ |
+| Node.js | 18+ (ariadne-cli) |
 | Arweave Wallet | JWK format |
 
-## Installation
+## Testing
 
-### Install ARIADNE CLI
+### Run Blockchain Test
 
 ```bash
-npm install -g ariadne-cli
+cd project
+godot --headless scenes/test_blockchain.tscn
 ```
 
-### Create Wallet
+### Test Script Location
+- Scene: `scenes/test_blockchain.tscn`
+- Script: `scripts/test_blockchain.gd`
 
-Use an existing Arweave wallet in JWK format:
+### Expected Output
+
+```
+=== Blockchain Test Starting ===
+Services initialized
+
+--- Testing Wallet ---
+Found wallet at: res://wallet.json
+Wallet loaded! Address: test_wallet_001
+
+--- Testing ARIADNE ---
+Using node: /usr/bin/node
+ARIADNE initialized in project: false
+ARIADNE not initialized - will need to init before publish
+
+--- Testing AO SDK ---
+AO SDK initialized: true
+
+--- Testing Publish Flow ---
+RobotHyperobject created
+- Repo ID:
+- Owner:
+
+Attempting ARIADNE push...
+Push result: { "exit_code": 1, "output": "...Not an ARIADNE repository..." }
+
+=== Blockchain Test Complete ===
+Summary:
+- Wallet loaded: true
+- Wallet address: test_wallet_001
+- ARIADNE initialized: false
+- Robots registered: 0
+```
+
+The "not initialized" error is **expected** before running `ariadne init`.
+
+## Initializing ARIADNE
+
+```bash
+# Initialize with wallet
+./node_modules/.bin/ariadne init --create --wallet wallet.json
+
+# Or use the CLI directly
+ariadne init --create --wallet wallet.json
+```
+
+## Wallet Setup
+
+Place wallet in project root as `wallet.json`:
 
 ```json
 {
@@ -43,9 +95,7 @@ Use an existing Arweave wallet in JWK format:
 }
 ```
 
-## Wallet Setup
-
-Load wallet once at startup:
+Load wallet in code:
 
 ```gdscript
 var result = WalletService.get_instance().load_wallet("res://wallet.json")
@@ -102,14 +152,25 @@ var results = trade_manager.search_by_name("turtlebot")
 
 ## Key Classes
 
-| Class | Purpose |
-|-------|---------|
-| `WalletService` | Singleton — single source of truth for wallet |
-| `ArweaveWallet` | JWK wallet wrapper |
-| `AriadneInterface` | Wrapper for ariadne-cli |
-| `RobotHyperobject` | Bridge — ARIADNE repos + AO processes |
-| `TradeManager` | Registry and trading operations |
-| `AOSDK` | AO Hyperobject SDK |
+| Class | File | Purpose |
+|-------|------|---------|
+| `WalletService` | `wallet_service.gd` | Singleton — single source of truth for wallet |
+| `ArweaveWallet` | `arweave_wallet.gd` | JWK wallet wrapper |
+| `AriadneInterface` | `ariadne_interface.gd` | Wrapper for ariadne-cli |
+| `RobotHyperobject` | `robot_hyperobject.gd` | Bridge — ARIADNE repos + AO processes |
+| `TradeManager` | `trade_manager.gd` | Registry and trading operations |
+| `AOSDK` | `ao.gd` | AO Hyperobject SDK |
+| `HyperHttpClient` | `http_client.gd` | HTTP client (stubbed) |
+
+## Godot 4.4 Migration Notes
+
+The blockchain code has been migrated to Godot 4.4:
+
+- `JSON.parse()` → `JSON.parse_string()`
+- `class_name HttpClient` → `class_name HyperHttpClient` (avoids native class conflict)
+- `OS.expand_environment()` → `OS.get_environment()`
+- Nested classes restructured
+- `WalletService` added `class_name` declaration
 
 ## ARIADNE CLI Commands
 
@@ -128,3 +189,8 @@ ariadne status
 ```
 
 For more on ARIADNE CLI, see [ariadne-cli repository](https://codeberg.org/PatrickM123/ARIADNE).
+
+## Cost Notes
+
+- **ArDrive uploads under 100kB are free**
+- **AO is gasless right now** (no AO token gas fees)
