@@ -5,7 +5,7 @@ class_name GameAIResult
 
 var _ok: bool
 var _value: Variant
-var _error: Dictionary
+var _error: Variant
 
 
 func _init(ok: bool, value: Variant = null, error: Variant = null):
@@ -26,7 +26,7 @@ func ok_value() -> Variant:
 	return _value
 
 
-func err_value() -> Dictionary:
+func err_value() -> Variant:
 	return _error
 
 

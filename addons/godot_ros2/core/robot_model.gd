@@ -128,6 +128,13 @@ func get_drive_system() -> Node:
 	return _drive_system
 
 
+func get_differential_drive() -> Node:
+	# Helper to get the differential drive if one is attached
+	# Returns Node (not DifferentialDrive) to avoid GDScript type narrowing issues
+	# Caller should check: if result != null and result.get("set_ros2_node") != null
+	return _drive_system
+
+
 func set_control_mode(mode: ControlMode) -> void:
 	_control_mode = mode
 

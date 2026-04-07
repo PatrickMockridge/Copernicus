@@ -44,10 +44,16 @@ func step(dt: float) -> void:
 
 
 func _process_physics(dt: float) -> void:
-	# Recursively process physics bodies
-	for child in get_children():
+	# Recursively process physics for all descendants
+	_recursive_physics(self, dt)
+
+
+func _recursive_physics(node: Node, dt: float) -> void:
+	for child in node.get_children():
 		if child.has_method("physics_update"):
 			child.physics_update(dt)
+		if child.get_child_count() > 0:
+			_recursive_physics(child, dt)
 
 
 func reset() -> void:
