@@ -41,7 +41,7 @@ static func query_transactions(tags: Array, owner: String = "", first: int = 100
 			}
 		}
 	}
-	""" % [parts.join(", "), first]
+	""" % [", ".join(parts), first]
 
 
 # ===== ANS-104 =====

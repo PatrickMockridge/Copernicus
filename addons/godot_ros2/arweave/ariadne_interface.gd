@@ -36,7 +36,7 @@ func _get_addon_dir() -> String:
 
 func _get_node_path() -> String:
 	# Find node executable
-	var nvm_node = OS.expand_environment("%USERPROFILE%") + "/.nvm/versions/node/v22.22.2/bin/node"
+	var nvm_node = OS.get_environment("USERPROFILE") + "/.nvm/versions/node/v22.22.2/bin/node"
 	if FileAccess.file_exists(nvm_node):
 		return nvm_node
 	# Fallback to system node

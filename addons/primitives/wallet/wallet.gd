@@ -57,21 +57,21 @@ class Secp256k1Wallet extends Wallet:
 	var _private_pem: String = ""
 	var _public_pem: String = ""
 
-	func _init().super("secp256k1"):
-		pass
+	func _init():
+		super("secp256k1")
 
 
 	func generate() -> Secp256k1Wallet:
-		var keys = Crypto.generate_secp256k1_keypair()
+		var keys = HyperCrypto.generate_secp256k1_keypair()
 		_private_pem = keys["private_pem"]
 		_public_pem = keys["public_pem"]
-		_address = Crypto.derive_address_from_public_key(_public_pem)
+		_address = HyperCrypto.derive_address_from_public_key(_public_pem)
 		_signer = Callable(self, "_secp256k1_signer")
 		return self
 
 
 	func _secp256k1_signer(data: PackedByteArray) -> PackedByteArray:
-		return Crypto.sign_secp256k1(data, _private_pem)
+		return HyperCrypto.sign_secp256k1(data, _private_pem)
 
 
 	func get_public_pem() -> String:
@@ -82,7 +82,7 @@ class Secp256k1Wallet extends Wallet:
 		var wallet = Secp256k1Wallet.new()
 		wallet._private_pem = private_pem
 		wallet._public_pem = public_pem if not public_pem.is_empty() else private_pem
-		wallet._address = Crypto.derive_address_from_public_key(wallet._public_pem)
+		wallet._address = HyperCrypto.derive_address_from_public_key(wallet._public_pem)
 		wallet._signer = Callable(wallet, "_secp256k1_signer")
 		return wallet
 
@@ -101,8 +101,8 @@ class RsaWallet extends Wallet:
 
 	var _private_key: PackedByteArray
 
-	func _init().super("rsa"):
-		pass
+	func _init():
+		super("rsa")
 
 
 	func sign(data: PackedByteArray) -> PackedByteArray:

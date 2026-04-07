@@ -1,7 +1,7 @@
 # crypto.gd
 # Unified cryptographic primitives - composable across SDKs
 
-class_name Crypto
+class_name HyperCrypto
 
 # ===== Base64url =====
 

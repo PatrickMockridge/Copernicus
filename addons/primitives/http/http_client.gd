@@ -113,7 +113,7 @@ func _sync_request(method: String, url: String, headers: Dictionary, body: Varia
 	# Parse URL
 	var parsed = full_url.replace("https://", "").replace("http://", "")
 	var host = parsed.split("/")[0]
-	var path = "/" + parsed.split("/").slice(1).join("/")
+	var path = "/" + "/".join(parsed.split("/").slice(1))
 
 	# Prepare headers array
 	var headers_array: Array = []
@@ -133,7 +133,7 @@ func _sync_request(method: String, url: String, headers: Dictionary, body: Varia
 
 	# Use Godot's HTTPClient synchronously
 	var client = HTTPClient.new()
-	var err = client.connect_to_host(host, 443, true)  # HTTPS
+	var err = client.connect_to_host(host, 443, true, TLSOptions.client())
 	if err != OK:
 		return Result.err("Connection failed: %s" % err)
 

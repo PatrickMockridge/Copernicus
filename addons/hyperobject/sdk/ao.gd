@@ -262,14 +262,14 @@ func _base64_encode(data: PackedByteArray) -> String:
 	"""Encode bytes to base64 string."""
 	if data.is_empty():
 		return ""
-	return Marshals.base64_encode(data)
+	return Marshalls.raw_to_base64(data)
 
 
 func _base64_encode_string(text: String) -> String:
 	"""Encode string to base64."""
 	if text.is_empty():
 		return ""
-	return Marshals.base64_encode(text.to_utf8_buffer())
+	return Marshalls.raw_to_base64(text.to_utf8_buffer())
 
 
 func _message_tags(message: Dictionary) -> Array:
