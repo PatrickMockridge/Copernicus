@@ -25,6 +25,7 @@ var _ariadne: AriadneInterface
 
 ## AO Hyperobject references
 var _ao: AOSDK
+var _hyperobject: Hyperobject
 
 ## Core IDs
 var _repo_id: String = ""        # ARIADNE repo TX ID (becomes asset_tx_id)

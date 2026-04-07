@@ -5,9 +5,10 @@
 extends Control
 
 # Preload AI classes instead of using autoloads
-const GameAI = preload("res://addons/GameAI/core/ai.gd")
-const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
-const Result = preload("res://addons/GameAI/core/result.gd")
+# GameAI temporarily disabled - requires Godot 4.4 fixes
+# const GameAI = preload("res://addons/GameAI/core/ai.gd")
+# const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
+# const Result = preload("res://addons/GameAI/core/result.gd")
 
 # ===== UI References =====
 var _main_vbox: VBoxContainer
@@ -28,8 +29,8 @@ var _copy_btn: Button
 var _add_to_scene_btn: Button
 
 # ===== AI Instances =====
-var _gameai: Node
-var _rosai: Node
+# var _gameai: Node  # GameAI disabled
+# var _rosai: Node   # GameAI disabled
 var _api_configured: bool = false
 
 # ===== Constants =====
@@ -42,11 +43,13 @@ func _ready() -> void:
 	_update_ai_status(false, "Not connected")
 
 func _init_ai_instances() -> void:
-	_gameai = GameAI.new()
-	_rosai = ROSAI.new()
-	add_child(_gameai)
-	add_child(_rosai)
-	_rosai.set_ai(_gameai)
+	# GameAI temporarily disabled - needs Godot 4.4 fixes
+	# _gameai = GameAI.new()
+	# _rosai = ROSAI.new()
+	# add_child(_gameai)
+	# add_child(_rosai)
+	# _rosai.set_ai(_gameai)
+	pass
 
 func _setup_ui() -> void:
 	_main_vbox = VBoxContainer.new()
@@ -158,16 +161,10 @@ func _setup_ui() -> void:
 	action_hbox.add_child(_add_to_scene_btn)
 
 func _connect_signals() -> void:
-	_rosai.behavior_generated.connect(_on_behavior_generated)
-	_rosai.sensor_processor_generated.connect(_on_sensor_processor_generated)
-	_rosai.controller_generated.connect(_on_controller_generated)
-	_rosai.topic_explained.connect(_on_topic_explained)
-	_rosai.diagnosis_completed.connect(_on_diagnosis_completed)
-	_rosai.state_machine_generated.connect(_on_state_machine_generated)
-	_rosai.vision_pipeline_generated.connect(_on_vision_pipeline_generated)
-	_rosai.waypoint_controller_generated.connect(_on_waypoint_controller_generated)
-	_rosai.multi_robot_logic_generated.connect(_on_multi_robot_logic_generated)
-	_rosai.robot_brain_generated.connect(_on_robot_brain_generated)
+	# GameAI signals temporarily disabled
+	# _rosai.behavior_generated.connect(_on_behavior_generated)
+	# etc.
+	pass
 
 func _update_ai_status(configured: bool, message: String) -> void:
 	_api_configured = configured
@@ -181,53 +178,26 @@ func _update_ai_status(configured: bool, message: String) -> void:
 # ===== AI Connection =====
 
 func _on_connect_ai() -> void:
-	var api_key = _api_key_input.text.strip_edges()
-	if api_key.is_empty():
-		_update_ai_status(false, "Error: API key required")
-		return
-	if api_key.begins_with("sk-ant"):
-		_gameai.configure({"anthropic": {"api_key": api_key}, "default": "anthropic"})
-		_update_ai_status(true, "Connected (Claude)")
-	elif api_key.begins_with("sk-"):
-		_gameai.configure({"openai": {"api_key": api_key}, "default": "openai"})
-		_update_ai_status(true, "Connected (OpenAI)")
-	else:
-		_gameai.configure({"minimax": {"api_key": api_key}, "default": "minimax"})
-		_update_ai_status(true, "Connected (Minimax)")
+	_update_ai_status(false, "GameAI disabled - needs Godot 4.4 fixes")
+	# var api_key = _api_key_input.text.strip_edges()
+	# if api_key.is_empty():
+	# 	_update_ai_status(false, "Error: API key required")
+	# 	return
+	# etc.
 
 # ===== AI Generation =====
 
 func _on_generate_behavior() -> void:
-	if not _api_configured:
-		_update_ai_status(false, "Error: Connect AI first")
-		return
-	var behavior = BEHAVIOR_TYPES[_behavior_select.get_selected_id()]
-	_code_output.text = "Generating " + behavior + " behavior..."
-	_rosai.generate_behavior(behavior)
+	_code_output.text = "GameAI disabled - needs Godot 4.4 fixes"
+	_update_ai_status(false, "GameAI disabled")
 
 func _on_explain_topic() -> void:
-	if not _api_configured:
-		_update_ai_status(false, "Error: Connect AI first")
-		return
-	var task = _task_input.text.strip_edges()
-	if task.is_empty():
-		task = "/turtlebot4/scan sensor_msgs/LaserScan"
-	var parts = task.split(" ")
-	var topic = parts[0] if parts.size() > 0 else "/turtlebot4/scan"
-	var msg_type = parts[1] if parts.size() > 1 else "sensor_msgs/LaserScan"
-	_code_output.text = "Explaining topic..."
-	_rosai.explain_ros_topic(topic, msg_type)
+	_code_output.text = "GameAI disabled - needs Godot 4.4 fixes"
+	_update_ai_status(false, "GameAI disabled")
 
 func _on_debug_issue() -> void:
-	if not _api_configured:
-		_update_ai_status(false, "Error: Connect AI first")
-		return
-	var task = _task_input.text.strip_edges()
-	if task.is_empty():
-		task = "robot drifts left when moving forward"
-	var symptoms = task.split(",")
-	_code_output.text = "Diagnosing issue..."
-	_rosai.diagnose_behavior_issue(symptoms)
+	_code_output.text = "GameAI disabled - needs Godot 4.4 fixes"
+	_update_ai_status(false, "GameAI disabled")
 
 # ===== Signal Handlers (AI Responses) =====
 

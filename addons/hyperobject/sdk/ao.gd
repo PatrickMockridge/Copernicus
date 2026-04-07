@@ -6,7 +6,7 @@ class_name AOSDK
 
 var _wallet: Wallet
 var _config: Dictionary = {}
-var _http_client: HttpClient
+var _http_client: HyperHttpClient
 var _storage: Storage
 
 # HyperBEAM endpoints (Messenger Unit / Compute Unit)
@@ -16,7 +16,7 @@ var _su_url: String = "https://su.ardrive.io/v1"
 
 
 func _init() -> void:
-	_http_client = HttpClient.new()
+	_http_client = HyperHttpClient.new()
 	_storage = Storage.new()
 
 
@@ -57,7 +57,7 @@ func get_process_info(process_id: String) -> Result:
 	"""Get info about an AO process from Compute Unit."""
 	var url = "%s/processes/%s" % [_cu_url, process_id]
 
-	var result = _http_client.get(url, _get_auth_headers())
+	var result = _http_client.fetch(url, _get_auth_headers())
 	if result.is_err():
 		return result
 
@@ -183,7 +183,7 @@ func get_messages(process_id: String) -> Result:
 	"""Get message history for a process from Scheduler Unit."""
 	var url = "%s/processes/%s/messages" % [_su_url, process_id]
 
-	var result = _http_client.get(url, _get_auth_headers())
+	var result = _http_client.fetch(url, _get_auth_headers())
 	if result.is_err():
 		return result
 
@@ -215,7 +215,7 @@ func get_transaction_status(tx_id: String) -> Result:
 	"""Get transaction status on Arweave."""
 	var url = "https://arweave.net/%s" % tx_id
 
-	var result = _http_client.get(url)
+	var result = _http_client.fetch(url)
 	if result.is_err():
 		return result
 

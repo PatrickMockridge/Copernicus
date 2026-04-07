@@ -2,6 +2,7 @@
 # Global wallet service - single source of truth for wallet across ARIADNE and AO Hyperobject
 # Implements singleton pattern via autoload
 
+class_name WalletService
 extends Node
 
 ## Singleton instance

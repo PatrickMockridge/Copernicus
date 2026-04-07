@@ -113,39 +113,3 @@ func to_dictionary() -> Dictionary:
 		"process_id": _process_id
 	}
 
-
-	class HyperobjectManager:
-
-		var _hyperobjects: Dictionary = {}
-
-
-		func register(hyperobject: Hyperobject) -> void:
-			_hyperobjects[hyperobject.get_id()] = hyperobject
-
-
-		func unregister(id: String) -> void:
-			_hyperobjects.erase(id)
-
-
-		func get(id: String) -> Hyperobject:
-			return _hyperobjects.get(id)
-
-
-		func get_all() -> Array:
-			return _hyperobjects.values()
-
-
-		func get_by_owner(owner: String) -> Array:
-			var result: Array = []
-			for h in _hyperobjects.values():
-				if h.get_owner() == owner:
-					result.append(h)
-			return result
-
-
-		func get_by_type(type: Hyperobject.Type) -> Array:
-			var result: Array = []
-			for h in _hyperobjects.values():
-				if h.get_type() == type:
-					result.append(h)
-			return result

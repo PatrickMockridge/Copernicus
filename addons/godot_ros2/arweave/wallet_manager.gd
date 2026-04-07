@@ -40,12 +40,14 @@ func load_wallet(path: String) -> bool:
 	var json_str = file.get_as_text()
 	file.close()
 
-	var json = JSON.parse(json_str)
-	if json.error != OK:
+	var jwk = JSON.parse_string(json_str)
+	if jwk == null:
 		push_error("Failed to parse wallet JSON: " + json_str)
 		return false
 
-	var jwk = json.result as Dictionary
+	if not jwk is Dictionary:
+		push_error("Invalid wallet JSON format")
+		return false
 
 	# Validate required JWK fields
 	if not jwk.has("kty") or not jwk.has("n") or not jwk.has("e"):

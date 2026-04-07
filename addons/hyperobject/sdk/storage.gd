@@ -5,12 +5,12 @@ class_name Storage
 
 var _gateway_url: String = "https://arweave.net"
 var _turbo_url: String = "https://turbo.ardrive.io/v1/turbo/upload"
-var _http_client: HttpClient
+var _http_client: HyperHttpClient
 
 
 func _init(gateway_url: String = "https://arweave.net") -> void:
 	_gateway_url = gateway_url
-	_http_client = HttpClient.new()
+	_http_client = HyperHttpClient.new()
 
 
 func set_gateway(url: String) -> void:
@@ -92,7 +92,7 @@ func download_data(tx_id: String) -> Result:
 	"""Download data from Arweave."""
 	var url = "%s/%s" % [_gateway_url, tx_id]
 
-	var result = _http_client.get(url)
+	var result = _http_client.fetch(url)
 	if result.is_err():
 		return result
 

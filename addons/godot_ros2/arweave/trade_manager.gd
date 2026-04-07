@@ -70,7 +70,7 @@ func unregister(repo_id: String) -> void:
 	_robots.erase(repo_id)
 
 
-func get(repo_id: String) -> RobotHyperobject:
+func get_robot(repo_id: String) -> RobotHyperobject:
 	return _robots.get(repo_id)
 
 
