@@ -16,6 +16,7 @@ func _init() -> void:
 	add_child(_code_edit)
 
 	_code_edit.set_draw_line_numbers(true)
+	_code_edit.set_language("python")
 	_code_edit.custom_minimum_size.y = 300
 
 	_code_edit.text_changed.connect(_on_text_changed)
