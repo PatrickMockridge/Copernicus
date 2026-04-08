@@ -1,19 +1,79 @@
 # Blockchain Integration
 
-Publish robot designs to Arweave and trade them as AO Hyperobjects.
+Publish robot designs to Arweave and trade them as AO Hyperobjects. Copernicus makes it easy — **few clicks to turn your robot into a tradeable item**.
 
 ## Architecture
 
 ```
-Robot Design (RobotModel)
+Robot Files (URDF, scenes, meshes)
     │
-    ├─► ARIADNE.push() ─► Arweave TX ID (permanent storage)
+    ├─► Arweave upload ─► TX ID (permanent storage)
     │
     └─► AO Hyperobject ─► AO Process (ownership, transfer)
 ```
 
-- **ARIADNE** — Decentralized git hosting on Arweave
+- **Arweave** — Permanent decentralized storage
 - **AO Hyperobjects** — Actor-Oriented compute for ownership and trading
+
+## Publishing via IDE (Recommended)
+
+The easiest way to publish your robot:
+
+### Step 1: Open Your Robot
+
+Load your robot scene in Copernicus.
+
+### Step 2: Click Publish
+
+In the main toolbar, click the **Publish** button.
+
+### Step 3: Configure
+
+The publish panel opens:
+- **Name** — Your robot's name (e.g., "TurtleBot4")
+- **Description** — What it does
+- **Price** — Set in AR (0 = not for sale)
+- **Files** — Auto-detected robot files (scripts, scenes, meshes, URDF)
+
+### Step 4: Publish
+
+Click **Publish**. The system automatically:
+1. Collects all robot files
+2. Uploads to Arweave
+3. Creates AO Hyperobject
+4. Lists on marketplace (if price > 0)
+
+That's it! Your robot is now a tradable AO Hyperobject.
+
+### Programmatic Publishing
+
+```gdscript
+var publisher = RobotPublisher.new()
+
+var config = {
+    "name": "MyRobot",
+    "description": "A differential drive robot",
+    "price": 10.0,  # AR
+    "files": [
+        "res://scripts/my_robot.gd",
+        "res://scenes/my_robot.tscn",
+        "res://meshes/body.glb"
+    ]
+}
+
+var result = yield(publisher.publish(config), "completed")
+if result.is_ok():
+    var info = result.get_data()
+    print("Published! repo_id: ", info.repo_id)
+    print("AO process_id: ", info.process_id)
+```
+
+### Quick Publish
+
+```gdscript
+var files = IDEIntegration.discover_robot_files()
+var result = IDEIntegration.quick_publish(files, "MyRobot", "Description", 5.0)
+```
 
 ## Requirements
 
@@ -154,13 +214,14 @@ var results = trade_manager.search_by_name("turtlebot")
 
 | Class | File | Purpose |
 |-------|------|---------|
-| `WalletService` | `wallet_service.gd` | Singleton — single source of truth for wallet |
-| `ArweaveWallet` | `arweave_wallet.gd` | JWK wallet wrapper |
-| `AriadneInterface` | `ariadne_interface.gd` | Wrapper for ariadne-cli |
-| `RobotHyperobject` | `robot_hyperobject.gd` | Bridge — ARIADNE repos + AO processes |
-| `TradeManager` | `trade_manager.gd` | Registry and trading operations |
-| `AOSDK` | `ao.gd` | AO Hyperobject SDK |
-| `HyperHttpClient` | `http_client.gd` | HTTP client (stubbed) |
+| `RobotPublisher` | `robot_publisher.gd` | Orchestrates full publish flow |
+| `RobotHyperobject` | `robot_hyperobject.gd` | Robot-specific AO hyperobject |
+| `PublishPanel` | `publish_panel.gd` | UI panel for IDE publishing |
+| `IDEIntegration` | `ide_integration.gd` | IDE toolbar integration |
+| `Hyperobject` | `hyperobject/sdk/hyperobjects.gd` | Base hyperobject class |
+| `AOSDK` | `hyperobject/sdk/ao.gd` | AO Hyperobject SDK |
+| `Bundler` | `hyperobject/sdk/bundler.gd` | ANS-104 bundling helper |
+| `Manifest` | `hyperobject/sdk/manifest.gd` | Arweave manifest helper |
 
 ## Godot 4.4 Migration Notes
 

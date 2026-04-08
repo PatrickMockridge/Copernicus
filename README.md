@@ -74,8 +74,8 @@ Copernicus doesn't fight Godot — it embraces what Godot does well:
 - **ROS 2 Bridge** — Sensor data streaming to/from external tools
 - **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, patrol)
 - **ROS Coder IDE** — In-game IDE for writing ROS2 Python (rclpy) software
-- **Blockchain Publishing** — Publish robot designs permanently to Arweave
-- **Tradeable Designs** — Robot designs become transferable via AO Hyperobjects
+- **Blockchain Publishing** — Few clicks to publish your robot to Arweave
+- **AO Hyperobjects** — Trade robot designs as ownership-verifiable assets
 
 ---
 
@@ -123,8 +123,9 @@ Copernicus / Robot Design Interface
 │  ├── TCP/UDP communication                                   │
 │  └── sensor_msgs / geometry_msgs                             │
 ├──────────────────────────────────────────────────────────────┤
-│  Blockchain Layer (Optional)                                  │
-│  ├── ARIADNE — Git-on-Arweave (permanent storage)           │
+│  Blockchain Layer                                             │
+│  ├── Arweave — Permanent decentralized storage             │
+│  ├── RobotPublisher — File bundling + upload orchestration │
 │  └── AO Hyperobjects — Ownership and trading                │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -150,6 +151,25 @@ Copernicus is designed to be extended:
 ```
 
 **Fork it. Extend it. Make it yours.**
+
+---
+
+## Publishing to Blockchain
+
+Turn your robot into a tradeable AO Hyperobject in **few clicks**:
+
+1. Open your robot scene in Copernicus
+2. Click **Publish** in the toolbar
+3. Configure name, description, price
+4. Click **Publish**
+
+Your robot files are uploaded to Arweave (permanent storage) and linked to an AO Hyperobject process (ownership, transfer).
+
+```gdscript
+// Programmatic publishing
+var files = IDEIntegration.discover_robot_files()
+var result = IDEIntegration.quick_publish(files, "MyRobot", "A differential drive robot", 5.0)
+```
 
 ---
 
