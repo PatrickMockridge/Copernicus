@@ -27,6 +27,9 @@ func _init() -> void:
 func _ready() -> void:
 	var home = OS.get_environment("HOME")
 	_workspace_path = home + "/.ros_workspace"
+	# Create workspace if it doesn't exist
+	if not DirAccess.dir_exists_absolute(_workspace_path):
+		DirAccess.make_dir_recursive_absolute(_workspace_path)
 	refresh()
 
 
@@ -79,9 +82,7 @@ func _on_item_selected() -> void:
 	if item:
 		var path = item.get_metadata(0)
 		if path is String and not path.is_empty():
-			var dir = DirAccess.open(path.get_base_dir())
-			if dir:
-				file_selected.emit(path)
+			file_selected.emit(path)
 
 
 func _on_gui_input(event: InputEvent) -> void:

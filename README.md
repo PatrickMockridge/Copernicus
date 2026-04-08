@@ -44,21 +44,24 @@ godot scenes/main.tscn
 ### Layout
 
 ```
-┌─────────────────────────────────────────┐
-│ FILE BROWSER │ CODE EDITOR (Python)     │
-│  ~/.ros_workspace/                      │
-├──────────────┴──────────────────────────┤
-│  Prompt: [________________] [Generate]    │
-├─────────────────────────────────────────┤
-│  CONSOLE OUTPUT                         │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ FILE BROWSER │ CODE EDITOR (Python with syntax highlighting)  │
+│  ~/.ros_workspace/                                              │
+├──────────────┴─────────────────────────────────────────────────┤
+│  [Preset ▼] Prompt: [________________] [Generate] [Run] [Save]│
+│                                       [Launch] [Deploy]         │
+├─────────────────────────────────────────────────────────────────┤
+│  CONSOLE OUTPUT                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Generate Python Code
 
-1. Enter a prompt (e.g., "Generate obstacle avoidance node for TurtleBot4")
-2. Click **Generate** — Python rclpy code appears in editor
+1. Select a preset (Obstacle Avoidance, Wall Following, Patrol, etc.) or enter a custom prompt
+2. Click **Generate** — Python rclpy code appears in editor with syntax highlighting
 3. Edit the code if needed
+4. Click **Run** to test locally, **Save** to save to workspace, or **Deploy** to push to the robot
+5. Click **Launch** to generate a Python-based ROS2 launch file
 
 ### Run Locally
 

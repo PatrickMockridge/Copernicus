@@ -24,6 +24,8 @@ func _ready() -> void:
 	_workspace_path = OS.get_environment("HOME") + "/.ros_workspace"
 	_setup_ui()
 	_connect_signals()
+	# Set placeholder content so editor isn't empty on open
+	_code_editor.set_content("#!/usr/bin/env python3\n# ROS2 Python Coder\n# Enter a prompt and click Generate, or open a file from the browser\n\nimport rclpy\nfrom rclpy.node import Node\n\n\ndef main(args=None):\n    rclpy.init(args=args)\n    node = Node('robot_node')\n    rclpy.spin(node)\n    node.destroy_node()\n    rclpy.shutdown()\n\n\nif __name__ == '__main__':\n    main()\n")
 
 
 func _setup_ui() -> void:
@@ -91,6 +93,8 @@ func _connect_signals() -> void:
 	_file_browser.file_selected.connect(_on_file_selected)
 	_prompt_bar.generate_requested.connect(_on_generate_requested)
 	_prompt_bar.run_requested.connect(_on_run_requested)
+	_prompt_bar.save_requested.connect(_on_save_requested)
+	_prompt_bar.launch_generate_requested.connect(_on_launch_generate_requested)
 	_prompt_bar.deploy_requested.connect(_on_deploy_requested)
 
 	_python_coder.code_generated.connect(_on_code_generated)
@@ -107,6 +111,22 @@ func _on_generate_requested(prompt: String) -> void:
 		var err = result.err_value()
 		var msg = err.get("message", str(err)) if err is Dictionary else str(err)
 		_console.print_output("Error: " + msg, "error")
+		return
+
+	var content = result.ok_value()
+	var code: String
+	if content is Dictionary:
+		code = content.get("content", "")
+	elif content is String:
+		code = content
+	else:
+		code = str(content)
+
+	if not code.is_empty():
+		_code_editor.set_content(code)
+		_console.print_output("Code generated successfully", "success")
+	else:
+		_console.print_output("No code in AI response", "error")
 
 
 func _on_code_generated(code: String) -> void:
@@ -133,6 +153,43 @@ func _on_run_requested() -> void:
 		_console.print_output(output[0] if output.size() > 0 else "Done", "success")
 	else:
 		_console.print_output(output[0] if output.size() > 0 else "Execution failed", "error")
+
+
+func _on_save_requested() -> void:
+	var current_file = _code_editor.get_current_file()
+	if current_file.is_empty():
+		_console.print_output("No file path set - use File Browser to select a location", "error")
+		return
+
+	if _code_editor.save_file():
+		_console.print_output("Saved to " + current_file, "success")
+	else:
+		_console.print_output("Save failed", "error")
+
+
+func _on_launch_generate_requested(node_name: String, package_name: String) -> void:
+	_console.print_output("Generating launch file for: " + node_name, "info")
+	var result = _python_coder.generate_launch_file(node_name, package_name)
+	if result.is_err():
+		var err = result.err_value()
+		var msg = err.get("message", str(err)) if err is Dictionary else str(err)
+		_console.print_output("Error: " + msg, "error")
+		return
+
+	var content = result.ok_value()
+	var code: String
+	if content is Dictionary:
+		code = content.get("content", "")
+	elif content is String:
+		code = content
+	else:
+		code = str(content)
+
+	if not code.is_empty():
+		_code_editor.set_content(code)
+		_console.print_output("Launch file generated successfully", "success")
+	else:
+		_console.print_output("No content in launch file", "error")
 
 
 func _on_deploy_requested() -> void:

@@ -67,23 +67,35 @@ Open via the **ROS Coder** button in the main AI panel header.
 ### Generating Python Code
 
 1. Open ROS Coder from the main AI panel
-2. Enter a prompt like "Generate obstacle avoidance node for TurtleBot4"
-3. Click **Generate** — rclpy Python code appears in the editor
+2. Select a preset (Obstacle Avoidance, Wall Following, Patrol, etc.) or enter a custom prompt
+3. Click **Generate** — rclpy Python code appears in the editor with syntax highlighting
 4. Edit the code as needed
-5. Click **Run** to test locally or **Deploy** to push to the robot
+5. Click **Run** to test locally, **Save** to save to workspace, or **Deploy** to push to the robot
+6. Click **Launch** to generate a Python-based ROS2 launch file for the node
+
+### Preset Prompts
+
+The ROS Coder includes preset prompts for common robot behaviors:
+- **Obstacle Avoidance** — Navigate around obstacles using laser scan
+- **Wall Following** — Follow a wall at a set distance
+- **Line Following** — Follow a line on the ground using camera/sensors
+- **Patrol** — Navigate between multiple waypoints
+- **Person Following** — Detect and follow a person
+- **Navigation** — Go-to-goal navigation with obstacle avoidance
 
 ### Architecture
 
 ```
 ROSCoder (addons/ROSCoder/)
-├── ros_coder.gd         — Main controller, split panel layout
+├── ros_coder.gd              — Main controller, split panel layout
 ├── ui/
-│   ├── code_editor.gd   — CodeEdit with Python syntax highlighting
-│   ├── file_tree.gd     — Tree browser for ~/.ros_workspace/
-│   ├── ai_prompt_bar.gd — Prompt input + Generate/Run/Deploy buttons
-│   └── console_output.gd — Terminal-style output display
+│   ├── code_editor.gd       — CodeEdit with Python syntax highlighting
+│   ├── python_syntax_highlighter.gd — Python keyword/string/comment coloring
+│   ├── file_tree.gd          — Tree browser for ~/.ros_workspace/
+│   ├── ai_prompt_bar.gd      — Preset selector + Generate/Run/Save/Launch/Deploy
+│   └── console_output.gd    — Terminal-style output display
 └── coders/
-    └── python_coder.gd  — AI prompts for rclpy code generation
+    └── python_coder.gd       — AI prompts + launch file generation
 ```
 
 ### Workspace

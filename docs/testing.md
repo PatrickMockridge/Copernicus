@@ -67,8 +67,9 @@ Or open via main AI panel by clicking "ROS Coder" button.
 ROS2 Python Coder window opens with:
 - File browser (left panel, 180px)
 - Code editor with Python syntax highlighting
-- Prompt bar: [prompt input] [Generate] [Run] [Deploy]
+- Prompt bar: [Preset dropdown] [prompt input] [Generate] [Run] [Save] [Launch] [Deploy]
 - Console output panel (bottom)
+- Placeholder Python code in editor on first open
 ```
 
 ### ROS 2 Bridge
@@ -98,6 +99,12 @@ ros2 topic list
 | `scripts/test_ai.gd` | AI test script |
 | `scenes/ros_coder.tscn` | ROS2 Python Coder IDE |
 | `addons/ROSCoder/ros_coder.gd` | ROS Coder main controller |
+| `addons/ROSCoder/ui/code_editor.gd` | CodeEdit with Python syntax highlighting |
+| `addons/ROSCoder/ui/ai_prompt_bar.gd` | Preset selector + action buttons |
+| `addons/ROSCoder/ui/file_tree.gd` | Workspace file browser |
+| `addons/ROSCoder/ui/console_output.gd` | Terminal-style console |
+| `addons/ROSCoder/ui/python_syntax_highlighter.gd` | Python syntax highlighting |
+| `addons/ROSCoder/coders/python_coder.gd` | AI code generation for rclpy |
 
 ## Known Issues
 
