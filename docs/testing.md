@@ -99,27 +99,24 @@ ros2 topic list
 | `scripts/test_ai.gd` | AI test script |
 | `scenes/ros_coder.tscn` | ROS2 Python Coder IDE |
 | `addons/ROSCoder/ros_coder.gd` | ROS Coder main controller |
-| `addons/ROSCoder/ui/code_editor.gd` | CodeEdit with Python syntax highlighting |
+| `addons/ROSCoder/ui/code_editor.gd` | CodeEdit wrapper |
 | `addons/ROSCoder/ui/ai_prompt_bar.gd` | Preset selector + action buttons |
 | `addons/ROSCoder/ui/file_tree.gd` | Workspace file browser |
 | `addons/ROSCoder/ui/console_output.gd` | Terminal-style console |
-| `addons/ROSCoder/ui/python_syntax_highlighter.gd` | Python syntax highlighting |
+| `addons/ROSCoder/ui/python_syntax_highlighter.gd` | Python syntax highlighting (unused - API mismatch) |
 | `addons/ROSCoder/coders/python_coder.gd` | AI code generation for rclpy |
 
 ## Known Issues
 
-### Godot Headless Autoload Loading
+### Godot Headless Autoload Loading (FIXED)
 
-When running `godot --headless` after clearing the `.godot/` cache, the `GodotROS2` autoload may fail to load due to Godot 4.4's `class_name` resolution ordering.
+When running `godot --headless` after clearing the `.godot/` cache, the `GodotROS2` autoload fails to load due to:
+1. A malformed `#[editor_plugins]` section in `project.godot`
+2. Godot 4.4 parsing commented-out autoload lines (`# GodotROS2=...`)
 
-**Workaround:** Run `godot --editor` once to rebuild the class cache, then headless mode works.
+**Fix:** The `GodotROS2` autoload was removed from `project.godot`. The `godot_ros2` addon has pre-existing parse errors (missing `class_name` declarations for `ROS2Node`, `ROS2Executor`, etc.) and is not needed for ROS Coder operation.
 
-```bash
-rm -rf .godot
-godot --editor --path . &
-# Close immediately after it opens
-godot --headless scenes/test_ai.tscn  # Now works
-```
+**Note:** The `godot_ros2` addon needs separate fixing before its autoload can be restored.
 
 ### ARIADNE "Not an ARIADNE repository"
 

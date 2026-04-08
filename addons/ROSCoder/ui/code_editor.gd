@@ -4,8 +4,6 @@
 class_name CodeEditor
 extends Control
 
-const PythonSyntaxHighlighter = preload("res://addons/ROSCoder/ui/python_syntax_highlighter.gd")
-
 var _code_edit: CodeEdit
 var _current_file: String = ""
 var _is_dirty: bool = false
@@ -18,7 +16,6 @@ func _init() -> void:
 	add_child(_code_edit)
 
 	_code_edit.set_draw_line_numbers(true)
-	_code_edit.set_syntax_highlighter(PythonSyntaxHighlighter.new())
 	_code_edit.custom_minimum_size.y = 300
 
 	_code_edit.text_changed.connect(_on_text_changed)

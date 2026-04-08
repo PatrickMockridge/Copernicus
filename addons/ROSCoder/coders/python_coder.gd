@@ -8,6 +8,7 @@ signal code_generated(code: String)
 signal multi_file_generated(files: Dictionary)
 
 const GameAIResult = preload("res://addons/GameAI/core/result.gd")
+const GameAI = preload("res://addons/GameAI/core/ai.gd")
 
 const PYTHON_SYSTEM_PROMPT = """You are an expert ROS2 Python developer specializing in rclpy.
 
@@ -65,7 +66,9 @@ func _call_ai(messages: Array) -> GameAIResult:
 	# Use GameAI via autoload - chat() method
 	var ai = get_tree().root.get_node("/root/GameAI")
 	if not ai:
-		return GameAIResult.new(false, null, {"code": -1, "message": "GameAI autoload not found"})
+		# Fallback: create local instance when autoload fails (e.g., headless mode)
+		ai = GameAI.new()
+		add_child(ai)
 
 	var result = ai.chat(messages, {"provider": "minimax", "max_tokens": 2048})
 	if result.is_err():
@@ -83,7 +86,9 @@ func _call_ai_multi(messages: Array) -> GameAIResult:
 	# Use GameAI via autoload - chat() method
 	var ai = get_tree().root.get_node("/root/GameAI")
 	if not ai:
-		return GameAIResult.new(false, null, {"code": -1, "message": "GameAI autoload not found"})
+		# Fallback: create local instance when autoload fails (e.g., headless mode)
+		ai = GameAI.new()
+		add_child(ai)
 
 	var result = ai.chat(messages, {"provider": "minimax", "max_tokens": 4096})
 	if result.is_err():
