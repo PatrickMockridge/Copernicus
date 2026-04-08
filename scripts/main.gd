@@ -82,6 +82,11 @@ func _setup_ui() -> void:
 	_status_label.text = "Not connected"
 	_header.add_child(_status_label)
 
+	var ros_coder_btn = Button.new()
+	ros_coder_btn.text = "ROS Coder"
+	ros_coder_btn.pressed.connect(_on_open_ros_coder)
+	_header.add_child(ros_coder_btn)
+
 	# ---- Context Panel ----
 	_context_panel = PanelContainer.new()
 	_context_panel.custom_minimum_size.y = 60
@@ -271,6 +276,11 @@ func _on_copy_code() -> void:
 
 func _on_add_to_scene() -> void:
 	_status_label.text = "Add to Scene: Feature not yet implemented"
+
+func _on_open_ros_coder() -> void:
+	var ros_coder_scene = preload("res://scenes/ros_coder.tscn")
+	var instance = ros_coder_scene.instantiate()
+	add_child(instance)
 
 func _process(delta: float) -> void:
 	pass

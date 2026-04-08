@@ -53,6 +53,24 @@ PASS: Chat response received
 --- Test 4: Generate Behavior ---
 ```
 
+### ROS Coder Test
+
+```bash
+cd project
+godot --headless scenes/ros_coder.tscn
+```
+
+Or open via main AI panel by clicking "ROS Coder" button.
+
+**Expected output:**
+```
+ROS2 Python Coder window opens with:
+- File browser (left panel, 180px)
+- Code editor with Python syntax highlighting
+- Prompt bar: [prompt input] [Generate] [Run] [Deploy]
+- Console output panel (bottom)
+```
+
 ### ROS 2 Bridge
 
 ```bash
@@ -78,6 +96,8 @@ ros2 topic list
 | `scripts/test_blockchain.gd` | Blockchain test script |
 | `scenes/test_ai.tscn` | AI/Minimax integration test |
 | `scripts/test_ai.gd` | AI test script |
+| `scenes/ros_coder.tscn` | ROS2 Python Coder IDE |
+| `addons/ROSCoder/ros_coder.gd` | ROS Coder main controller |
 
 ## Known Issues
 
