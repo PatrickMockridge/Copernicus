@@ -52,6 +52,9 @@ AI behavior generation + ROS Coder IDE.
 ### [Development](development/code-patterns.md)
 Godot 4.x coding patterns and contributing guidelines.
 
+### [License](license.md)
+AGPLv3 license with ethical statement.
+
 ---
 
 ## Quick Links
