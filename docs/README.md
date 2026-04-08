@@ -22,4 +22,5 @@ Godot 4.x coding patterns and contributing guidelines.
 |----------|-------------|
 | [ROS 2 Bridge Setup](simulation.md#bridge-setup) | Build and run the TCP/UDP bridge |
 | [Wallet Setup](blockchain.md#wallet-setup) | Configure Arweave wallet |
-| [AI Code Agent](development/code-patterns.md#ai-code-agent) | Experimental AI behavior generation |
+| [AI Code Agent](ai-codegen.md) | AI behavior generation + ROS Coder IDE |
+| [Testing](testing.md) | Test procedures and expected outputs |

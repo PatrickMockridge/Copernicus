@@ -90,12 +90,12 @@ ROSCoder (addons/ROSCoder/)
 ├── ros_coder.gd              — Main controller, split panel layout
 ├── ui/
 │   ├── code_editor.gd       — CodeEdit with Python syntax highlighting
-│   ├── python_syntax_highlighter.gd — Python keyword/string/comment coloring
+│   ├── python_syntax_highlighter.gd — Custom highlighter (optional, CodeEdit has built-in)
 │   ├── file_tree.gd          — Tree browser for ~/.ros_workspace/
 │   ├── ai_prompt_bar.gd      — Preset selector + Generate/Run/Save/Launch/Deploy
 │   └── console_output.gd    — Terminal-style output display
 └── coders/
-    └── python_coder.gd       — AI prompts + launch file generation
+    └── python_coder.gd       — AI prompts + launch file generation + multi-file package
 ```
 
 ### Workspace

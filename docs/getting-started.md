@@ -42,7 +42,8 @@ godot --headless --quit
 │   ├── godot_ros2/          # ROS 2 simulator SDK
 │   │   ├── arweave/        # Blockchain integration
 │   │   └── core/           # Robot models, sensors, actuators
-│   └── GameAI/             # AI code agent (EXPERIMENTAL)
+│   ├── GameAI/              # AI code agent for GDScript behaviors
+│   └── ROSCoder/           # In-game IDE for ROS2 Python (rclpy) coding
 ├── docs/                   # Documentation
 ├── scenes/                 # Robot scene files
 └── scripts/                # Main scripts
@@ -68,7 +69,8 @@ godot
 1. **Spawn TurtleBot4** — Choose DAE Meshes (real robot) or Primitives (Godot shapes)
 2. **Connect Bridge** — Connects to the running `godot_ros2_bridge` node
 3. **Play / Pause / Reset** — Control the simulation
-4. **Generate Behavior** — Use AI to generate robot behaviors
+4. **Generate Behavior** — Use AI to generate GDScript behaviors (via GameAI panel)
+5. **ROS Coder** — Click "ROS Coder" button to open the in-game IDE for writing and deploying ROS2 Python code to your robot
 
 ## Troubleshooting
 
