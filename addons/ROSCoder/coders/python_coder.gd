@@ -21,6 +21,26 @@ Generate clean, production-ready Python code for robotics applications.
 
 Return code in ```python``` blocks only. No explanations outside the code blocks."""
 
+const NAV2_SYSTEM_PROMPT = """You are an expert ROS2 Python developer specializing in rclpy and Nav2 navigation.
+
+Generate production-ready Python code for autonomous navigation using Nav2.
+- Use rclpy.node.Node as base class
+- Use Nav2 action servers for navigation (NavigateToPose)
+- Subscribe to map, localization, and costmap topics
+- Publish velocity commands via cmd_vel
+- Include proper QoS profiles for Nav2
+- Handle navigation lifecycle (active, completed, failed)
+- Include obstacle avoidance using costmap information
+
+Return code in ```python``` blocks only. No explanations outside the code blocks.
+
+Example topics:
+- /nav2/goal_pose (geometry_msgs/PoseStamped)
+- /amcl/pose (geometry_msgs/PoseWithCovarianceStamped)
+- /global_costmap/costmap (nav_msgs/OccupancyGrid)
+- /scan (sensor_msgs/LaserScan)
+- /cmd_vel (geometry_msgs/Twist)"""
+
 const MULTI_FILE_SYSTEM_PROMPT = """You are an expert ROS2 Python developer specializing in rclpy.
 
 Generate a complete ROS2 package structure with multiple files. For the given robot behavior, generate ALL of the following:
@@ -47,8 +67,13 @@ Only output the code blocks, no explanations."""
 
 
 func generate_code(prompt: String) -> GameAIResult:
+	var system_prompt = PYTHON_SYSTEM_PROMPT
+	# Use Nav2-specific system prompt for navigation-related prompts
+	var lower_prompt = prompt.to_lower()
+	if "nav2" in lower_prompt or "navigation" in lower_prompt or "path plan" in lower_prompt or "go to goal" in lower_prompt or "autonomous" in lower_prompt:
+		system_prompt = NAV2_SYSTEM_PROMPT
 	var messages = [
-		{"role": "system", "content": PYTHON_SYSTEM_PROMPT},
+		{"role": "system", "content": system_prompt},
 		{"role": "user", "content": prompt}
 	]
 	return _call_ai(messages)

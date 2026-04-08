@@ -81,7 +81,7 @@ The ROS Coder includes preset prompts for common robot behaviors:
 - **Line Following** — Follow a line on the ground using camera/sensors
 - **Patrol** — Navigate between multiple waypoints
 - **Person Following** — Detect and follow a person
-- **Navigation** — Go-to-goal navigation with obstacle avoidance
+- **Navigation** — Nav2 autonomous navigation using NavigateToPose action client, costmap navigation, and obstacle avoidance
 
 ### Architecture
 

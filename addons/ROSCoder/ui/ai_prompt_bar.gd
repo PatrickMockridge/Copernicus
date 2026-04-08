@@ -16,7 +16,7 @@ const PRESETS = {
 	"Line Following": "Generate a line following node for TurtleBot4 using rclpy. Use camera or sensor data to follow a line on the ground.",
 	"Patrol": "Generate a patrol node for TurtleBot4 using rclpy. Navigate between multiple waypoints in sequence and repeat.",
 	"Person Following": "Generate a person following node for TurtleBot4 using rclpy. Detect and track a person using camera/depth sensor and follow them.",
-	"Navigation": "Generate a navigation node for TurtleBot4 using rclpy. Use Nav2 or simple go-to-goal behavior with obstacle avoidance.",
+	"Navigation": "Generate a Nav2 autonomous navigation node for TurtleBot4 using rclpy. Use NavigateToPose action client, subscribe to /amcl/pose and /scan, publish velocity commands via cmd_vel with obstacle avoidance.",
 	"Custom": ""
 }
 
