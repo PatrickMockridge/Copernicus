@@ -116,15 +116,20 @@ ros2 topic list
 
 ## Known Issues
 
-### Godot Headless Autoload Loading (FIXED)
+### GodotROS2 Autoload Disabled (Known Limitation)
 
-When running `godot --headless` after clearing the `.godot/` cache, the `GodotROS2` autoload fails to load due to:
-1. A malformed `#[editor_plugins]` section in `project.godot`
-2. Godot 4.4 parsing commented-out autoload lines (`# GodotROS2=...`)
+The `GodotROS2` autoload is disabled in `project.godot` due to systemic issues in the `godot_ros2` addon:
 
-**Fix:** The `GodotROS2` autoload was removed from `project.godot`. The `godot_ros2` addon has pre-existing parse errors (missing `class_name` declarations for `ROS2Node`, `ROS2Executor`, etc.) and is not needed for ROS Coder operation.
+**Root Cause:** Circular type dependencies between `godot_ros2` addon files:
+- `ros2_node.gd` references `ROS2BridgeClient`, `Publisher`, `Subscription`, etc.
+- `ros2_executor.gd` references `ROS2Node`, `ROS2Future`, `ROS2Timer`
+- `ros2_bridge_client.gd` references types from `ros2_node.gd`
 
-**Note:** The `godot_ros2` addon needs separate fixing before its autoload can be restored.
+Godot 4.4's class_name resolution cannot handle these circular dependencies at load time, causing parse failures.
+
+**Workaround:** The ROS Coder does not require the `GodotROS2` autoload. It uses its own `PythonCoder` class to generate rclpy code via AI. The `GodotROS2` addon remains installed but disabled.
+
+**To re-enable:** Rewrite `godot_ros2` addon to eliminate circular dependencies (e.g., move all type definitions to the root level, or use preload-based loading instead of class_name).
 
 ### ARIADNE "Not an ARIADNE repository"
 
