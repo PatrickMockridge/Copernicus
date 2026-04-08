@@ -58,6 +58,53 @@ ROSAI (autoload)
 └── ros_ai.gd — ROS-specific behavior prompts
 ```
 
+## ROS Coder IDE
+
+The ROS Coder is a minimalist in-game IDE for writing and deploying ROS2 Python (rclpy) robot software. It generates code via AI and can deploy directly to a robot.
+
+Open via the **ROS Coder** button in the main AI panel header.
+
+### Generating Python Code
+
+1. Open ROS Coder from the main AI panel
+2. Enter a prompt like "Generate obstacle avoidance node for TurtleBot4"
+3. Click **Generate** — rclpy Python code appears in the editor
+4. Edit the code as needed
+5. Click **Run** to test locally or **Deploy** to push to the robot
+
+### Architecture
+
+```
+ROSCoder (addons/ROSCoder/)
+├── ros_coder.gd         — Main controller, split panel layout
+├── ui/
+│   ├── code_editor.gd   — CodeEdit with Python syntax highlighting
+│   ├── file_tree.gd     — Tree browser for ~/.ros_workspace/
+│   ├── ai_prompt_bar.gd — Prompt input + Generate/Run/Deploy buttons
+│   └── console_output.gd — Terminal-style output display
+└── coders/
+    └── python_coder.gd  — AI prompts for rclpy code generation
+```
+
+### Workspace
+
+The file browser shows `~/.ros_workspace/`. Set up with:
+
+```bash
+mkdir -p ~/.ros_workspace/{src,config}
+```
+
+For SSH deploy, create `~/.ros_workspace/config/robot_config.json`:
+
+```json
+{
+  "host": "192.168.1.100",
+  "port": 22,
+  "username": "robot",
+  "remote_path": "/home/robot/catkin_ws/src/"
+}
+```
+
 ## Supported Providers
 
 | Provider | Endpoint | Model |
@@ -73,3 +120,5 @@ ROSAI (autoload)
 - `addons/GameAI/core/result.gd` — Result type
 - `addons/GameAI/integrations/ros/ros_ai.gd` — ROS behavior prompts
 - `addons/primitives/env/env_service.gd` — .env loader
+- `addons/ROSCoder/ros_coder.gd` — ROS Coder main controller
+- `addons/ROSCoder/coders/python_coder.gd` — rclpy AI code generation

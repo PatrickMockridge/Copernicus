@@ -6,6 +6,7 @@ AI-powered robotics simulator in Godot 4 with ROS 2, blockchain publishing, and 
 
 - **ROS 2 Simulation** — Simulate TurtleBot4 with realistic sensor data
 - **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, wall following, patrol) via Minimax/Claude
+- **ROS Coder IDE** — Minimalist in-game IDE for writing and deploying ROS2 Python (rclpy) robot software
 - **Blockchain Publishing** — Publish robot designs permanently to Arweave
 - **Tradeable Designs** — Robot designs become transferable via AO Hyperobjects
 
@@ -30,6 +31,58 @@ The AI code agent uses Minimax (same API as Claude Code in VS Code).
    ANTHROPIC_BASE_URL=https://api.minimax.io/anthropic
    ```
 3. Run Godot and use the AI panel to generate robot behaviors
+
+## ROS Coder IDE
+
+A minimalist in-game IDE for writing and deploying ROS2 Python robot software. Click **ROS Coder** in the main AI panel header.
+
+```bash
+godot scenes/main.tscn
+# Click "ROS Coder" in the AI assistant header
+```
+
+### Layout
+
+```
+┌─────────────────────────────────────────┐
+│ FILE BROWSER │ CODE EDITOR (Python)     │
+│  ~/.ros_workspace/                      │
+├──────────────┴──────────────────────────┤
+│  Prompt: [________________] [Generate]    │
+├─────────────────────────────────────────┤
+│  CONSOLE OUTPUT                         │
+└─────────────────────────────────────────┘
+```
+
+### Generate Python Code
+
+1. Enter a prompt (e.g., "Generate obstacle avoidance node for TurtleBot4")
+2. Click **Generate** — Python rclpy code appears in editor
+3. Edit the code if needed
+
+### Run Locally
+
+Click **Run** to execute the Python code via `python3` locally.
+
+### Deploy to Robot
+
+Click **Deploy** to copy the code to the robot via SSH. Requires `~/.ros_workspace/config/robot_config.json`:
+
+```json
+{
+  "host": "192.168.1.100",
+  "port": 22,
+  "username": "robot",
+  "remote_path": "/home/robot/catkin_ws/src/"
+}
+```
+
+### Workspace Setup
+
+```bash
+mkdir -p ~/.ros_workspace/{src,config}
+# Place robot_config.json in config/ for SSH deploy
+```
 
 ## ROS 2 Bridge
 
