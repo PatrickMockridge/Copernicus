@@ -1,7 +1,11 @@
 # service_client.gd
 # ROS 2 Service Client
+#
+# NOTE: Removed cross-file type annotations to resolve Godot 4.4 parse errors.
 
 class_name ServiceClient
+
+const _ROS2_FUTURE_PATH = "res://addons/godot_ros2/core/ros2_future.gd"
 
 var _service_name: String
 var _service_type: String
@@ -22,8 +26,9 @@ func get_service_type() -> String:
 	return _service_type
 
 
-func call_service(request: Dictionary) -> ROS2Future:
-	var future = ROS2Future.new()
+func call_service(request: Dictionary):
+	var future_class = load(_ROS2_FUTURE_PATH)
+	var future = future_class.new()
 	var request_id = _generate_request_id()
 	_pending_requests[request_id] = future
 	_send_request(request_id, request)

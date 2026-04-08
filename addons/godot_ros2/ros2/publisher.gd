@@ -1,18 +1,20 @@
 # publisher.gd
 # ROS 2 Publisher
+#
+# NOTE: Removed cross-file type annotations to resolve Godot 4.4 parse errors.
 
 class_name Publisher
 
 var _topic_name: String
 var _message_type: String
-var _QoS: QoSProfile
+var _QoS
 var _message_queue: Array = []
 var _sequence_number: int = 0
-var _bridge_client: ROS2BridgeClient = null
+var _bridge_client = null
 var _use_udp: bool = true
 
 
-func _init(topic: String, msg_type: String, qos: QoSProfile) -> void:
+func _init(topic: String, msg_type: String, qos) -> void:
 	_topic_name = topic
 	_message_type = msg_type
 	_QoS = qos
@@ -26,15 +28,15 @@ func get_type() -> String:
 	return _message_type
 
 
-func get_qos() -> QoSProfile:
+func get_qos():
 	return _QoS
 
 
-func set_bridge_client(client: ROS2BridgeClient) -> void:
+func set_bridge_client(client) -> void:
 	_bridge_client = client
 
 
-func get_bridge_client() -> ROS2BridgeClient:
+func get_bridge_client():
 	return _bridge_client
 
 

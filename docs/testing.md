@@ -116,20 +116,36 @@ ros2 topic list
 
 ## Known Issues
 
-### GodotROS2 Autoload Disabled (Known Limitation)
+### GodotROS2 Autoload (Refactored for Godot 4.4)
 
-The `GodotROS2` autoload is disabled in `project.godot` due to systemic issues in the `godot_ros2` addon:
+The `godot_ros2` addon was previously disabled due to systemic circular type dependency issues in Godot 4.4. It has been **refactored** and is now **enabled**.
 
-**Root Cause:** Circular type dependencies between `godot_ros2` addon files:
-- `ros2_node.gd` references `ROS2BridgeClient`, `Publisher`, `Subscription`, etc.
-- `ros2_executor.gd` references `ROS2Node`, `ROS2Future`, `ROS2Timer`
-- `ros2_bridge_client.gd` references types from `ros2_node.gd`
+**What was fixed:**
+- Removed all cross-file type annotations from the 14 essential files
+- Deleted non-essential stub files (sensors, robots, actuators, arweave, simulators)
+- Converted typed class variables to untyped (`var _x` instead of `var _x: TypeName`)
+- Converted typed method parameters to untyped
+- Converted typed method returns to untyped
+- Used `load("path")` for dynamic instantiation
 
-Godot 4.4's class_name resolution cannot handle these circular dependencies at load time, causing parse failures.
+**Files fixed:**
+- `godot_ros2.gd` — autoload entry point
+- `core/ros2_executor.gd` — spin executor
+- `core/ros2_node.gd` — node wrapper
+- `ros2/publisher.gd`, `ros2/subscription.gd`, `ros2/service_client.gd`, `ros2/action_client.gd`
 
-**Workaround:** The ROS Coder does not require the `GodotROS2` autoload. It uses its own `PythonCoder` class to generate rclpy code via AI. The `GodotROS2` addon remains installed but disabled.
+**Files removed (stubs/unused):**
+- All sensor files (stub implementations)
+- All robot/simulation files (unused)
+- All arweave files (separate blockchain system, not ROS2)
+- `ros2/file_manager.gd` (moved to ROS Coder if needed)
+- Various stub actuator, controller, and plugin files
 
-**To re-enable:** Rewrite `godot_ros2` addon to eliminate circular dependencies (e.g., move all type definitions to the root level, or use preload-based loading instead of class_name).
+**Limitation:** The addon now uses untyped variables internally, losing compile-time type safety. Runtime behavior is unchanged.
+
+**Proper fix would require:** A complete architecture redesign that eliminates circular dependencies, or moving the ROS2 bridge to a GDExtension/C++ module.
+
+### ARIADNE "Not an ARIADNE repository"
 
 ### ARIADNE "Not an ARIADNE repository"
 

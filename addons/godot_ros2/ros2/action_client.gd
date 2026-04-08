@@ -1,7 +1,11 @@
 # action_client.gd
 # ROS 2 Action Client
+#
+# NOTE: Removed cross-file type annotations to resolve Godot 4.4 parse errors.
 
 class_name ActionClient
+
+const _ROS2_FUTURE_PATH = "res://addons/godot_ros2/core/ros2_future.gd"
 
 var _action_name: String
 var _action_type: String
@@ -22,8 +26,9 @@ func get_action_type() -> String:
 	return _action_type
 
 
-func send_goal(goal: Dictionary) -> ROS2Future:
-	var future = ROS2Future.new()
+func send_goal(goal: Dictionary):
+	var future_class = load(_ROS2_FUTURE_PATH)
+	var future = future_class.new()
 	var goal_id = _generate_goal_id()
 	_goals[goal_id] = {"future": future, "goal": goal}
 	_send_goal_to_ros(goal_id, goal)
@@ -32,7 +37,8 @@ func send_goal(goal: Dictionary) -> ROS2Future:
 
 func send_goal_with_callback(goal: Dictionary, feedback_callback: Callable, result_callback: Callable) -> String:
 	var goal_id = _generate_goal_id()
-	var future = ROS2Future.new()
+	var future_class = load(_ROS2_FUTURE_PATH)
+	var future = future_class.new()
 	_goals[goal_id] = {
 		"future": future,
 		"goal": goal,

@@ -1,18 +1,20 @@
 # subscription.gd
 # ROS 2 Subscription
+#
+# NOTE: Removed cross-file type annotations to resolve Godot 4.4 parse errors.
 
 class_name Subscription
 
 var _topic_name: String
 var _message_type: String
 var _callback: Callable
-var _QoS: QoSProfile
+var _QoS
 var _message_queue: Array = []
 var _last_message: Dictionary = {}
-var _bridge_client: ROS2BridgeClient = null
+var _bridge_client = null
 
 
-func _init(topic: String, msg_type: String, cb: Callable, qos: QoSProfile) -> void:
+func _init(topic: String, msg_type: String, cb: Callable, qos) -> void:
 	_topic_name = topic
 	_message_type = msg_type
 	_callback = cb
@@ -27,15 +29,15 @@ func get_type() -> String:
 	return _message_type
 
 
-func get_qos() -> QoSProfile:
+func get_qos():
 	return _QoS
 
 
-func set_bridge_client(client: ROS2BridgeClient) -> void:
+func set_bridge_client(client) -> void:
 	_bridge_client = client
 
 
-func get_bridge_client() -> ROS2BridgeClient:
+func get_bridge_client():
 	return _bridge_client
 
 
