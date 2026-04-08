@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bx8r2tq7yp38k"]
+
+[ext_resource type="Script" path="res://scripts/robot_viewer_controller.gd" id="1"]
+
+[node name="RobotViewer" type="Node3D"]
+script = ExtResource("1")

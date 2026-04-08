@@ -1,6 +1,27 @@
-# ROS 2 Simulation
+# ROS 2 Simulation for Copernicus
 
-ROS 2 simulator for Godot 4 with sensors, actuators, and physics.
+ROS 2 simulator for Copernicus with sensors, actuators, and Godot-native physics.
+
+> **What Copernicus IS:** A fast 3D editor for visualizing robots, testing joint configurations, and streaming sensor data to/from ROS 2.
+>
+> **What Copernicus IS NOT:** A physics research simulator. For research-grade simulation, use Isaac Sim or Gazebo. Copernicus is designed to be a design tool that exports to those full simulators.
+
+---
+
+## Godot-Native Physics
+
+Copernicus uses Godot's built-in physics nodes, not custom simulation code:
+
+| Component | Godot Node | Use Case |
+|-----------|-----------|----------|
+| Robot Base | `RigidBody3D` | Basic dynamics |
+| Wheels | `VehicleBody3D` | Differential drive |
+| Joints | `PinJoint3D`, `SliderJoint3D` | Kinematic chains |
+| Collisions | `CollisionShape3D` | Physics shapes |
+
+This approach keeps Copernicus lightweight and leverages Godot's proven physics engine.
+
+---
 
 ## Bridge Setup
 
@@ -158,6 +179,18 @@ var header = StdMsgs.create_header_now("base_link")
 var twist = GeometryMsgs.create_twist(Vector3(1.0, 0, 0), Vector3.ZERO)
 var scan = SensorMsgs.create_laserscan(header, -PI, PI, 0.01, 0.0, 0.1, 0.1, 30.0, ranges, intensities)
 ```
+
+## When to Use Copernicus vs Full Simulators
+
+| Use Case | Tool |
+|----------|------|
+| Quick robot design iteration | **Copernicus** |
+| Testing joint configurations | **Copernicus** |
+| Visualizing URDF models | **Copernicus** |
+| Sensor data streaming | **Copernicus** |
+| Research-grade physics | Isaac Sim / Gazebo |
+| Motion planning | MoveIt / Nav2 |
+| Controller development | Copernicus → full simulator |
 
 ## Troubleshooting
 

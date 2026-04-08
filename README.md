@@ -1,135 +1,157 @@
-# Robot Design Interface
+# Copernicus
 
-AI-powered robotics simulator in Godot 4 with ROS 2, blockchain publishing, and AI code generation.
+## Robot Design Interface
+
+> *"In the middle of difficulty lies opportunity."* — Albert Einstein
+
+AI-powered robotics design interface in Godot 4 with ROS 2, blockchain publishing, and AI code generation. Named **Copernicus** after the astronomer who placed the Sun at the center of the solar system — just as this project places the **open-source community** at the center of robot development.
+
+---
+
+## The Copernican Philosophy
+
+### Why Open Source Robotics?
+
+Robotics has been dominated by closed, proprietary systems:
+- **Expensive licenses** restrict who can participate
+- **Black-box simulators** hide the math
+- **Single-vendor lock-in** stifles innovation
+- **Fragmented tools** prevent sharing
+
+Just as NVIDIA uses Unity for Isaac Sim, Copernicus uses [Godot](https://godotengine.org/) — but with a fundamentally different philosophy:
+
+```
+        Proprietary Tools
+              ↓
+         ┌─────────┐
+         │ CLOSED  │   ← Old model: exclusive, expensive
+         └─────────┘
+              ↓
+    ┌─────────────────────┐
+    │     COPERNICUS      │   ← New model: open, modular, yours
+    │  ┌───────────────┐  │
+    │  │   Community   │  │
+    │  │    ↺ Fork     │  │
+    │  │    ↻ PRs      │  │
+    │  │    ↻ Modules  │  │
+    │  └───────────────┘  │
+    └─────────────────────┘
+              ↓
+         Everyone
+```
+
+### Godot-Native Approach
+
+Copernicus doesn't fight Godot — it embraces what Godot does well:
+
+| Strength | Use Case |
+|----------|----------|
+| 3D Rendering | Robot meshes, materials, lighting |
+| UI System | Joint sliders, control panels |
+| Scene Tree | Robot hierarchy, kinematic chains |
+| Native Physics | VehicleBody3D, joints, basic simulation |
+| ROS2 Bridge | Sensor streaming to external tools |
+
+**Copernicus is NOT:**
+- A physics research simulator (use Isaac Sim/Gazebo)
+- An IK solver (use MoveIt)
+- A motion planner (use Nav2)
+
+**Copernicus IS:**
+- A fast 3D editor for visualizing robot models
+- An interactive tool for testing joint configurations
+- A ROS2 data source for sensor streams
+- A design viewer that exports to full simulators
+
+---
 
 ## Features
 
-- **ROS 2 Simulation** — Simulate TurtleBot4 with realistic sensor data
-- **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, wall following, patrol) via Minimax/Claude
-- **ROS Coder IDE** — Minimalist in-game IDE for writing and deploying ROS2 Python (rclpy) robot software
+- **URDF Visualizer** — Parse and visualize robot models from URDF files
+- **Interactive Joint Control** — Real-time joint manipulation via sliders
+- **Physics Demo** — Differential drive using Godot's VehicleBody3D
+- **Sensor Debug Visualization** — LIDAR rays, camera frustum, IMU axes
+- **ROS 2 Bridge** — Sensor data streaming to/from external tools
+- **AI Code Agent** — Generate GDScript behaviors (obstacle avoidance, patrol)
+- **ROS Coder IDE** — In-game IDE for writing ROS2 Python (rclpy) software
 - **Blockchain Publishing** — Publish robot designs permanently to Arweave
 - **Tradeable Designs** — Robot designs become transferable via AO Hyperobjects
+
+---
 
 ## Quick Start
 
 ```bash
+# Clone
 git clone https://codeberg.org/PatrickM123/Godot_4__Robotic_Design_Interface.git
 cd Godot_4__Robotic_Design_Interface
-cp .env.example .env
-# Add your Minimax API key to .env
-godot
-```
 
-## AI Setup
+# Run robot viewer
+godot scenes/robot_viewer.tscn
 
-The AI code agent uses Minimax (same API as Claude Code in VS Code).
+# Run physics demo (WASD controls)
+godot scenes/physics_demo.tscn
 
-1. Copy `.env.example` to `.env`
-2. Add your API key:
-   ```
-   ANTHROPIC_API_KEY=your_key_here
-   ANTHROPIC_BASE_URL=https://api.minimax.io/anthropic
-   ```
-3. Run Godot and use the AI panel to generate robot behaviors
-
-## ROS Coder IDE
-
-A minimalist in-game IDE for writing and deploying ROS2 Python robot software. Click **ROS Coder** in the main AI panel header.
-
-```bash
+# Run main interface
 godot scenes/main.tscn
-# Click "ROS Coder" in the AI assistant header
 ```
 
-### Layout
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ FILE BROWSER │ CODE EDITOR (Python with syntax highlighting)  │
-│  ~/.ros_workspace/                                              │
-├──────────────┴─────────────────────────────────────────────────┤
-│  [Preset ▼] Prompt: [________________] [Generate] [Run] [Save]│
-│                                       [Launch] [Deploy]         │
-├─────────────────────────────────────────────────────────────────┤
-│  CONSOLE OUTPUT                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Generate Python Code
-
-1. Select a preset (Obstacle Avoidance, Wall Following, Patrol, etc.) or enter a custom prompt
-2. Click **Generate** — Python rclpy code appears in editor with syntax highlighting
-3. Edit the code if needed
-4. Click **Run** to test locally, **Save** to save to workspace, or **Deploy** to push to the robot
-5. Click **Launch** to generate a Python-based ROS2 launch file
-
-### Run Locally
-
-Click **Run** to execute the Python code via `python3` locally.
-
-### Deploy to Robot
-
-Click **Deploy** to copy the code to the robot via SSH. Requires `~/.ros_workspace/config/robot_config.json`:
-
-```json
-{
-  "host": "192.168.1.100",
-  "port": 22,
-  "username": "robot",
-  "remote_path": "/home/robot/catkin_ws/src/"
-}
-```
-
-### Workspace Setup
-
-```bash
-mkdir -p ~/.ros_workspace/{src,config}
-# Place robot_config.json in config/ for SSH deploy
-```
-
-## ROS 2 Bridge
-
-```bash
-# Build the bridge
-cd ~/ros2_ws
-source /opt/ros/jazzy/setup.bash
-colcon build --packages-select godot_ros2_bridge
-source install/setup.sh
-
-# Run
-export ROS_DOMAIN_ID=0
-ros2 run godot_ros2_bridge godot_bridge_node
-
-# In another terminal
-cd Godot_4__Robotic_Design_Interface
-godot
-```
+---
 
 ## Architecture
 
 ```
-Robot Design Interface
-├─────────────────────────────────────────────────────────────┐
+Copernicus / Robot Design Interface
+├──────────────────────────────────────────────────────────────┐
 │  UI Layer (Godot Controls)                                   │
-│  ├── AI behavior generation (GameAI SDK)                      │
-│  ├── Robot spawner (TurtleBot4)                              │
-│  ├── Simulation controls (play/pause/reset)                   │
+│  ├── Robot viewer with orbit camera                           │
+│  ├── Joint control panels (sliders)                          │
+│  ├── Physics demo with VehicleBody3D                         │
 │  └── ROS 2 Bridge controls                                   │
-├─────────────────────────────────────────────────────────────┤
-│  AI Layer                                                   │
-│  ├── GameAI — Chat/completion via Minimax                   │
-│  └── ROSAI — ROS-specific behavior prompts                  │
-├─────────────────────────────────────────────────────────────┤
-│  Simulation Layer                                            │
-│  ├── GodotROS2 SDK — Sensors, actuators, physics            │
-│  ├── TurtleBot4 — Real robot models                         │
-│  └── ROS 2 Bridge — TCP/UDP communication                   │
-├─────────────────────────────────────────────────────────────┤
-│  Blockchain Layer                                            │
+├──────────────────────────────────────────────────────────────┤
+│  Godot-Native Modules                                        │
+│  ├── URDF Importer → Godot scene tree                       │
+│  ├── Skeleton3D / Joint3D for kinematics                    │
+│  ├── VehicleBody3D for differential drive                    │
+│  └── MeshInstance3D for visuals                              │
+├──────────────────────────────────────────────────────────────┤
+│  AI Layer (Optional)                                          │
+│  ├── GameAI — Chat/completion via Minimax                    │
+│  └── ROSAI — ROS-specific behavior prompts                   │
+├──────────────────────────────────────────────────────────────┤
+│  ROS 2 Bridge                                                │
+│  ├── TCP/UDP communication                                   │
+│  └── sensor_msgs / geometry_msgs                             │
+├──────────────────────────────────────────────────────────────┤
+│  Blockchain Layer (Optional)                                  │
 │  ├── ARIADNE — Git-on-Arweave (permanent storage)           │
 │  └── AO Hyperobjects — Ownership and trading                │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Modular by Design
+
+Copernicus is designed to be extended:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Copernicus                                │
+│  ┌───────────┐ ┌───────────┐ ┌───────────────────────────┐ │
+│  │ URDF      │ │ Physics   │ │ ROS2                      │ │
+│  │ Importer  │ │ Demo      │ │ Bridge                    │ │
+│  └───────────┘ └───────────┘ └───────────────────────────┘ │
+│  ┌───────────┐ ┌───────────┐ ┌───────────────────────────┐ │
+│  │ Joint     │ │ Sensor    │ │ Hyperobject               │ │
+│  │ Control   │ │ Debug     │ │ Trade Assets              │ │
+│  └───────────┘ └───────────┘ └───────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**Fork it. Extend it. Make it yours.**
+
+---
 
 ## ROS 2 Topics
 
@@ -140,9 +162,7 @@ Robot Design Interface
 | `/turtlebot4/imu` | sensor_msgs/Imu | IMU data |
 | `/turtlebot4/cmd_vel` | geometry_msgs/Twist | Velocity command |
 
-## Testing
-
-See [Testing](docs/testing.md) for test procedures and known issues.
+---
 
 ## Documentation
 
@@ -152,6 +172,19 @@ See [Testing](docs/testing.md) for test procedures and known issues.
 - [ROS 2 Simulation](docs/simulation.md)
 - [Testing](docs/testing.md)
 
+---
+
+## Contributing
+
+1. **Fork** the repository
+2. **Create** your module in a clean, self-contained way
+3. **Submit** a PR with a clear description
+4. **Join** the discussion
+
+Every contribution makes robotics more accessible.
+
+---
+
 ## Requirements
 
 | Component | Version |
@@ -159,3 +192,7 @@ See [Testing](docs/testing.md) for test procedures and known issues.
 | Godot | 4.4+ |
 | ROS 2 | Jazzy or Humble |
 | Node.js | 22+ (for ARIADNE CLI) |
+
+---
+
+**Copernicus: Robot design for the many, not the few.**
