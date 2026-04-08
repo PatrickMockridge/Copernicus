@@ -215,4 +215,19 @@ Every contribution makes robotics more accessible.
 
 ---
 
+## License
+
+Copernicus is distributed under the **GNU Affero General Public License v3 (AGPLv3)**.
+
+See [LICENSE](LICENSE) for the full license text and ethical statement.
+
+**In short:**
+- You can use, modify, and distribute Copernicus freely
+- If you distribute it (including over a network), you must release source under AGPL
+- Derivative works must also be AGPL
+
+**Ethical Note:** We believe robotics should expand human capability, solve real problems, and respect autonomy. We acknowledge that any technology can be misused — we cannot stop bad actors. But by making this software open, we choose to trust the many over controlling the few.
+
+---
+
 **Copernicus: Robot design for the many, not the few.**

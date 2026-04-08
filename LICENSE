@@ -1,0 +1,130 @@
+# Copernicus - License and Ethical Statement
+
+---
+
+## Ethical Preamble
+
+Copernicus is built on a simple belief: **robotics belongs to everyone**.
+
+This project was created to democratize robot design — to give hobbyists, students, researchers, and small companies access to tools that were previously locked behind proprietary systems and expensive licenses.
+
+We believe robotics should be used to:
+
+- **Expand human capability** — Helping people do more, not replacing them
+- **Solve real problems** — Healthcare, accessibility, environment, education
+- **Enable creativity** — Art, exploration, discovery
+- **Strengthen communities** — Shared knowledge, collaborative development
+- **Respect autonomy** — Robots should serve humans, not control them
+
+**We acknowledge that any technology can be misused.** Robotics has applications in warfare, surveillance, and oppression. We cannot stop bad actors, and we won't pretend we can.
+
+**But we can set a tone.** By making this software free and open, we choose to trust the many over to control the few. We believe that open development, transparency, and community oversight do more for ethical robotics than restrictions ever could.
+
+This is not a legal restriction. This is a statement of values.
+
+---
+
+## GNU AFFERO GENERAL PUBLIC LICENSE
+
+_Version 3, 19 November 2007_
+
+_Copernicus is distributed under the terms of AGPLv3 (see below)._
+
+---
+
+### Preamble
+
+The GNU Affero General Public License is a free, copyleft license for software, and especially suitable for network use.
+
+The licenses for most software and other practical works are designed to take away your freedom to share and change the works. By contrast, the GNU Affero General Public License is intended to guarantee your freedom to share and change all versions of a program—to make sure it remains free software for all its users.
+
+When we speak of free software, we are referring to freedom, not price. Our General Public Licenses are designed to make sure that you have the freedom to distribute copies of free software (and charge for them if you wish), that you receive source code or can get it if you want it, that you can change the software or use pieces of it in new free programs, and that you know you can do these things.
+
+As a complement to the Ethical Preamble above, this license ensures that:
+1. The community always has access to the source code
+2. Any modifications to the software (including for proprietary systems) must be released under AGPL
+3. Users can run, study, share, and improve the software
+
+---
+
+## TERMS AND CONDITIONS
+
+### 0. Definitions
+
+"This License" refers to version 3 of the GNU Affero General Public License.
+
+"Copyright" also means copyright-like laws that apply to other kinds of works.
+
+"The Program" refers to any copyrightable work licensed under this License.
+
+---
+
+### 1. Source Code
+
+The "source code" for a work means the preferred form of the work for making modifications to it.
+
+---
+
+### 2. Basic Permissions
+
+All rights granted under this License are granted for the term of copyright on the Program, and are irrevocable provided the stated conditions are met.
+
+An exception is granted for uses that comply with the Ethical Preamble above.
+
+---
+
+### 3. Protecting Users' Legal Rights From Anti-Circumvention Law
+
+No covered work shall be deemed part of an effective technological measure under any applicable law fulfilling obligations under article 11 of the WIPO copyright treaty adopted on 20 December 1996, or similar laws prohibiting or restricting circumvention of such measures.
+
+---
+
+### 4. Conveying Verbatim Copies
+
+You may convey verbatim copies of the Program's source code as you receive it, in any medium, provided that you conspicuously and appropriately publish on each copy an appropriate copyright notice.
+
+---
+
+### 5. Conveying Modified Source Code
+
+You may convey a work based on the Program, or the modifications to produce it from the Program, in the form of source code under the terms of section 4.
+
+---
+
+### 6. Conveying Non-Source Forms
+
+You may convey a non-source form of the Program, provided you accompany it with the complete corresponding machine-readable source code.
+
+---
+
+### 7. Additional Permissions
+
+Additional permissions are terms that supplement the terms of this License by making exceptions from one or more of its conditions.
+
+---
+
+### 8. Termination
+
+You may not propagate or modify the Program except as expressly provided under this License.
+
+---
+
+### 9. No Warranty
+
+THE PROGRAM IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+---
+
+### 10. Waiver of Infringement Claims
+
+You may not assert patent claims against the Program.
+
+---
+
+## SEE ALSO
+
+GNU Affero General Public License: https://www.gnu.org/licenses/agpl-3.0.en.html
+
+---
+
+**Copernicus: Robot design for the many, not the few.**
