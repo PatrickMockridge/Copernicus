@@ -72,6 +72,14 @@ ROS2 Python Coder window opens with:
 - Placeholder Python code in editor on first open
 ```
 
+**Verified working (headless mode):**
+- Scene loads without errors
+- Generate launch file produces valid Python launch code
+- Run executes Python code locally via `python3`
+- Save writes to selected workspace file
+- Deploy constructs SSH command correctly (needs real robot config to test fully)
+- Python syntax highlighting via `set_language("python")` works
+
 ### ROS 2 Bridge
 
 ```bash
@@ -103,7 +111,7 @@ ros2 topic list
 | `addons/ROSCoder/ui/ai_prompt_bar.gd` | Preset selector + action buttons |
 | `addons/ROSCoder/ui/file_tree.gd` | Workspace file browser |
 | `addons/ROSCoder/ui/console_output.gd` | Terminal-style console |
-| `addons/ROSCoder/ui/python_syntax_highlighter.gd` | Python syntax highlighting (unused - API mismatch) |
+| `addons/ROSCoder/ui/python_syntax_highlighter.gd` | Python syntax highlighting (optional - CodeEdit has built-in `set_language("python")`) |
 | `addons/ROSCoder/coders/python_coder.gd` | AI code generation for rclpy |
 
 ## Known Issues
