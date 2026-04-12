@@ -43,6 +43,9 @@ The conceptual foundation: why open source, why Godot, why modular.
 ### [Architecture](architecture.md)
 System design and module relationships.
 
+### [Physics Backends](physics-backends.md)
+Optional physics engines: Godot Native or PyBullet.
+
 ### [Blockchain](blockchain.md)
 ARIADNE git-on-Arweave and AO Hyperobjects for trading robot designs.
 
