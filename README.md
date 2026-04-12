@@ -18,7 +18,8 @@ godot scenes/physics_demo.tscn   # VehicleBody3D with WASD controls
 
 - **3D Robot Visualization** — URDF import, orbit camera, joint inspection
 - **Interactive Joint Control** — Real-time joint manipulation via sliders
-- **Physics Simulation** — Godot VehicleBody3D (native) or PyBullet backend
+- **Physics Simulation** — Godot VehicleBody3D (native), PyBullet, or PyBullet CUDA (GPU)
+- **GPU Acceleration** — CUDA physics, PyTorch DQN reinforcement learning, GPU raycasting
 - **ROS 2 Integration** — TCP/UDP bridge for sensor streaming and control
 - **IK Solver Plugins** — Analytical (CCD, FABRIK) or MoveIt via ROS 2
 - **Navigation Plugins** — A* Grid (pure GDScript) or Nav2 via ROS 2
@@ -32,7 +33,8 @@ Copernicus uses a modular plugin architecture with swappable backends:
 
 | Component | Plugin Options |
 |-----------|---------------|
-| Physics | Godot Native (VehicleBody3D), PyBullet |
+| Physics | Godot Native (VehicleBody3D), PyBullet, PyBullet CUDA (GPU) |
+| GPU Acceleration | PyTorch Q-Learning (DQN), Compute Raycast (LIDAR/Camera) |
 | IK Solver | Analytical (CCD/FABRIK), MoveIt (ROS 2) |
 | Navigation | A* Grid, Nav2 (ROS 2) |
 | Marketplace | AO Hyperobjects, Mock (testing) |
@@ -48,6 +50,7 @@ Copernicus uses a modular plugin architecture with swappable backends:
 ## Documentation
 
 - [Quick Start Guide](docs/quick-start.md) — Turtle demo and getting started
+- [GPU Acceleration](docs/gpu-acceleration.md) — CUDA physics, DQN learning, GPU raycasting
 - [Marketplace](docs/marketplace.md) — Decentralized asset trading
 - [Physics Backends](docs/physics-backends.md)
 - [IK Solvers](docs/ik-solver.md)

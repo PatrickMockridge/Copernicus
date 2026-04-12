@@ -46,6 +46,9 @@ System design and module relationships.
 ### [Physics Backends](physics-backends.md)
 Optional physics engines: Godot Native or PyBullet.
 
+### [GPU Acceleration](gpu-acceleration.md)
+GPU-accelerated physics, Q-learning, and sensor processing via CUDA.
+
 ### [IK Solver](ik-solver.md)
 Optional IK solvers: Analytical (CCD, FABRIK) or MoveIt via ROS2.
 
