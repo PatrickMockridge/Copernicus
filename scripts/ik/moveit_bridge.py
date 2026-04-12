@@ -167,3 +167,46 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+class MoveItBridgeStandalone:
+    """Standalone bridge for temp file IPC (used by Godot GDScript)"""
+
+    def __init__(self, robot_description: str = "robot_description", group: str = "manipulator"):
+        self._last_response = {"status": "error", "message": "Not initialized"}
+        self._ros_initialized = False
+
+        try:
+            if not rclpy.ok():
+                rclpy.init(args=None)
+            self._bridge = MoveItBridge(robot_description, group)
+            self._ros_initialized = True
+        except Exception as e:
+            self._last_response = {"status": "error", "message": f"ROS init failed: {str(e)}"}
+            self._bridge = None
+
+    def process_command(self, cmd: dict):
+        """Process a command and store result"""
+        if not self._ros_initialized or self._bridge is None:
+            self._last_response = {"status": "error", "message": "ROS2/MoveIt not available"}
+            return
+
+        command = cmd.get("cmd", "")
+
+        try:
+            if command == "solve_ik":
+                target = cmd.get("target_position", [0, 0, 0])
+                timeout = cmd.get("timeout", 0.5)
+                self._last_response = self._bridge.solve_ik(target, timeout)
+
+            elif command == "shutdown":
+                self._last_response = {"status": "ok", "cmd": "shutdown"}
+
+            else:
+                self._last_response = {"status": "error", "message": f"Unknown command: {command}"}
+
+        except Exception as e:
+            self._last_response = {"status": "error", "message": str(e)}
+
+    def get_response(self) -> dict:
+        return self._last_response

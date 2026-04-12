@@ -134,23 +134,62 @@ func clear_costmap() -> void:
 ## ===== Communication =====
 
 func _send_request(request: Dictionary) -> Dictionary:
-	var json_str = JSON.stringify(request)
+	# Use temp file IPC pattern (same as PyBullet)
+	var temp_dir = "/tmp/copernicus_nav2_%d" % OS.get_process_id()
+	var cmd_file = temp_dir + "/cmd.json"
+	var resp_file = temp_dir + "/resp.json"
 
-	# Try to find running nav2_bridge process
-	var args = ["service", "call", "/nav2_bridge/request", "std_srvs/srv/Empty", "{data: '" + json_str + "'}"]
+	# Create temp directory
+	OS.execute("mkdir", ["-p", temp_dir], [], true)
+
+	# Write command to temp file
+	var f = FileAccess.open(cmd_file, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(request))
+		f.close()
+	else:
+		return {"status": "error", "message": "Failed to write command"}
+
+	# Execute Python bridge to process command
+	var script_path = ProjectSettings.globalize_path("res://scripts/nav/nav2_bridge.py")
+	var escaped_cmd = cmd_file.replace("\\", "\\\\").replace("'", "\\'")
+	var escaped_script = script_path.replace("\\", "\\\\").replace("'", "\\'")
 
 	var output = []
-	var _result = OS.execute("ros2", args, output, true, true)
+	var result = OS.execute("python3", ["-c", """
+import sys, os, json
+sys.path.insert(0, os.path.dirname('%s'))
 
-	# Parse output - expected JSON response
-	if output.size() > 0:
-		var output_str = output[0]
-		# Extract JSON from output
-		var json_match = output_str.strip_edges()
-		if json_match.begins_with("{"):
-			var json_result = JSON.parse_string(output_str)
-			if json_result is Dictionary:
-				return json_result
+# Import the bridge module
+import importlib.util
+spec = importlib.util.spec_from_file_location('nav2_bridge', '%s')
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+# Read command
+with open('%s', 'r') as f:
+    cmd = json.load(f)
+
+# Create bridge and process command
+bridge = module.Nav2BridgeStandalone()
+bridge.process_command(cmd)
+
+# Write response
+with open('%s', 'w') as f:
+    json.dump(bridge._last_response, f)
+""" % (escaped_script, escaped_script, escaped_cmd, resp_file.replace("\\", "\\\\").replace("'", "\\'"))], output, true)
+
+	# Read response from temp file
+	f = FileAccess.open(resp_file, FileAccess.READ)
+	if f:
+		var content = f.get_as_text()
+		f.close()
+		var parsed = JSON.parse_string(content)
+		if parsed is Dictionary:
+			return parsed
+
+	# Clean up
+	OS.execute("rm", ["-rf", temp_dir], [], true)
 
 	return {"status": "error", "message": "No response from nav2_bridge"}
 

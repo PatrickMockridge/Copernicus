@@ -236,3 +236,61 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+class Nav2BridgeStandalone:
+    """Standalone bridge for temp file IPC (used by Godot GDScript)"""
+
+    def __init__(self):
+        self._last_response = {"status": "error", "message": "Not initialized"}
+        self._ros_initialized = False
+
+        try:
+            if not rclpy.ok():
+                rclpy.init(args=sys.argv)
+            self._node = Nav2Bridge()
+            self._ros_initialized = True
+        except Exception as e:
+            self._last_response = {"status": "error", "message": f"ROS init failed: {str(e)}"}
+            self._node = None
+
+    def process_command(self, cmd: dict):
+        """Process a command and store result"""
+        if not self._ros_initialized or self._node is None:
+            self._last_response = {"status": "error", "message": "ROS2 not initialized"}
+            return
+
+        command = cmd.get("cmd", "")
+
+        try:
+            if command == "plan":
+                start = cmd.get("start", [0, 0, 0])
+                goal = cmd.get("goal", [0, 0, 0])
+                planner_id = cmd.get("planner_id", "GridBased")
+                self._last_response = self._node.compute_path(start, goal, planner_id)
+
+            elif command == "localize":
+                pos = cmd.get("position", [0, 0, 0])
+                rot = cmd.get("rotation", [0, 0, 0])
+                self._last_response = self._node.localize_robot(pos, rot)
+
+            elif command == "clear_costmap":
+                self._last_response = self._node.clear_costmap()
+
+            elif command == "start":
+                self._last_response = self._node.start_navigation()
+
+            elif command == "stop":
+                self._last_response = self._node.stop_navigation()
+
+            elif command == "shutdown":
+                self._last_response = {"status": "ok", "cmd": "shutdown"}
+
+            else:
+                self._last_response = {"status": "error", "message": f"Unknown command: {command}"}
+
+        except Exception as e:
+            self._last_response = {"status": "error", "message": str(e)}
+
+    def get_response(self) -> dict:
+        return self._last_response
