@@ -53,9 +53,9 @@ Copernicus doesn't fight Godot — it embraces what Godot does well:
 | ROS2 Bridge | Sensor streaming to external tools |
 
 **Copernicus is NOT:**
-- A physics research simulator (use Isaac Sim/Gazebo)
-- An IK solver (use MoveIt)
-- A motion planner (use Nav2)
+- A physics research simulator (use Isaac Sim/Gazebo) — but has Godot native + PyBullet plugin
+- An IK solver (use MoveIt) — but has Analytical IK + MoveIt plugin
+- A motion planner (use Nav2) — but has A* Grid + Nav2 plugin
 
 **Copernicus IS:**
 - A fast 3D editor for visualizing robot models
@@ -76,6 +76,9 @@ Copernicus doesn't fight Godot — it embraces what Godot does well:
 - **ROS Coder IDE** — In-game IDE for writing ROS2 Python (rclpy) software
 - **Blockchain Publishing** — Few clicks to publish your robot to Arweave
 - **AO Hyperobjects** — Trade robot designs as ownership-verifiable assets
+- **Navigation Plugins** — A* Grid (pure GDScript) and Nav2 (ROS2) path planners
+- **IK Solver Plugins** — Analytical (CCD/FABRIK) and MoveIt (ROS2)
+- **Physics Backend Plugins** — Godot native and PyBullet backends
 
 ---
 
@@ -134,21 +137,30 @@ Copernicus / Robot Design Interface
 
 ## Modular by Design
 
-Copernicus is designed to be extended:
+Copernicus is designed to be extended with swappable plugin backends:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Copernicus                                │
 │  ┌───────────┐ ┌───────────┐ ┌───────────────────────────┐ │
 │  │ URDF      │ │ Physics   │ │ ROS2                      │ │
-│  │ Importer  │ │ Demo      │ │ Bridge                    │ │
+│  │ Importer  │ │ Backend   │ │ Bridge                    │ │
 │  └───────────┘ └───────────┘ └───────────────────────────┘ │
 │  ┌───────────┐ ┌───────────┐ ┌───────────────────────────┐ │
-│  │ Joint     │ │ Sensor    │ │ Hyperobject               │ │
-│  │ Control   │ │ Debug     │ │ Trade Assets              │ │
+│  │ Joint     │ │ IK Solver │ │ Navigation               │ │
+│  │ Control   │ │ Backend   │ │ Planner                  │ │
+│  └───────────┘ └───────────┘ └───────────────────────────┘ │
+│  ┌───────────┐ ┌───────────┐ ┌───────────────────────────┐ │
+│  │ Sensor    │ │ Hyperobject│ │ ROS Coder IDE           │ │
+│  │ Debug     │ │ Trade      │ │                          │ │
 │  └───────────┘ └───────────┘ └───────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**Each backend has a swappable interface:**
+- **Physics:** Godot Native (VehicleBody3D) or PyBullet
+- **IK Solver:** Analytical (CCD/FABRIK) or MoveIt (ROS2)
+- **Navigation:** A* Grid or Nav2 (ROS2)
 
 **Fork it. Extend it. Make it yours.**
 
@@ -191,6 +203,9 @@ var result = IDEIntegration.quick_publish(files, "MyRobot", "A differential driv
 - [Blockchain](docs/blockchain.md)
 - [ROS 2 Simulation](docs/simulation.md)
 - [Testing](docs/testing.md)
+- [Physics Backends](docs/physics-backends.md)
+- [IK Solvers](docs/ik-solver.md)
+- [Navigation Planners](docs/nav-planner.md)
 
 ---
 
