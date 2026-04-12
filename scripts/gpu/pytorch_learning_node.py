@@ -192,6 +192,254 @@ class LearningNode:
         return ranges
 
 
+class ActorCritic(nn.Module):
+    """Actor-Critic network for PPO"""
+    def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 128):
+        super().__init__()
+        self.actor = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, action_dim)
+        )
+        self.critic = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)
+        )
+
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        action_logits = self.actor(x)
+        value = self.critic(x)
+        return action_logits, value
+
+
+class PPONode:
+    """PPO implementation for policy gradient RL"""
+    def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 128, device: str = "cpu"):
+        self.device = torch.device(device if torch.cuda.is_available() else "cpu")
+        self.policy = ActorCritic(state_dim, action_dim, hidden_dim).to(self.device)
+        self.old_policy = ActorCritic(state_dim, action_dim, hidden_dim).to(self.device)
+        self.old_policy.load_state_dict(self.policy.state_dict())
+        self.optimizer = optim.Adam(self.policy.parameters(), lr=0.0003)
+        self.gamma = 0.99
+        self.epsilon_clip = 0.2
+        self.gae_lambda = 0.95
+        self.update_epochs = 10
+
+    def get_action(self, observations: List[float], deterministic: bool = False) -> Dict:
+        with torch.no_grad():
+            state = torch.FloatTensor(observations).unsqueeze(0).to(self.device)
+            action_logits, value = self.policy(state)
+            probs = torch.softmax(action_logits, dim=-1)
+            if deterministic:
+                action = probs.argmax().item()
+            else:
+                dist = torch.distributions.Categorical(probs)
+                action = dist.sample().item()
+            log_prob = torch.log(probs[0, action] + 1e-8).item()
+        return {"action": action, "log_prob": log_prob, "value": value.item()}
+
+    def train_step(self, cmd: Dict) -> Dict:
+        observations = cmd.get("observations", [])
+        actions = cmd.get("actions", [])
+        rewards = cmd.get("rewards", [])
+        old_log_probs = cmd.get("old_log_probs", [])
+        values = cmd.get("values", [])
+        dones = cmd.get("dones", [])
+        gamma = cmd.get("gamma", 0.99)
+        epsilon_clip = cmd.get("epsilon_clip", 0.2)
+        gae_lambda = cmd.get("gae_lambda", 0.95)
+
+        if not observations:
+            return {"status": "ok", "loss": 0.0, "entropy": 0.0, "mean_reward": 0.0}
+
+        states = torch.FloatTensor(observations).to(self.device)
+        actions_t = torch.LongTensor(actions).to(self.device)
+        old_log_probs_t = torch.FloatTensor(old_log_probs).to(self.device)
+        rewards_t = torch.FloatTensor(rewards).to(self.device)
+        dones_t = torch.FloatTensor(dones).to(self.device)
+
+        action_logits, values_pred = self.policy(states)
+        dist = torch.distributions.Categorical(torch.softmax(action_logits, dim=-1))
+        new_log_probs = dist.log_prob(actions_t)
+        entropy = dist.entropy().mean().item()
+
+        ratio = torch.exp(new_log_probs - old_log_probs_t)
+        advantages = rewards_t - values_pred.detach().mean()
+        surr1 = ratio * advantages
+        surr2 = torch.clamp(ratio, 1.0 - epsilon_clip, 1.0 + epsilon_clip) * advantages
+        loss = -torch.min(surr1, surr2).mean() - 0.01 * entropy
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        mean_reward = rewards_t.mean().item() if len(rewards) > 0 else 0.0
+        return {"status": "ok", "loss": loss.item(), "entropy": entropy, "mean_reward": mean_reward}
+
+
+class SACNode:
+    """SAC implementation for off-policy policy gradient RL"""
+    def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 128, device: str = "cpu"):
+        self.device = torch.device(device if torch.cuda.is_available() else "cpu")
+        self.action_dim = action_dim
+        self.gamma = 0.99
+        self.tau = 0.005
+        self.alpha = 0.2
+        self.auto_alpha = True
+
+        # Actor network
+        self.actor = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, action_dim)
+        ).to(self.device)
+
+        # Twin Q networks
+        self.q1 = nn.Sequential(
+            nn.Linear(state_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)
+        ).to(self.device)
+        self.q2 = nn.Sequential(
+            nn.Linear(state_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)
+        ).to(self.device)
+
+        self.target_q1 = nn.Sequential(
+            nn.Linear(state_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)
+        ).to(self.device)
+        self.target_q2 = nn.Sequential(
+            nn.Linear(state_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)
+        ).to(self.device)
+        self.target_q1.load_state_dict(self.q1.state_dict())
+        self.target_q2.load_state_dict(self.q2.state_dict())
+
+        self.actor_opt = optim.Adam(self.actor.parameters(), lr=0.0003)
+        self.q_opt = optim.Adam(list(self.q1.parameters()) + list(self.q2.parameters()), lr=0.0003)
+        self.log_alpha = torch.tensor([math.log(0.2)], requires_grad=True, device=self.device)
+        self.alpha_opt = optim.Adam([self.log_alpha], lr=0.0003)
+
+    def get_action(self, observations: List[float], deterministic: bool = False) -> Dict:
+        with torch.no_grad():
+            state = torch.FloatTensor(observations).unsqueeze(0).to(self.device)
+            action_logits = self.actor(state)
+            probs = torch.softmax(action_logits, dim=-1)
+            if deterministic:
+                action = probs.argmax().item()
+            else:
+                dist = torch.distributions.Categorical(probs)
+                action = dist.sample().item()
+            log_prob = torch.log(probs[0, action] + 1e-8).item()
+        return {"action": action, "log_prob": log_prob}
+
+    def train_step(self, cmd: Dict) -> Dict:
+        observations = cmd.get("observations", [])
+        actions = cmd.get("actions", [])
+        rewards = cmd.get("rewards", [])
+        next_observations = cmd.get("next_observations", [])
+        dones = cmd.get("dones", [])
+        gamma = cmd.get("gamma", 0.99)
+        tau = cmd.get("tau", 0.005)
+
+        if not observations:
+            return {"status": "ok", "loss": 0.0, "entropy": 0.0, "mean_reward": 0.0}
+
+        states = torch.FloatTensor(observations).to(self.device)
+        actions_t = torch.LongTensor(actions).to(self.device)
+        rewards_t = torch.FloatTensor(rewards).to(self.device)
+        next_states = torch.FloatTensor(next_observations).to(self.device)
+        dones_t = torch.FloatTensor(dones).to(self.device)
+
+        # Update Q networks
+        with torch.no_grad():
+            next_action_logits = self.actor(next_states)
+            next_probs = torch.softmax(next_action_logits, dim=-1)
+            next_log_probs = torch.log(next_probs + 1e-8)
+            next_q = torch.min(self.target_q1(torch.cat([next_states, next_probs], dim=1)),
+                              self.target_q2(torch.cat([next_states, next_probs], dim=1)))
+            target_q = rewards_t.unsqueeze(1) + gamma * (1 - dones_t.unsqueeze(1)) * next_q
+
+        q1_values = self.q1(torch.cat([states, F.one_hot(actions_t, self.action_dim).float()], dim=1))
+        q2_values = self.q2(torch.cat([states, F.one_hot(actions_t, self.action_dim).float()], dim=1))
+        q1_loss = F.mse_loss(q1_values, target_q)
+        q2_loss = F.mse_loss(q2_values, target_q)
+        q_loss = q1_loss + q2_loss
+
+        self.q_opt.zero_grad()
+        q_loss.backward()
+        self.q_opt.step()
+
+        # Update actor
+        action_logits = self.actor(states)
+        probs = torch.softmax(action_logits, dim=-1)
+        log_probs = torch.log(probs + 1e-8)
+        q_values = torch.min(self.q1(torch.cat([states, probs], dim=1)),
+                            self.q2(torch.cat([states, probs], dim=1)))
+        actor_loss = -(q_values.mean() + self.alpha * log_probs.mean())
+
+        self.actor_opt.zero_grad()
+        actor_loss.backward()
+        self.actor_opt.step()
+
+        entropy = probs.mean().item()
+        mean_reward = rewards_t.mean().item() if len(rewards) > 0 else 0.0
+        return {"status": "ok", "loss": q_loss.item(), "entropy": entropy, "mean_reward": mean_reward}
+
+
+# Module-level dispatch functions for Godot GDScript calls
+def ppo_train_step(cmd: Dict) -> Dict:
+    if 'ppo_node' not in ppo_train_step.__dict__:
+        ppo_train_step.ppo_node = PPONode(
+            cmd.get('state_dim', 24), cmd.get('action_dim', 4),
+            cmd.get('hidden_dim', 128), cmd.get('device', 'cpu'))
+    return ppo_train_step.ppo_node.train_step(cmd)
+
+
+def ppo_get_action(cmd: Dict) -> Dict:
+    if 'ppo_node' not in ppo_get_action.__dict__:
+        ppo_get_action.ppo_node = PPONode(
+            cmd.get('state_dim', 24), cmd.get('action_dim', 4),
+            cmd.get('hidden_dim', 128), cmd.get('device', 'cpu'))
+    return ppo_get_action.ppo_node.get_action(cmd.get('observations', []))
+
+
+def sac_train_step(cmd: Dict) -> Dict:
+    if 'sac_node' not in sac_train_step.__dict__:
+        sac_train_step.sac_node = SACNode(
+            cmd.get('state_dim', 24), cmd.get('action_dim', 4),
+            cmd.get('hidden_dim', 128), cmd.get('device', 'cpu'))
+    return sac_train_step.sac_node.train_step(cmd)
+
+
+def sac_get_action(cmd: Dict) -> Dict:
+    if 'sac_node' not in sac_get_action.__dict__:
+        sac_node = SACNode(
+            cmd.get('state_dim', 24), cmd.get('action_dim', 4),
+            cmd.get('hidden_dim', 128), cmd.get('device', 'cpu'))
+        sac_get_action.sac_node = sac_node
+    return sac_get_action.sac_node.get_action(cmd.get('observations', []))
+
+
 def main():
     """Main loop - process commands from stdin"""
     node = None
