@@ -22,11 +22,23 @@ godot scenes/robot_viewer.tscn
 # Physics demo with differential drive
 godot scenes/physics_demo.tscn
 
-# AI code generation panel
-godot scenes/main.tscn
-
 # Joint control panel
 godot scenes/joint_control_panel.tscn
+
+# GPU backend selector (Isaac Gym, RTX sensors)
+godot scenes/gpu/gpu_backend_selector.tscn
+
+# Navigation planner selector (A*, Nav2)
+godot scenes/nav_selector.tscn
+
+# IK solver selector (CCD, FABRIK, MoveIt)
+godot scenes/ik_selector.tscn
+
+# Industrial robot selector (MOTOMAN, ABB, OPC-UA)
+godot scenes/industrial_selector.tscn
+
+# Physics backend selector
+godot scenes/physics_selector.tscn
 ```
 
 ---
@@ -36,7 +48,7 @@ godot scenes/joint_control_panel.tscn
 ### Robot Design
 - **URDF Import** — Load robot models from URDF files into Godot scene tree
 - **Interactive Joint Control** — Real-time sliders for joint manipulation
-- **MJCF Support** — MuJoCo model format import (planned)
+- **MJCF Support** — MuJoCo model format import
 
 ### Physics Simulation
 | Backend | Speed | Accuracy | Use Case |
@@ -51,14 +63,20 @@ godot scenes/joint_control_panel.tscn
 | DQN | Value-based | Discrete actions |
 | PPO | Policy gradient | Continuous control |
 | SAC | Off-policy | Exploration tasks |
+| Isaac Gym | GPU | Multi-robot training |
+
+**Isaac Gym Tasks:** shadow_hand, anymal, allegro_hand, cartpole, ball_balance, quadcopter, franka_cube, kortex_robot
 
 ### Sensor Simulation
-- **LIDAR** — 360° scan with beam divergence and range noise
-- **Camera** — Lens distortion (Brown-Conrady model), salt-pepper noise
+- **RTX LIDAR** — GPU ray tracing with Velodyne VLP-16/HDL-32E/HDL-64E, Ouster OS1-64
+- **RTX Camera** — GPU path tracing with Intel RealSense D455, Azure Kinect DK, ZED 2i
+- **Sensor Fusion** — Kalman filtering for LIDAR + camera + IMU + GPS
 - **IMU** — Bias drift, random walk noise models
 
 ### ROS 2 Integration
-- TCP/UDP bridge for sensor streaming and control
+- **TCP/UDP Bridge** — Sensor streaming and control
+- **Native rclpy** — Direct ROS 2 integration with DDS transport
+- **Isaac ROS Messages** — Nav2 and MoveIt integration
 - Publishes: `/robot/odom`, `/robot/scan`, `/robot/image_raw`, `/robot/imu`
 - Subscribes to: `/robot/cmd_vel`
 
@@ -67,6 +85,20 @@ godot scenes/joint_control_panel.tscn
 |-----------|---------|
 | Navigation | A* Grid (GDScript), Nav2 (ROS 2) |
 | IK Solver | CCD, FABRIK (analytical), MoveIt (ROS 2) |
+
+### Industrial Robots
+| Robot | Protocol | Features |
+|-------|----------|----------|
+| MOTOMAN | INRC4 | Cartesian/joint moves, trajectory streaming |
+| ABB | RAPID over TCP | FlexPendant integration |
+| OPC-UA | Standard | Digital I/O, registers |
+| Fanuc | Karl | Roboguide support |
+| UR | urscript | ROS 2 driver integration |
+
+### Omniverse Integration
+- **USD Pipeline** — Export to Omniverse Kit format
+- **Digital Twin Sync** — Real-time sync with Omniverse
+- **Replicator** — Synthetic data generation for training
 
 ### Blockchain & Marketplace
 - **ARIADNE** — Git-on-Arweave for permanent robot design storage
@@ -78,27 +110,35 @@ godot scenes/joint_control_panel.tscn
 
 ```
 Copernicus
-├── scripts/                    # Core GDScript modules
-│   ├── urdf_to_godot.gd        # URDF parser
+├── scripts/
+│   ├── urdf_to_godot.gd           # URDF parser
 │   ├── robot_viewer_controller.gd
-│   ├── physics_demo.gd         # VehicleBody3D + differential drive
+│   ├── physics_demo.gd            # VehicleBody3D + differential drive
 │   ├── control/
-│   │   └── pid_controller.gd   # PID closed-loop control
+│   │   └── pid_controller.gd      # PID closed-loop control
 │   ├── gpu/
-│   │   ├── backends/           # GPU acceleration backends
-│   │   │   ├── pytorch_learner.gd  # DQN
-│   │   │   ├── ppo_learner.gd       # PPO
-│   │   │   └── sac_learner.gd        # SAC
-│   │   └── pytorch_learning_node.py # Python RL subprocess
-│   ├── nav/                    # Navigation planners
-│   ├── ik/                     # IK solvers
-│   └── physics/                # Physics backends
-├── scenes/                     # Godot scene files
+│   │   ├── backends/              # GPU acceleration backends
+│   │   │   ├── pytorch_learner.gd      # DQN
+│   │   │   ├── ppo_learner.gd         # PPO
+│   │   │   ├── sac_learner.gd          # SAC
+│   │   │   ├── isaac_gym_task.gd       # Isaac Gym RL
+│   │   │   ├── isaac_gym_replicator.gd # Omniverse Replicator
+│   │   │   ├── multi_robot_trainer.gd   # Multi-robot coordinator
+│   │   │   ├── compute_raycast.gd      # GPU raycasting
+│   │   │   └── rtx_camera.py           # GPU path tracing
+│   │   └── pytorch_learning_node.py    # Python RL subprocess
+│   ├── nav/                        # Navigation planners
+│   ├── ik/                         # IK solvers
+│   └── physics/                    # Physics backends
+├── scenes/                          # Godot scene files
 ├── addons/
-│   ├── godot_ros2/            # ROS 2 bridge
-│   ├── hyperobject/           # AO Hyperobjects SDK
-│   └── GameAI/               # AI code generation
-└── docs/                      # Documentation
+│   ├── godot_ros2/                 # ROS 2 TCP/UDP bridge
+│   ├── ros2_native/               # Native rclpy integration
+│   ├── hyperobject/                # AO Hyperobjects SDK
+│   ├── gpu_sensors/                # RTX LIDAR, camera, fusion
+│   ├── industrial/                 # Industrial robot backends
+│   └── omni/                       # Omniverse USD integration
+└── docs/                           # Documentation
 ```
 
 ---
@@ -111,6 +151,8 @@ Copernicus
 | Python | 3.10+ | For PyBullet/PyTorch backends |
 | ROS 2 | Jazzy/Humble | Optional |
 | CUDA | 11.8+ | For GPU acceleration |
+| Isaac Gym | Latest | Optional, for GPU RL training |
+| Omniverse | Latest | Optional, for USD pipeline |
 
 ---
 
@@ -123,15 +165,21 @@ Copernicus
 
 ### Feature Guides
 - [Physics Backends](docs/physics/backends.md) — Godot vs PyBullet vs CUDA
-- [Sensors](docs/sensors/overview.md) — LIDAR, camera, IMU
+- [Sensors Overview](docs/sensors/overview.md) — LIDAR, camera, IMU
+- [Sensor Noise Models](docs/sensors/noise-models.md) — Realistic noise
 - [Reinforcement Learning](docs/rl/overview.md) — DQN, PPO, SAC
+- [Isaac Gym RL Tasks](docs/rl/isaac-gym.md) — GPU training with Isaac Gym
+- [RTX Sensors](docs/gpu/rtx_sensors.md) — GPU sensors
 
 ### Reference
 - [Architecture](docs/03-architecture.md) — System design
-- [Navigation](docs/navigation/planners.md) — A* and Nav2
+- [Navigation Planners](docs/navigation/planners.md) — A* and Nav2
 - [IK Solvers](docs/navigation/ik-solvers.md) — CCD, FABRIK, MoveIt
 - [ROS 2 Bridge](docs/ros2/bridge.md) — TCP/UDP setup
-- [Marketplace](docs/marketplace.md) — Trading robot designs
+- [ROS2 Native](docs/ros2_native/overview.md) — Native rclpy integration
+- [Industrial Robots](docs/industrial/overview.md) — MOTOMAN, ABB, OPC-UA
+- [Omniverse](docs/omni/overview.md) — USD pipeline and digital twin
+- [Marketplace](docs/blockchain/marketplace.md) — Trading robot designs
 
 ---
 
