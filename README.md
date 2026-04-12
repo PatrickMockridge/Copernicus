@@ -99,9 +99,35 @@ godot scenes/physics_demo.tscn
 godot scenes/main.tscn
 ```
 
+### Try the Turtle Demo (No ROS2 Required!)
+
+The **TurtleBot demo** is the fastest way to see Copernicus in action:
+
+```bash
+godot scenes/turtle_demo.tscn
+```
+
+**What it does:**
+- Shows a turtlebot in a 2D arena with obstacles
+- **Click anywhere on the ground** to set a goal
+- Robot plans an A* path and navigates to your click
+- Toggle **"Switch to ROS2 Mode"** to connect to real turtlesim
+
+This demo showcases the modular plugin architecture — same A* planner works natively (Godot physics) and via ROS2 (turtlesim bridge).
+
 ---
 
-## Architecture
+## Documentation
+
+- [Quick Start Guide](docs/quick-start.md) ← **Start here for the turtle demo**
+- [Getting Started](docs/getting-started.md)
+- [AI Code Agent](docs/ai-codegen.md)
+- [Blockchain](docs/blockchain.md)
+- [ROS 2 Simulation](docs/simulation.md)
+- [Testing](docs/testing.md)
+- [Physics Backends](docs/physics-backends.md)
+- [IK Solvers](docs/ik-solver.md)
+- [Navigation Planners](docs/nav-planner.md)
 
 ```
 Copernicus / Robot Design Interface
