@@ -92,6 +92,11 @@ func _setup_ui() -> void:
 	turtle_demo_btn.pressed.connect(_on_open_turtle_demo)
 	_header.add_child(turtle_demo_btn)
 
+	var marketplace_btn = Button.new()
+	marketplace_btn.text = "Marketplace"
+	marketplace_btn.pressed.connect(_on_open_marketplace)
+	_header.add_child(marketplace_btn)
+
 	# ---- Context Panel ----
 	_context_panel = PanelContainer.new()
 	_context_panel.custom_minimum_size.y = 60
@@ -289,6 +294,9 @@ func _on_open_ros_coder() -> void:
 
 func _on_open_turtle_demo() -> void:
 	get_tree().change_scene_to_file("res://scenes/turtle_demo.tscn")
+
+func _on_open_marketplace() -> void:
+	get_tree().change_scene_to_file("res://scenes/marketplace/marketplace_panel.tscn")
 
 func _process(delta: float) -> void:
 	pass

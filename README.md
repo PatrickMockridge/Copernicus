@@ -76,6 +76,7 @@ Copernicus doesn't fight Godot — it embraces what Godot does well:
 - **ROS Coder IDE** — In-game IDE for writing ROS2 Python (rclpy) software
 - **Blockchain Publishing** — Few clicks to publish your robot to Arweave
 - **AO Hyperobjects** — Trade robot designs as ownership-verifiable assets
+- **Decentralized Marketplace** — Buy and sell robots, parts, and worlds via AO tokens
 - **Navigation Plugins** — A* Grid (pure GDScript) and Nav2 (ROS2) path planners
 - **IK Solver Plugins** — Analytical (CCD/FABRIK) and MoveIt (ROS2)
 - **Physics Backend Plugins** — Godot native and PyBullet backends
@@ -120,6 +121,7 @@ This demo showcases the modular plugin architecture — same A* planner works na
 ## Documentation
 
 - [Quick Start Guide](docs/quick-start.md) ← **Start here for the turtle demo**
+- [Marketplace](docs/marketplace.md) ← **Buy and sell robots, parts, worlds**
 - [Getting Started](docs/getting-started.md)
 - [AI Code Agent](docs/ai-codegen.md)
 - [Blockchain](docs/blockchain.md)
