@@ -46,6 +46,9 @@ System design and module relationships.
 ### [Physics Backends](physics-backends.md)
 Optional physics engines: Godot Native or PyBullet.
 
+### [IK Solver](ik-solver.md)
+Optional IK solvers: Analytical (CCD, FABRIK) or MoveIt via ROS2.
+
 ### [Blockchain](blockchain.md)
 ARIADNE git-on-Arweave and AO Hyperobjects for trading robot designs.
 
