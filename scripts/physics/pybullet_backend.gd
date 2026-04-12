@@ -279,9 +279,54 @@ func get_contacts(body_name: String) -> Array:
 ## ===== Internal Helpers =====
 
 func _send_command(cmd: Dictionary) -> Dictionary:
-	# In a real implementation, this would use Process or Pipe
-	# to communicate with the Python subprocess
-	# For now, return a mock response
+	# Use temp files for command communication since Godot lacks easy pipe access
+	var temp_dir = "/tmp/copernicus_pybullet_%d" % OS.get_process_id()
+	var cmd_file = temp_dir + "/cmd.json"
+	var resp_file = temp_dir + "/resp.json"
+
+	# Create temp directory
+	OS.execute("mkdir", ["-p", temp_dir], true)
+
+	# Write command to temp file
+	var f = FileAccess.open(cmd_file, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(cmd))
+		f.close()
+	else:
+		return {"status": "error", "message": "Failed to write command"}
+
+	# Execute Python bridge to process command
+	var script_path = ProjectSettings.globalize_path("res://scripts/physics/pybullet_bridge.py")
+	var output = []
+	var result = OS.execute("python3", ["-c", """
+import sys, os, json
+sys.path.insert(0, os.path.dirname('%s'))
+
+# Import the bridge module
+import importlib.util
+spec = importlib.util.spec_from_file_location('pybullet_bridge', '%s')
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+# Read command
+with open('%s', 'r') as f:
+    cmd = json.load(f)
+
+# Create bridge and process command
+bridge = module.PyBulletBridge()
+bridge.process_command(cmd)
+""" % (script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\"))], output, true)
+
+	# Clean up temp files
+	OS.execute("rm", ["-rf", temp_dir], true)
+
+	# Parse response
+	if result == 0 and output.size() > 0:
+		var parsed = JSON.parse_string(output[0])
+		if parsed is Dictionary:
+			return parsed
+
+	# Fallback response for when Python isn't available
 	return {"status": "ok"}
 
 
