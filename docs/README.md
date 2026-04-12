@@ -2,112 +2,135 @@
 
 > *"In the middle of difficulty lies opportunity."* — Albert Einstein
 
-Welcome to **Copernicus**, an open-source robot design interface built on [Godot 4](https://godotengine.org/). Named after the astronomer who placed the Sun at the center of our solar system, Copernicus places the **open-source community** at the center of robot development.
+Welcome to **Copernicus**, an open-source robot design interface built on [Godot 4](https://godotengine.org/).
 
 ---
 
-## The Copernican Philosophy
+## Getting Started
 
-### Why Open Source Robotics?
+### [Quick Start Guide](quick-start.md)
+Run your first demo with the TurtleBot simulation.
 
-Robotics has long been dominated by closed, proprietary systems:
-- **Expensive licenses** restrict who can participate
-- **Black-box simulators** hide the math
-- **Single-vendor lock-in** stifles innovation
-- **Fragmented tools** prevent sharing
+### [Getting Started Guide](01-getting-started.md)
+Detailed setup: Godot installation, Python dependencies, ROS 2.
 
-Just as NVIDIA uses Unity for Isaac Sim, Copernicus uses Godot — but with a fundamentally different philosophy:
+### [Core Concepts](02-concepts.md)
+Understand robots, physics engines, sensors, control systems, and RL.
 
-| Proprietary | Copernicus |
-|-------------|------------|
-| Closed, expensive | Free (MIT), open source |
-| Single vendor | Community-driven |
-| Black box | Transparent, hackable |
-| Fragmented | Modular, composable |
-
-**Copernicus is more than software — it's a statement that robotics belongs to everyone.**
+### [Architecture](03-architecture.md)
+System design, module relationships, and data flow.
 
 ---
 
-## Contents
+## Feature Guides
 
-### [Getting Started](getting-started.md)
-Setup, installation, and your first robot.
+### [URDF Import](robots/urdf-import.md)
+Load robot models from URDF files into Godot.
 
-### [ROS 2 Simulation](simulation.md)
-Sensors, actuators, robot models, and Godot-native physics.
+### [Robot Control](robots/control.md)
+Joint control, differential drive, PID controllers, trajectory execution.
 
-### [Philosophy](philosophy.md)
-The conceptual foundation: why open source, why Godot, why modular.
+### [Physics Backends](physics/backends.md)
+Godot Native vs PyBullet vs PyBullet CUDA comparison.
 
-### [Architecture](architecture.md)
-System design and module relationships.
+### [Sensors Overview](sensors/overview.md)
+LIDAR, camera, IMU, GPS, contact sensor simulation.
 
-### [Physics Backends](physics-backends.md)
-Optional physics engines: Godot Native or PyBullet.
+### [Sensor Noise Models](sensors/noise-models.md)
+Realistic sensor modeling: range noise, lens distortion, IMU drift.
 
-### [GPU Acceleration](gpu-acceleration.md)
-GPU-accelerated physics, Q-learning, and sensor processing via CUDA.
+### [Reinforcement Learning](rl/overview.md)
+DQN, PPO, and SAC algorithms for robot skill acquisition.
 
-### [IK Solver](ik-solver.md)
-Optional IK solvers: Analytical (CCD, FABRIK) or MoveIt via ROS2.
+### [DQN](rl/dqn.md)
+Deep Q-Network for discrete action spaces.
 
-### [Blockchain](blockchain.md)
-ARIADNE git-on-Arweave and AO Hyperobjects for trading robot designs.
+### [PPO and SAC](rl/ppo-sac.md)
+Policy gradient methods for continuous control.
 
-### [AI Code Agent](ai-codegen.md)
+### [Navigation Planners](navigation/planners.md)
+A* Grid and Nav2 for robot navigation.
+
+### [IK Solvers](navigation/ik-solvers.md)
+CCD, FABRIK, and MoveIt for inverse kinematics.
+
+---
+
+## Reference
+
+### [ROS 2 Bridge](ros2/bridge.md)
+TCP/UDP bridge setup for sensor streaming and control.
+
+### [AI Code Generation](../ai-codegen.md)
 AI behavior generation + ROS Coder IDE.
 
-### [Development](development/code-patterns.md)
-Godot 4.x coding patterns and contributing guidelines.
-
-### [License](license.md)
-AGPLv3 license with ethical statement.
+### [Marketplace](../blockchain/marketplace.md)
+Trade robot designs via AO Hyperobjects.
 
 ---
 
-## Quick Links
+## Directory Structure
 
-| Resource | Description |
-|----------|-------------|
-| [ROS 2 Bridge Setup](simulation.md#bridge-setup) | Build and run the TCP/UDP bridge |
-| [Wallet Setup](blockchain.md#wallet-setup) | Configure Arweave wallet |
-| [AI Code Agent](ai-codegen.md) | AI behavior generation + ROS Coder IDE |
-| [Testing](testing.md) | Test procedures and expected outputs |
+```
+docs/
+├── 01-getting-started.md    # Setup and first demo
+├── 02-concepts.md           # Core concepts
+├── 03-architecture.md         # System design
+├── robots/                   # Robot-related docs
+│   ├── urdf-import.md       # URDF loading
+│   └── control.md           # Joint control, PID
+├── physics/                  # Physics docs
+│   └── backends.md          # Backend comparison
+├── sensors/                  # Sensor docs
+│   ├── overview.md          # LIDAR, camera, IMU
+│   └── noise-models.md     # Realistic noise
+├── rl/                       # Reinforcement learning
+│   ├── overview.md         # RL introduction
+│   ├── dqn.md             # DQN algorithm
+│   └── ppo-sac.md         # PPO and SAC
+├── navigation/               # Navigation docs
+│   ├── planners.md        # A*, Nav2
+│   └── ik-solvers.md      # CCD, FABRIK, MoveIt
+├── ros2/                    # ROS 2 integration
+└── blockchain/              # Marketplace docs
+```
+
+---
+
+## Quick Commands
+
+```bash
+# Run demos
+godot scenes/turtle_demo.tscn      # Navigation (no ROS 2)
+godot scenes/robot_viewer.tscn      # URDF visualization
+godot scenes/physics_demo.tscn     # Vehicle dynamics
+
+# GPU learning
+godot scenes/gpu/gpu_backend_selector.tscn
+
+# Selection panels
+godot scenes/physics_selector.tscn
+godot scenes/nav_selector.tscn
+godot scenes/ik_selector.tscn
+```
 
 ---
 
 ## Core Principles
 
-### 1. Godot-Native
-Copernicus doesn't fight Godot — it embraces what Godot does well:
-- **3D rendering** with meshes, materials, lighting
-- **UI system** for interactive controls
-- **Scene tree** for robot hierarchy
-- **Native physics** (VehicleBody3D, joints)
-- **ROS2 bridge** for sensor streaming
+### Godot-Native
+Copernicus uses Godot's built-in capabilities: 3D rendering, physics (Jolt),
+scene tree management, and UI system.
 
-### 2. Clear Scope
-Copernicus is **not** trying to replace research simulators:
-- **NOT** a physics research simulator (use Isaac Sim/Gazebo)
-- **NOT** an IK solver (use MoveIt)
-- **NOT** a motion planner (use Nav2)
+### Modular by Design
+Every component is swappable: physics backends, navigation planners,
+IK solvers, and RL algorithms.
 
-Copernicus **IS** a fast 3D editor for visualizing robots, testing joint configurations, and serving as a ROS2 data source.
+### Clear Scope
+Copernicus is a fast 3D editor for robot visualization and design.
+For research-grade simulation, use Isaac Sim or Gazebo.
+Copernicus exports to those simulators.
 
-### 3. Modular by Design
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Copernicus                                │
-│  ┌───────────┐ ┌───────────┐ ┌───────────────────────────┐ │
-│  │ URDF      │ │ Physics   │ │ ROS2                      │ │
-│  │ Importer  │ │ Demo      │ │ Bridge                    │ │
-│  └───────────┘ └───────────┘ └───────────────────────────┘ │
-│  ┌───────────┐ ┌───────────┐ ┌───────────────────────────┐ │
-│  │ Joint     │ │ Sensor    │ │ Hyperobject               │ │
-│  │ Control   │ │ Debug     │ │ Trade Assets              │ │
-│  └───────────┘ └───────────┘ └───────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
+---
 
-**Fork it. Extend it. Make it yours.**
+**Ready to start?** Read the [Quick Start Guide](quick-start.md) or jump to [Core Concepts](02-concepts.md).
