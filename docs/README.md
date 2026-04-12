@@ -73,6 +73,9 @@ Connect to MOTOMAN, ABB, UR, FANUC industrial robots.
 ### [Omniverse Integration](omni/overview.md)
 USD pipeline, digital twin sync with Omniverse Kit.
 
+### [ROS2 Native](ros2_native/overview.md)
+Native rclpy integration, Isaac ROS messages, DDS transport.
+
 ---
 
 ## Directory Structure
@@ -98,6 +101,7 @@ docs/
 │   ├── planners.md        # A*, Nav2
 │   └── ik-solvers.md      # CCD, FABRIK, MoveIt
 ├── ros2/                    # ROS 2 integration
+├── ros2_native/              # Native rclpy integration
 ├── industrial/              # Industrial robot plugins
 ├── omni/                    # Omniverse integration
 └── blockchain/              # Marketplace docs
