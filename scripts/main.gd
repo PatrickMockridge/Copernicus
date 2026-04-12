@@ -87,6 +87,11 @@ func _setup_ui() -> void:
 	ros_coder_btn.pressed.connect(_on_open_ros_coder)
 	_header.add_child(ros_coder_btn)
 
+	var turtle_demo_btn = Button.new()
+	turtle_demo_btn.text = "Turtle Demo"
+	turtle_demo_btn.pressed.connect(_on_open_turtle_demo)
+	_header.add_child(turtle_demo_btn)
+
 	# ---- Context Panel ----
 	_context_panel = PanelContainer.new()
 	_context_panel.custom_minimum_size.y = 60
@@ -281,6 +286,9 @@ func _on_open_ros_coder() -> void:
 	var ros_coder_scene = preload("res://scenes/ros_coder.tscn")
 	var instance = ros_coder_scene.instantiate()
 	add_child(instance)
+
+func _on_open_turtle_demo() -> void:
+	get_tree().change_scene_to_file("res://scenes/turtle_demo.tscn")
 
 func _process(delta: float) -> void:
 	pass
