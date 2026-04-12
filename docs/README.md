@@ -70,6 +70,9 @@ Trade robot designs via AO Hyperobjects.
 ### [Industrial Robot Plugin](industrial/overview.md)
 Connect to MOTOMAN, ABB, UR, FANUC industrial robots.
 
+### [Omniverse Integration](omni/overview.md)
+USD pipeline, digital twin sync with Omniverse Kit.
+
 ---
 
 ## Directory Structure
@@ -96,6 +99,7 @@ docs/
 │   └── ik-solvers.md      # CCD, FABRIK, MoveIt
 ├── ros2/                    # ROS 2 integration
 ├── industrial/              # Industrial robot plugins
+├── omni/                    # Omniverse integration
 └── blockchain/              # Marketplace docs
 ```
 
