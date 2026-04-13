@@ -9,7 +9,7 @@ signal cancelled()
 
 const IndustrialBackend = preload("res://addons/industrial/core/industrial_backend.gd")
 const MockIndustrial = preload("res://addons/industrial/backends/mock_industrial.gd")
-const MotomanBridge = preload("res://scripts/industrial/backends/motoman_bridge.gd")
+const MotomanBridge = preload("res://addons/industrial/backends/motoman_bridge.gd")
 const OpcuaBridge = preload("res://addons/industrial/backends/opcua_bridge.gd")
 
 # UI elements

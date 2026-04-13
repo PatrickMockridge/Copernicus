@@ -1,0 +1,13 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ground -->
+  <rect x="16" y="96" width="96" height="8" fill="#4a5568"/>
+  <!-- Camera -->
+  <circle cx="64" cy="48" r="20" fill="#68d391"/>
+  <rect x="60" y="24" width="8" height="16" fill="#2d3748"/>
+  <!-- Lights -->
+  <polygon points="20,32 28,48 12,48" fill="#f6e05e"/>
+  <polygon points="108,32 116,48 100,48" fill="#f6e05e"/>
+  <!-- Grid lines on ground -->
+  <line x1="16" y1="100" x2="112" y2="100" stroke="#718096" stroke-width="1"/>
+  <line x1="16" y1="104" x2="112" y2="104" stroke="#718096" stroke-width="1"/>
+</svg>

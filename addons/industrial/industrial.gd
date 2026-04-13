@@ -9,8 +9,8 @@ const IndustrialBackend = preload("res://addons/industrial/core/industrial_backe
 const JointTrajectoryHandler = preload("res://addons/industrial/core/joint_trajectory_handler.gd")
 const RobotStatusMonitor = preload("res://addons/industrial/core/robot_status_monitor.gd")
 const MockIndustrial = preload("res://addons/industrial/backends/mock_industrial.gd")
-const MotomanBridge = preload("res://scripts/industrial/backends/motoman_bridge.gd")
-const IndustrialSelector = preload("res://scripts/industrial/industrial_selector.gd")
+const MotomanBridge = preload("res://addons/industrial/backends/motoman_bridge.gd")
+const IndustrialSelector = preload("res://addons/industrial/industrial_selector.gd")
 
 var _selector_instance: IndustrialSelector
 

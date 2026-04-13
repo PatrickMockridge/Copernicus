@@ -141,6 +141,10 @@ Copernicus
 └── docs/                           # Documentation
 ```
 
+### Design Philosophy
+
+Copernicus aims for **Pareto efficiency** — maximum functionality with minimum complexity. **Composability first:** modules must be swappable without modifying caller code. The more complex and entangled a dependency, the more likely it belongs as an external plugin rather than in this repository. See the full [Design Philosophy](docs/design-philosophy.md) for details.
+
 ---
 
 ## Requirements

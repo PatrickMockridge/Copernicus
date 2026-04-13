@@ -11,6 +11,9 @@ Welcome to **Copernicus**, an open-source robot design interface built on [Godot
 ### [Quick Start Guide](quick-start.md)
 Run your first demo with the TurtleBot simulation.
 
+### [Design Philosophy](design-philosophy.md)
+Pareto efficiency, composability first, and dependency management principles.
+
 ### [Getting Started Guide](01-getting-started.md)
 Detailed setup: Godot installation, Python dependencies, ROS 2.
 
