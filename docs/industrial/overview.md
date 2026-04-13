@@ -33,19 +33,19 @@ The industrial plugin bridges Copernicus with real industrial robot hardware, en
 addons/industrial/
 ├── industrial.gd                    # Godot plugin entry point
 ├── plugin.cfg                      # Plugin configuration
+├── industrial_selector.gd         # UI selector panel (self-contained)
 ├── core/
 │   ├── industrial_backend.gd      # Abstract interface
 │   ├── joint_trajectory_handler.gd # Trajectory execution
 │   └── robot_status_monitor.gd    # State monitoring
 └── backends/
     ├── mock_industrial.gd         # Testing mock
+    ├── motoman_bridge.gd          # MOTOMAN INRC4 bridge
     └── opcua_bridge.gd            # OPC-UA bridge (stub)
 
 scripts/industrial/
-├── industrial_selector.gd         # UI selector panel
 ├── industrial_controller.gd        # High-level controller
-└── backends/
-    └── motoman_bridge.gd          # MOTOMAN INRC4 bridge
+└── industrial_controller.gd.uid   # UID file
 ```
 
 ---

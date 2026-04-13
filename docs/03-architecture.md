@@ -131,6 +131,12 @@ Copernicus/
 │   └── gpu/                        # GPU scenes (note: path overlap intentional)
 │
 ├── addons/                          # Optional plugins
+│   ├── demo_framework/             # Reusable demo infrastructure
+│   │   ├── demo_framework.gd        # EditorPlugin entry
+│   │   ├── demo_environment.gd     # Camera, lighting, ground, obstacles
+│   │   ├── demo_robot.gd           # Robot builder (CharacterBody3D)
+│   │   └── plugin.cfg
+│   │
 │   ├── godot_ros2/                # ROS 2 bridge
 │   │   ├── godot_ros2.gd          # Main entry
 │   │   ├── core/
@@ -150,6 +156,8 @@ Copernicus/
 │   │       ├── imu_sensor.gd
 │   │       └── gps_sensor.gd
 │   │
+│   ├── gpu_sensors/               # GPU-accelerated sensors (RTX LIDAR, path tracing)
+│   │
 │   ├── hyperobject/              # AO Hyperobjects SDK
 │   │   ├── sdk/
 │   │   │   ├── hyperobjects.gd
@@ -157,8 +165,18 @@ Copernicus/
 │   │   │   └── network.gd
 │   │   └── marketplace/
 │   │
-│   ├── primitives/               # Crypto, HTTP, wallet
-│   └── GameAI/                   # AI code generation
+│   ├── industrial/                 # Industrial robot backends (self-contained)
+│   │   ├── industrial.gd          # Plugin entry
+│   │   ├── industrial_selector.gd # UI selector panel
+│   │   ├── core/
+│   │   │   └── ...               # Backend interface, handlers
+│   │   └── backends/
+│   │       ├── mock_industrial.gd
+│   │       ├── motoman_bridge.gd # MOTOMAN INRC4 bridge
+│   │       └── opcua_bridge.gd
+│   │
+│   ├── primitives/               # Crypto, HTTP, wallet primitives
+│   └── omni/                     # Omniverse USD integration
 │
 ├── docs/                           # Documentation
 │   ├── 01-getting-started.md
