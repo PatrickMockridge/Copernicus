@@ -50,10 +50,11 @@ addons/
 ### Bad: Cross-Boundary Entanglement
 
 ```
-# Anti-pattern: addons loading from scripts/
+# Anti-pattern (BEFORE refactoring - now fixed):
+# addons loading from scripts/ was the old broken state
 addons/industrial/industrial.gd → preload("res://scripts/industrial/backends/...")
 
-# Correct: all dependencies point inward to the addon
+# Correct: all dependencies point inward to the addon (NOW IMPLEMENTED)
 addons/industrial/industrial.gd → preload("res://addons/industrial/backends/...")
 ```
 
