@@ -268,9 +268,7 @@ static func _create_joint_node(j: Dictionary, link_nodes: Dictionary) -> Node3D:
 			var pin = PinJoint3D.new()
 			pin.set_name(j["name"])
 			joint_node = pin
-			# Set joint parameters
-			pin.set_param(PinJoint3D.PARAM_LIMIT_LOWER, j["limit_lower"])
-			pin.set_param(PinJoint3D.PARAM_LIMIT_UPPER, j["limit_upper"])
+			# Note: Godot 4 PinJoint3D uses bias/damping/impulse_clamp, not limit params
 
 		"prismatic":
 			# Use SliderJoint3D for prismatic joints (linear motion)
@@ -338,7 +336,7 @@ static func _load_mesh(mesh_path: String) -> Mesh:
 	var loaded = load(mesh_path)
 	if loaded and loaded is Mesh:
 		return loaded
-	elif loaded and loaded can_instantiate:
+	elif loaded and loaded.can_instantiate():
 		# It's a PackedScene
 		var instance = loaded.instantiate()
 		if instance is MeshInstance3D:

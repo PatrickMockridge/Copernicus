@@ -78,7 +78,7 @@ func _setup_environment() -> void:
 	var ground = StaticBody3D.new()
 	ground.set_name("Ground")
 	var ground_collision = CollisionShape3D.new()
-	ground_collision.shape = PlaneShape3D.new()
+	ground_collision.shape = WorldBoundaryShape3D.new()
 	ground.add_child(ground_collision)
 
 	var ground_mesh = MeshInstance3D.new()

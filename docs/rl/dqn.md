@@ -278,4 +278,4 @@ func train_navbot_dqn():
 
 - [RL Overview](overview.md) — RL introduction
 - [PPO/SAC](ppo-sac.md) — Policy gradient methods
-- [GPU Acceleration](../gpu-acceleration.md) — Backend details
+- [GPU Sensors](../gpu/rtx_sensors.md) — GPU sensor simulation

@@ -339,4 +339,4 @@ func train_navbot():
 - [DQN](dqn.md) — Deep Q-Network implementation
 - [PPO/SAC](ppo-sac.md) — Policy gradient methods
 - [Control](../robots/control.md) — Using learned policies
-- [GPU Acceleration](../gpu-acceleration.md) — GPU backend details
+- [GPU Sensors](../gpu/rtx_sensors.md) — GPU sensor simulation

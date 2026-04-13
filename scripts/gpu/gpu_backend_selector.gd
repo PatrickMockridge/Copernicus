@@ -11,6 +11,8 @@ const GPUBackend = preload("res://scripts/gpu/gpu_backend.gd")
 const CUDAPhysics = preload("res://scripts/gpu/backends/cuda_physics.gd")
 const PyTorchLearner = preload("res://scripts/gpu/backends/pytorch_learner.gd")
 const ComputeRaycast = preload("res://scripts/gpu/backends/compute_raycast.gd")
+const IsaacGymTask = preload("res://scripts/gpu/backends/isaac_gym_task.gd")
+const MultiRobotTrainer = preload("res://scripts/gpu/backends/multi_robot_trainer.gd")
 
 # UI elements
 var _panel: PanelContainer
@@ -70,6 +72,14 @@ func _setup_ui() -> void:
 	_add_backend_option("ComputeRaycast", "GPU Raycast",
 		"GPU-accelerated batch raycasting for LIDAR and camera sensors. Significantly speeds up sensor processing.",
 		ComputeRaycast.is_available())
+
+	_add_backend_option("IsaacGymTask", "Isaac Gym RL",
+		"NVIDIA Isaac Gym multi-robot RL training. GPU-accelerated with 4096 parallel environments.",
+		IsaacGymTask.is_isaac_gym_available())
+
+	_add_backend_option("MultiRobotTrainer", "Multi-Robot Trainer",
+		"Distributed multi-robot training coordinator. Supports PPO, SAC, and TD3 algorithms.",
+		true)  # Always available - falls back to simulation
 
 	# Separator
 	var sep2 = HSeparator.new()
@@ -182,6 +192,10 @@ static func get_backend_class(backend_id: String) -> GPUBackend:
 			return PyTorchLearner.new()
 		"ComputeRaycast":
 			return ComputeRaycast.new()
+		"IsaacGymTask":
+			return IsaacGymTask.new()
+		"MultiRobotTrainer":
+			return MultiRobotTrainer.new()
 		_:
 			return CUDAPhysics.new()
 
@@ -195,6 +209,9 @@ static func get_available_backends() -> Array:
 		available.append("PyTorchLearner")
 	if ComputeRaycast.is_available():
 		available.append("ComputeRaycast")
+	if IsaacGymTask.is_isaac_gym_available():
+		available.append("IsaacGymTask")
+	available.append("MultiRobotTrainer")  # Always available
 	return available
 
 

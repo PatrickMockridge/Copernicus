@@ -9,6 +9,8 @@ signal cancelled()
 
 const IndustrialBackend = preload("res://addons/industrial/core/industrial_backend.gd")
 const MockIndustrial = preload("res://addons/industrial/backends/mock_industrial.gd")
+const MotomanBridge = preload("res://scripts/industrial/backends/motoman_bridge.gd")
+const OpcuaBridge = preload("res://addons/industrial/backends/opcua_bridge.gd")
 
 # UI elements
 var _panel: PanelContainer
@@ -61,17 +63,21 @@ func _setup_ui() -> void:
 		"Simulated industrial robot for testing without hardware.",
 		MockIndustrial.is_available())
 
-	_add_backend_option("MOTOMAN", "MOTOMAN (INRC4)",
-		"MOTOMAN industrial robots via INRC4 protocol. Requires: MOTOMAN robot controller.",
-		false)  # TODO: Check for motoman_driver
+	_add_backend_option("MotomanBridge", "MOTOMAN (INRC4)",
+		"MOTOMAN industrial robots via INRC4 protocol. Supports joint and cartesian moves.",
+		MotomanBridge.is_available())
+
+	_add_backend_option("OpcuaBridge", "OPC-UA",
+		"OPC-UA industrial robot bridge. Supports any robot with OPC-UA server.",
+		OpcuaBridge.is_available())
 
 	_add_backend_option("ABB", "ABB (EtherNet/IP)",
 		"ABB industrial robots via EtherNet/IP. Requires: ABB robot controller.",
-		false)  # TODO: Check for abb_driver
+		false)
 
 	_add_backend_option("UR", "Universal Robots",
 		"Universal Robots (UR3/UR5/UR10) via RTDB. Requires: ur_robot_driver.",
-		false)  # TODO: Check for ur_robot_driver
+		false)
 
 	_add_backend_option("FANUC", "FANUC (KAREL)",
 		"FANUC industrial robots via KAREL. Requires: FANUC robot controller.",
@@ -184,7 +190,10 @@ static func get_backend_class(backend_id: String) -> IndustrialBackend:
 	match backend_id:
 		"MockIndustrial":
 			return MockIndustrial.new()
-		# TODO: Add other backends when implemented
+		"MotomanBridge":
+			return MotomanBridge.new()
+		"OpcuaBridge":
+			return OpcuaBridge.new()
 		_:
 			return MockIndustrial.new()
 
@@ -194,7 +203,10 @@ static func get_available_backends() -> Array:
 	var available = []
 	if MockIndustrial.is_available():
 		available.append("MockIndustrial")
-	# TODO: Check ROS 2 packages for other backends
+	if MotomanBridge.is_available():
+		available.append("MotomanBridge")
+	if OpcuaBridge.is_available():
+		available.append("OpcuaBridge")
 	return available
 
 

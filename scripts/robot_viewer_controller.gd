@@ -92,14 +92,14 @@ func _setup_environment() -> void:
 	ground.material_override = ground_mat
 
 	# Make ground receive shadows
-	ground.cast_shadow = STATIC
+	ground.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 
 	var ground_static = StaticBody3D.new()
 	ground_static.set_name("GroundStatic")
 	ground_static.add_child(ground)
 
 	var ground_collision = CollisionShape3D.new()
-	ground_collision.shape = PlaneShape3D.new()
+	ground_collision.shape = WorldBoundaryShape3D.new()
 	ground_static.add_child(ground_collision)
 
 	add_child(ground_static)

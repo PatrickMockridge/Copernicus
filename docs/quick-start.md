@@ -169,14 +169,14 @@ godot scenes/turtle_demo.tscn --video-driver headless
 
 ## Getting Help
 
-- Check [docs/getting-started.md](getting-started.md) for detailed setup
-- See [docs/simulation.md](simulation.md) for ROS2 simulation
+- Check [Getting Started Guide](01-getting-started.md) for detailed setup
+- See [Simulation Guide](simulation.md) for ROS2 simulation
 - Open an issue on [Codeberg](https://codeberg.org/PatrickM123/Godot_4__Robotic_Design_Interface)
 
 ---
 
 **Ready to dive deeper?**
-- [Architecture overview](architecture.md) - How plugins work
-- [Physics backends](physics-backends.md) - Godot vs PyBullet
-- [Navigation planners](nav-planner.md) - A* vs Nav2
-- [IK solvers](ik-solver.md) - Analytical vs MoveIt
+- [Architecture overview](03-architecture.md) - How plugins work
+- [Physics backends](physics/backends.md) - Godot vs PyBullet
+- [Navigation planners](navigation/planners.md) - A* vs Nav2
+- [IK solvers](navigation/ik-solvers.md) - Analytical vs MoveIt
