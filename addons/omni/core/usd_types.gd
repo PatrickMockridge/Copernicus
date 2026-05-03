@@ -276,7 +276,7 @@ class USDReader:
 
     def count_prims(self, stage):
         count = 0
-        for prim in stage Traverse():
+        for prim in stage.Traverse():
             count += 1
         return count
 
@@ -292,7 +292,7 @@ class USDReader:
 
     def list_all_prims(self, stage):
         prims = []
-        for prim in stage Traverse():
+        for prim in stage.Traverse():
             prims.append({
                 'path': str(prim.GetPath()),
                 'type': prim.GetTypeName(),

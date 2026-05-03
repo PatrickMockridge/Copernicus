@@ -79,11 +79,16 @@ func _build_scene_from_usd(parent_node: Node3D, file_path: String, stage_info: D
 				# No parent found, add to root
 				parent_node.add_child(node)
 
-	# Third pass: apply transforms and properties
+	# Third pass: batch-query all prim properties in one Python invocation
+	var prim_paths = []
+	for prim in prims:
+		prim_paths.append(prim.get("path", "/"))
+	var all_props = _get_all_prim_props(file_path, prim_paths)
+
 	for prim in prims:
 		var prim_path = prim.get("path", "/")
 		var node = node_map.get(prim_path)
-		var props = _get_prim_props(file_path, prim_path)
+		var props = all_props.get(prim_path, {})
 
 		if node and node is Node3D:
 			_apply_prim_properties(node, props)
@@ -127,24 +132,58 @@ func _apply_prim_properties(node: Node, props: Dictionary) -> void:
 	if node is MeshInstance3D and props.has("mesh"):
 		_apply_mesh_to_instance(node, props["mesh"])
 
+	if node is MeshInstance3D and props.has("material"):
+		var mat = USDTypes.convert_material(props["material"])
+		node.material_override = mat
+
 	if node is Camera3D:
 		_apply_camera_properties(node, props)
 
 
 func _apply_mesh_to_instance(mesh_node: MeshInstance3D, mesh_data: Variant) -> void:
-	# mesh_data contains vertex/index data
-	if mesh_data is Dictionary:
-		var array_mesh = ArrayMesh.new()
+	if not mesh_data is Dictionary:
+		return
 
-		var vertices = mesh_data.get("vertices", PackedVector3Array())
-		var indices = mesh_data.get("indices", PackedInt32Array())
+	var array_mesh = ArrayMesh.new()
 
-		if vertices.size() > 0:
-			var arrays = []
-			arrays.append(vertices)
-			array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var vertices = PackedVector3Array()
+	var indices = PackedInt32Array()
+	var normals = PackedVector3Array()
+	var uvs = PackedVector2Array()
 
-			mesh_node.mesh = array_mesh
+	if mesh_data.has("points"):
+		var points = mesh_data["points"]
+		for i in range(0, points.size(), 3):
+			vertices.append(Vector3(points[i], points[i + 1], points[i + 2]))
+
+	if mesh_data.has("indices"):
+		for i in mesh_data["indices"]:
+			indices.append(int(i))
+
+	if mesh_data.has("normals"):
+		for i in range(0, mesh_data["normals"].size(), 3):
+			normals.append(Vector3(mesh_data["normals"][i], mesh_data["normals"][i + 1], mesh_data["normals"][i + 2]))
+
+	if mesh_data.has("uvs"):
+		for i in range(0, mesh_data["uvs"].size(), 2):
+			uvs.append(Vector2(mesh_data["uvs"][i], mesh_data["uvs"][i + 1]))
+
+	if vertices.size() > 0:
+		var arrays = []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+
+		if normals.size() == vertices.size():
+			arrays[Mesh.ARRAY_NORMAL] = normals
+
+		if uvs.size() == vertices.size():
+			arrays[Mesh.ARRAY_TEX_UV] = uvs
+
+		if indices.size() > 0:
+			arrays[Mesh.ARRAY_INDEX] = indices
+
+		array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		mesh_node.mesh = array_mesh
 
 
 func _apply_camera_properties(camera: Camera3D, props: Dictionary) -> void:
@@ -268,6 +307,117 @@ func _find_robot_prims(file_path: String) -> Array:
 	return robot_prims
 
 
+func _get_all_prim_props(file_path: String, prim_paths: Array) -> Dictionary:
+	var escaped_path = file_path.replace("\\", "\\\\").replace("'", "\\'")
+	var paths_json = JSON.stringify(prim_paths)
+	var escaped_paths = paths_json.replace("'", "\\'")
+
+	var py_code = """
+import sys
+import json
+
+try:
+    from pxr import Usd, UsdGeom, UsdShade
+
+    stage = Usd.Stage.Open('%s')
+    prim_paths = json.loads('%s')
+
+    result = {}
+    for prim_path in prim_paths:
+        prim = stage.GetPrimAtPath(prim_path)
+        if not prim:
+            result[prim_path] = {"error": "prim not found"}
+            continue
+
+        props = {}
+
+        # Transform
+        xformable = UsdGeom.Xformable(prim)
+        if xformable:
+            try:
+                matrix = xformable.GetLocalTransformation()
+                props['transform'] = [matrix[i][j] for i in range(4) for j in range(4)]
+            except:
+                pass
+
+        # Mesh data: vertices, normals, UVs, indices
+        mesh = UsdGeom.Mesh(prim)
+        if mesh:
+            mesh_data = {}
+            try:
+                points_attr = mesh.GetPointsAttr()
+                if points_attr:
+                    points = points_attr.Get()
+                    if points:
+                        mesh_data['points'] = [float(p) for p in points]
+            except:
+                pass
+
+            try:
+                indices_attr = mesh.GetFaceVertexIndicesAttr()
+                if indices_attr:
+                    idxs = indices_attr.Get()
+                    if idxs:
+                        mesh_data['indices'] = [int(i) for i in idxs]
+            except:
+                pass
+
+            try:
+                normals_attr = mesh.GetNormalsAttr()
+                if normals_attr:
+                    normals = normals_attr.Get()
+                    if normals:
+                        mesh_data['normals'] = [float(n) for n in normals]
+            except:
+                pass
+
+            try:
+                uv_primvar = mesh.GetPrimvar('st')
+                if uv_primvar:
+                    uvs = uv_primvar.Get()
+                    if uvs is not None and len(uvs) > 0:
+                        mesh_data['uvs'] = [float(u) for u in uvs]
+            except:
+                pass
+
+            props['mesh'] = mesh_data
+
+            # Material bindings
+            try:
+                mat_binding = UsdShade.MaterialBindingAPI(prim)
+                if mat_binding:
+                    bound_mat, relationship = mat_binding.ComputeBoundMaterial()
+                    if bound_mat:
+                        mat_data = {}
+                        mat_data['path'] = str(bound_mat.GetPath())
+                        # Walk surface shader outputs
+                        for child in bound_mat.GetPrim().GetChildren():
+                            if child.GetTypeName() == 'Shader':
+                                for attr in child.GetAttributes():
+                                    mat_data[attr.GetName()] = attr.Get().Convert('json')
+                        props['material'] = mat_data
+            except:
+                pass
+
+        # Generic attributes
+        for attr in prim.GetAttributes():
+            try:
+                props[attr.GetName()] = attr.Get().Convert('json')
+            except:
+                pass
+
+        result[prim_path] = props
+
+    print(json.dumps(result))
+
+except Exception as e:
+    print(json.dumps({'error': str(e)}))
+""" % (escaped_path, escaped_paths)
+
+	var result = _execute_python(py_code, _get_python_script_path())
+	return result if result is Dictionary else {}
+
+
 func _get_prim_props(file_path: String, prim_path: String) -> Dictionary:
 	var escaped_path = file_path.replace("\\", "\\\\").replace("'", "\\'")
 	var escaped_prim = prim_path.replace("\\", "\\\\").replace("'", "\\'")
@@ -277,7 +427,7 @@ import sys
 import json
 
 try:
-    from pxr import Usd, UsdGeom
+    from pxr import Usd, UsdGeom, UsdShade
 
     stage = Usd.Stage.Open('%s')
     prim = stage.GetPrimAtPath('%s')
@@ -294,18 +444,64 @@ try:
         matrix = xformable.GetLocalTransformation()
         props['transform'] = [matrix[i][j] for i in range(4) for j in range(4)]
 
-    # Mesh
+    # Mesh data: vertices, normals, UVs, indices
     mesh = UsdGeom.Mesh(prim)
     if mesh:
         mesh_data = {}
-        points = mesh.GetPointsAttr().Get()
-        if points:
-            mesh_data['points'] = [float(p) for p in points]
+        try:
+            points = mesh.GetPointsAttr().Get()
+            if points:
+                mesh_data['points'] = [float(p) for p in points]
+        except:
+            pass
+
+        try:
+            idxs = mesh.GetFaceVertexIndicesAttr().Get()
+            if idxs:
+                mesh_data['indices'] = [int(i) for i in idxs]
+        except:
+            pass
+
+        try:
+            normals = mesh.GetNormalsAttr().Get()
+            if normals:
+                mesh_data['normals'] = [float(n) for n in normals]
+        except:
+            pass
+
+        try:
+            uv_primvar = mesh.GetPrimvar('st')
+            if uv_primvar:
+                uvs = uv_primvar.Get()
+                if uvs is not None and len(uvs) > 0:
+                    mesh_data['uvs'] = [float(u) for u in uvs]
+        except:
+            pass
+
         props['mesh'] = mesh_data
 
-    # Attributes
+        # Material bindings
+        try:
+            mat_binding = UsdShade.MaterialBindingAPI(prim)
+            if mat_binding:
+                bound_mat, relationship = mat_binding.ComputeBoundMaterial()
+                if bound_mat:
+                    mat_data = {}
+                    mat_data['path'] = str(bound_mat.GetPath())
+                    for child in bound_mat.GetPrim().GetChildren():
+                        if child.GetTypeName() == 'Shader':
+                            for attr in child.GetAttributes():
+                                mat_data[attr.GetName()] = attr.Get().Convert('json')
+                    props['material'] = mat_data
+        except:
+            pass
+
+    # Generic attributes
     for attr in prim.GetAttributes():
-        props[attr.GetName()] = attr.Get().Convert('json')
+        try:
+            props[attr.GetName()] = attr.Get().Convert('json')
+        except:
+            pass
 
     print(json.dumps(props))
 
@@ -313,7 +509,7 @@ except Exception as e:
     print(json.dumps({'error': str(e)}))
 """ % (escaped_path, escaped_prim)
 
-	var result = _execute_python(py_code, script_path)
+	var result = _execute_python(py_code, _get_python_script_path())
 	return result if result is Dictionary else {}
 
 
@@ -362,22 +558,18 @@ static func create_array_mesh(vertices: PackedVector3Array, indices: PackedInt32
 	var mesh = ArrayMesh.new()
 
 	var arrays = []
-	arrays.append(Mesh.ARRAY_VERTEX)  # Index 0
-	arrays.append(vertices)
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
 
 	if normals.size() == vertices.size():
-		arrays.append(Mesh.ARRAY_NORMAL)  # Index 1
-		arrays.append(normals)
+		arrays[Mesh.ARRAY_NORMAL] = normals
 
 	if uvs.size() == vertices.size():
-		arrays.append(Mesh.ARRAY_TEX_UV)  # Index 2
-		arrays.append(uvs)
+		arrays[Mesh.ARRAY_TEX_UV] = uvs
 
 	# Add index array if we have triangles
 	if indices.size() > 0:
-		var index_array = Mesh.ARRAY_INDEX  # Index 12
-		arrays.append(index_array)
-		arrays.append(indices)
+		arrays[Mesh.ARRAY_INDEX] = indices
 
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
