@@ -31,17 +31,17 @@ enum IsaacPackage {
 
 static func is_isaac_available() -> bool:
 	# Check if isaac_ros packages are available
-	var result = OS.execute("ros2", ["pkg", "list"], true)
-	if result[0] == OK:
-		var output = result[1]
+	var result_output = []; var result = OS.execute("ros2", ["pkg", "list"], result_output, true)
+	if result == OK and result_output.size() > 0:
+		var output = result_output[0]
 		return output.contains("isaac_ros") or output.contains("navigation2")
 	return false
 
 
 static func get_isaac_packages() -> Array:
-	var result = OS.execute("ros2", ["pkg", "list"], true)
-	if result[0] == OK:
-		var output = result[1]
+	var result_output = []; var result = OS.execute("ros2", ["pkg", "list"], result_output, true)
+	if result == OK and result_output.size() > 0:
+		var output = result_output[0]
 		var packages = []
 		for line in output.split("\n"):
 			if "isaac" in line.to_lower():

@@ -115,13 +115,13 @@ func batch_raycast_from_points(origins: Array, directions: Array) -> Array:
 
 func _send_command(cmd: Dictionary) -> Dictionary:
 	var json_str = JSON.stringify(cmd)
-	var result = OS.execute("python3", ["-c", """
+	var output = []; var result = OS.execute("python3", ["-c", """
 import sys, json
 print(json.dumps(%s))
-""" % json_str], true)
+""" % json_str], output, true)
 
-	if result[0] == 0:
-		var parsed = JSON.parse_string(result[1])
+	if result == 0 and output.size() > 0:
+		var parsed = JSON.parse_string(output[0])
 		if parsed is Dictionary:
 			return parsed
 	return {"status": "error"}

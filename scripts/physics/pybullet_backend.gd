@@ -285,7 +285,7 @@ func _send_command(cmd: Dictionary) -> Dictionary:
 	var resp_file = temp_dir + "/resp.json"
 
 	# Create temp directory
-	OS.execute("mkdir", ["-p", temp_dir], true)
+	OS.execute("mkdir", ["-p", temp_dir], [], true)
 
 	# Write command to temp file
 	var f = FileAccess.open(cmd_file, FileAccess.WRITE)
@@ -318,7 +318,7 @@ bridge.process_command(cmd)
 """ % (script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\"))], output, true)
 
 	# Clean up temp files
-	OS.execute("rm", ["-rf", temp_dir], true)
+	OS.execute("rm", ["-rf", temp_dir], [], true)
 
 	# Parse response
 	if result == 0 and output.size() > 0:

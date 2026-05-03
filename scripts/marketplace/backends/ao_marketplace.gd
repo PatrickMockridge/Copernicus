@@ -45,8 +45,8 @@ func get_marketplace_description() -> String:
 
 func is_available() -> bool:
 	# Check if AO SDK is available
-	var result = OS.execute("node", ["--version"], true)
-	return result[0] == 0
+	var output = []; var result = OS.execute("node", ["--version"], output, true)
+	return result == 0
 
 
 func get_requirements() -> String:
@@ -160,7 +160,7 @@ func _upload_listing_files(files: Array) -> Result:
 
 		# Determine content type
 		var ext = file_path.get_extension().to_lower()
-		var content_type = _get_content_type(ext)
+		var content_type = FileUtils.get_content_type(ext)
 
 		# Upload to Arweave
 		var tags = {
@@ -186,31 +186,6 @@ func _upload_listing_files(files: Array) -> Result:
 		"files": uploaded_files,
 		"manifest_tx_id": manifest_tx_id
 	})
-
-
-func _get_content_type(ext: String) -> String:
-	match ext:
-		"gd", "gdscript": return "text/plain"
-		"tscn": return "text/plain"
-		"escn": return "text/plain"
-		"tres": return "text/plain"
-		"png": return "image/png"
-		"jpg", "jpeg": return "image/jpeg"
-		"obj": return "model/obj"
-		"glb": return "model/gltf-binary"
-		"gltf": return "model/gltf+json"
-		"dae": return "model/vnd.collada+xml"
-		"urdf": return "application/xml"
-		"xacro": return "application/xml"
-		"pdf": return "application/pdf"
-		"zip": return "application/zip"
-		"json": return "application/json"
-		"md": return "text/markdown"
-		"txt": return "text/plain"
-		_:
-			return "application/octet-stream"
-
-
 func update_listing(listing_id: String, config: Dictionary) -> bool:
 	if not is_connected():
 		return false

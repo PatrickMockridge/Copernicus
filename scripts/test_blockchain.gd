@@ -6,7 +6,7 @@ extends Node3D
 const ArweaveWallet = preload("res://addons/godot_ros2/arweave/arweave_wallet.gd")
 const AriadneInterface = preload("res://addons/godot_ros2/arweave/ariadne_interface.gd")
 const AOSDK = preload("res://addons/hyperobject/sdk/ao.gd")
-const RobotHyperobject = preload("res://addons/godot_ros2/arweave/robot_hyperobject.gd")
+const RobotHyperobject = preload("res://scripts/robot_hyperobject.gd")
 const TradeManager = preload("res://addons/godot_ros2/arweave/trade_manager.gd")
 const Result = preload("res://addons/primitives/result.gd")
 
@@ -113,19 +113,8 @@ func _test_publish() -> void:
 		_finish_test()
 		return
 
-	# Create a simple robot manifest for testing
-	var manifest = {
-		"format_version": "1.0",
-		"name": "TestRobot",
-		"robot_type": 0,
-		"links": [],
-		"joints": [],
-		"pose": {"position": [0, 0, 0], "rotation": [0, 0, 0]}
-	}
-
-	# Create robot hyperobject
-	var robot = RobotHyperobject.new("TestRobot", _ariadne, _ao)
-	robot.set_manifest(manifest)
+	# Create robot hyperobject (uses AO SDK directly)
+	var robot = RobotHyperobject.new("TestRobot", _ao)
 	robot.set_description("Test robot for blockchain publishing")
 
 	print("RobotHyperobject created")

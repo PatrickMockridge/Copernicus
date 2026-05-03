@@ -99,7 +99,7 @@ func _update_ray_visual(index: int, origin: Vector3, direction: Vector3, distanc
 	transform.basis = transform.basis.rotated(Vector3.UP, PI / 2.0)
 
 	var scale = Vector3(1, 1, distance)
-	transform.scaled(scale)
+	transform = transform.scaled(scale)
 
 	_line_multimesh.set_instance_transform(index, transform)
 

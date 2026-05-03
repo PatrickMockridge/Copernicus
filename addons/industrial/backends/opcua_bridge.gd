@@ -57,7 +57,7 @@ static func is_available() -> bool:
 	# OPC-UA support requires opcua package (asyncua or similar)
 	# For now, this is a placeholder - return false until proper implementation
 	var result = OS.execute("python3", ["-c", "import asyncua; print('available')"], [], true)
-	return result[0] == OK
+	return result == OK
 
 
 static func get_requirements() -> String:
@@ -93,7 +93,7 @@ func connect(address: String) -> bool:
 	# Real implementation would use opcua package or native bindings
 
 	_connected = true
-	emit_signal("connection_changed", true)
+	connection_changed.emit(true)
 	return true
 
 
@@ -104,7 +104,7 @@ func disconnect() -> void:
 	_abort_trajectory_internal()
 	_connected = false
 	_session_id = ""
-	emit_signal("connection_changed", false)
+	connection_changed.emit(false)
 
 
 func is_connected() -> bool:
@@ -157,7 +157,7 @@ func execute_trajectory(points: Array) -> bool:
 	_is_trajectory_running = true
 	# TODO: Implement trajectory execution
 	_is_trajectory_running = false
-	emit_signal("trajectory_complete", true)
+	trajectory_complete.emit(true)
 	return true
 
 
@@ -194,16 +194,16 @@ func move_cartesian(position: Vector3, orientation: Quaternion) -> bool:
 
 ## ===== Safety =====
 
-func trigger_eston() -> void:
+func trigger_estop() -> void:
 	if not _connected:
 		return
 
 	_e_stop_triggered = true
 	abort_trajectory()
-	emit_signal("error_occurred", "E-Stop triggered")
+	error_occurred.emit("E-Stop triggered")
 
 
-func clear_eston() -> void:
+func clear_estop() -> void:
 	if not _connected:
 		return
 

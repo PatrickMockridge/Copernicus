@@ -121,7 +121,7 @@ func is_in_error() -> bool:
 
 
 ## Check if emergency stop is triggered
-func is_eston_triggered() -> bool:
+func is_estop_triggered() -> bool:
 	return _current_status.get("e_stop_triggered", false)
 
 
@@ -152,23 +152,23 @@ func _update_status() -> void:
 	## Check for mode change
 	var new_mode = new_status.get("mode", 0)
 	if new_mode != old_mode:
-		emit_signal("mode_changed", new_mode)
+		mode_changed.emit(new_mode)
 
 	## Check for e-stop trigger
 	var new_estop = new_status.get("e_stop_triggered", false)
 	if new_estop and not old_estop:
-		emit_signal("e_stop_triggered")
+		e_stop_triggered.emit()
 
 	## Check for error
 	var error_code = new_status.get("error_code", 0)
 	if error_code != 0:
-		emit_signal("error_occurred", error_code)
+		error_occurred.emit(error_code)
 
 	## Check digital I/O changes
 	_check_io_changes(new_status)
 
 	## Emit status changed
-	emit_signal("status_changed", _current_status.duplicate(true))
+	status_changed.emit(_current_status.duplicate(true))
 
 
 func _check_io_changes(status: Dictionary) -> void:
@@ -178,7 +178,7 @@ func _check_io_changes(status: Dictionary) -> void:
 	## Compare with last states and emit signals for changes
 	for i in range(min(new_inputs.size(), _last_io_states.size())):
 		if new_inputs[i] != _last_io_states[i]:
-			emit_signal("io_changed", i, new_inputs[i])
+			io_changed.emit(i, new_inputs[i])
 
 	_last_io_states = new_inputs.duplicate()
 

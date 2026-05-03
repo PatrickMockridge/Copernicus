@@ -25,9 +25,9 @@ static func get_backend_description() -> String:
 
 static func is_available() -> bool:
 	# Check if PyBullet CUDA is available
-	var result = OS.execute("python3", ["-c", "import pybullet; print(hasattr(pybullet, 'CUDA'))"], true)
-	if result[0] == 0:
-		return "True" in result[1] or "1" in result[1]
+	var output = []; var result = OS.execute("python3", ["-c", "import pybullet; print(hasattr(pybullet, 'CUDA'))"], output, true)
+	if result == 0 and output.size() > 0:
+		return "True" in output[0] or "1" in output[0]
 	return false
 
 
@@ -59,15 +59,15 @@ func initialize(config: Dictionary) -> bool:
 func _check_cuda_connection() -> bool:
 	# PyBullet uses CUDA when you call setGravity with a GPU-enabled client
 	# We can verify by checking the physics engine
-	var result = OS.execute("python3", ["-c", """
+	var output = []; var result = OS.execute("python3", ["-c", """
 import pybullet as p
 import pybullet_data
 cid = p.connect(p.GUI)
 info = p.getPhysicsInfo(cid)
 print('cuda' if info.gpuEnabled else 'cpu')
 p.disconnect(cid)
-"""], true)
-	if result[0] == 0 and "cuda" in result[1].to_lower():
+"""], output, true)
+	if result == 0 and output.size() > 0 and "cuda" in output[0].to_lower():
 		return true
 	return false
 

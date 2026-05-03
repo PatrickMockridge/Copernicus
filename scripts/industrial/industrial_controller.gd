@@ -57,7 +57,7 @@ func connect_robot(ip: String, backend_id: String = "MockIndustrial") -> bool:
 
 	# Connect to robot
 	if not _backend.connect(ip):
-		emit_signal("error_occurred", "Failed to connect to %s at %s" % [backend_id, ip])
+		error_occurred.emit("Failed to connect to %s at %s" % [backend_id, ip])
 		return false
 
 	# Start monitoring
@@ -65,7 +65,7 @@ func connect_robot(ip: String, backend_id: String = "MockIndustrial") -> bool:
 	_status_monitor.status_changed.connect(_on_status_changed)
 
 	_robot_name = backend_id
-	emit_signal("connected", _robot_name)
+	connected.emit(_robot_name)
 	return true
 
 
@@ -77,7 +77,7 @@ func disconnect_robot() -> void:
 	_status_monitor.stop_monitoring()
 	_robot_name = "Unknown"
 
-	emit_signal("disconnected")
+	disconnected.emit()
 
 
 ## ===== Connection State =====
@@ -107,7 +107,7 @@ func get_mode_string() -> String:
 
 
 func is_estop_triggered() -> bool:
-	return _status_monitor.is_eston_triggered()
+	return _status_monitor.is_estop_triggered()
 
 
 func is_in_error() -> bool:
@@ -166,13 +166,13 @@ func move_cartesian(position: Vector3, orientation: Quaternion) -> bool:
 ## Trigger emergency stop
 func trigger_estop() -> void:
 	if _backend:
-		_backend.trigger_eston()
+		_backend.trigger_estop()
 
 
 ## Clear emergency stop
 func clear_estop() -> void:
 	if _backend:
-		_backend.clear_eston()
+		_backend.clear_estop()
 
 
 ## ===== I/O =====
@@ -216,15 +216,15 @@ func get_joint_positions_formatted() -> String:
 ## ===== Signal Handlers =====
 
 func _on_status_changed(status: Dictionary) -> void:
-	emit_signal("status_changed", status)
+	status_changed.emit(status)
 
 
 func _on_trajectory_completed() -> void:
-	emit_signal("trajectory_completed", true)
+	trajectory_completed.emit(true)
 
 
 func _on_trajectory_aborted() -> void:
-	emit_signal("trajectory_completed", false)
+	trajectory_completed.emit(false)
 
 
 ## ===== Utility =====

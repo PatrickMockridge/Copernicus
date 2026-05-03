@@ -34,7 +34,7 @@ var _action_servers: Dictionary = {}
 
 static func is_rclpy_available() -> bool:
 	var result = OS.execute("python3", ["-c", "import rclpy; print('available')"], [], true)
-	return result[0] == OK
+	return result == OK
 
 
 static func get_requirements() -> String:
@@ -202,7 +202,7 @@ func _start_python_node() -> Result:
 	var cmd_file = temp_dir + "/cmd.json"
 	var resp_file = temp_dir + "/resp.json"
 
-	OS.execute("mkdir", ["-p", temp_dir], true)
+	OS.execute("mkdir", ["-p", temp_dir], [], true)
 
 	# Write initialization command
 	var f = FileAccess.open(cmd_file, FileAccess.WRITE)

@@ -135,7 +135,7 @@ func upload_files() -> Result:
 
 		# Determine content type
 		var ext = file_path.get_extension().to_lower()
-		var content_type = _get_content_type(ext)
+		var content_type = FileUtils.get_content_type(ext)
 
 		# Build tags
 		var tags = {
@@ -387,20 +387,3 @@ func from_dictionary(data: Dictionary) -> void:
 
 
 ## ===== Helper Methods =====
-
-func _get_content_type(extension: String) -> String:
-	match extension:
-		"gd": return "text/x-gdscript"
-		"tscn": return "text/plain"
-		"tres": return "text/plain"
-		"urdf": return "application/xml"
-		"glb": return "model/gltf-binary"
-		"gltf": return "model/gltf+json"
-		"obj": return "model/obj"
-		"stl": return "model/stl"
-		"vrm": return "model/vrm"
-		"png": return "image/png"
-		"jpg", "jpeg": return "image/jpeg"
-		"json": return "application/json"
-		"md": return "text/markdown"
-		_: return "application/octet-stream"

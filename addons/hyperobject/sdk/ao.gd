@@ -237,7 +237,7 @@ func upload_asset(path: String, tags: Dictionary = {}) -> Result:
 		return Result.err("Could not read file")
 
 	var ext = path.get_extension().to_lower()
-	tags["Content-Type"] = _get_content_type(ext)
+	tags["Content-Type"] = FileUtils.get_content_type(ext)
 
 	return upload_data(file, tags)
 
@@ -279,15 +279,3 @@ func _message_tags(message: Dictionary) -> Array:
 	if not action.is_empty():
 		tags.append({"name": "Action", "value": action})
 	return tags
-
-
-func _get_content_type(extension: String) -> String:
-	match extension:
-		"vrm": return "model/vrm"
-		"glb": return "model/gltf-binary"
-		"gltf": return "model/gltf+json"
-		"png": return "image/png"
-		"jpg", "jpeg": return "image/jpeg"
-		"mp4": return "video/mp4"
-		"json": return "application/json"
-		_: return "application/octet-stream"

@@ -39,7 +39,7 @@ signal replicator_error(message: String)
 static func is_replicator_available() -> bool:
 	# Check if Omniverse Replicator is available
 	var result = OS.execute("python3", ["-c", "import omni.replicator; print('available')"], [], true)
-	return result[0] == OK
+	return result == OK
 
 
 static func get_supported_formats() -> Array:

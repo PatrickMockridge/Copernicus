@@ -5,9 +5,6 @@
 class_name AStarGridPlanner
 extends NavPlanner
 
-# Ensure NavPlanner is loaded first
-const _NavPlannerRef = preload("res://scripts/nav/nav_planner.gd")
-
 ## Grid map data
 var _grid_width: int = 0
 var _grid_height: int = 0

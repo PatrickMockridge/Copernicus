@@ -157,13 +157,13 @@ func move_cartesian(position: Vector3, orientation: Quaternion) -> bool:
 ## ===== Safety =====
 
 ## Trigger emergency stop
-func trigger_eston() -> void:
-	push_error("IndustrialBackend.trigger_eston() must be implemented by subclass")
+func trigger_estop() -> void:
+	push_error("IndustrialBackend.trigger_estop() must be implemented by subclass")
 
 
 ## Clear emergency stop
-func clear_eston() -> void:
-	push_error("IndustrialBackend.clear_eston() must be implemented by subclass")
+func clear_estop() -> void:
+	push_error("IndustrialBackend.clear_estop() must be implemented by subclass")
 
 
 ## ===== Digital I/O =====

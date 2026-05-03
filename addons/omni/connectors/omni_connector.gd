@@ -163,14 +163,14 @@ func _notification_callback(notification: String, data: Dictionary) -> void:
 		"connection_changed":
 			_connected = data.get("connected", false)
 			if _connected:
-				emit_signal("connected")
+				connected.emit()
 			else:
-				emit_signal("disconnected")
+				disconnected.emit()
 		"sync_complete":
 			_last_sync_time = Time.get_ticks_msec() / 1000.0
-			emit_signal("scene_synced")
+			scene_synced.emit()
 		"error":
-			emit_signal("error_occurred", data.get("message", "Unknown error"))
+			error_occurred.emit(data.get("message", "Unknown error"))
 
 
 ## ===== Connectable Node Tracking =====

@@ -1,8 +1,9 @@
-fix_gameai_prompt.md
-
 # Godot build artifacts
 .godot/
 *.uid
+
+# Dependencies
+node_modules/
 
 # Environment / API keys
 .env

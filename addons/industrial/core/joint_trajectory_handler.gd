@@ -73,11 +73,11 @@ func set_speed(speed: float) -> void:
 ## Start trajectory execution
 func execute() -> bool:
 	if _trajectory.size() == 0:
-		emit_signal("error", "No trajectory points set")
+		error.emit("No trajectory points set")
 		return false
 
 	if _backend == null:
-		emit_signal("error", "No backend configured")
+		error.emit("No backend configured")
 		return false
 
 	_is_executing = true
@@ -85,7 +85,7 @@ func execute() -> bool:
 	_start_time = Time.get_ticks_msec() / 1000.0
 	_last_point_time = 0.0
 
-	emit_signal("trajectory_started")
+	trajectory_started.emit()
 	_execute_current_point()
 	return true
 
@@ -97,7 +97,7 @@ func abort() -> void:
 
 	_is_executing = false
 	_backend.abort_trajectory()
-	emit_signal("trajectory_aborted")
+	trajectory_aborted.emit()
 
 
 ## Get current point index
@@ -145,7 +145,7 @@ func process(delta: float) -> void:
 func _execute_current_point() -> void:
 	if _current_point_index >= _trajectory.size():
 		_is_executing = false
-		emit_signal("trajectory_completed")
+		trajectory_completed.emit()
 		return
 
 	var point = _trajectory[_current_point_index]
@@ -154,7 +154,7 @@ func _execute_current_point() -> void:
 	if _backend.is_connected():
 		_backend.move_joints(positions)
 
-	emit_signal("point_reached", _current_point_index)
+	point_reached.emit(_current_point_index)
 
 	## Schedule interpolation check
 	var next_time = _get_next_point_time()
@@ -167,7 +167,7 @@ func _advance_to_next_point() -> void:
 
 	if _current_point_index >= _trajectory.size():
 		_is_executing = false
-		emit_signal("trajectory_completed")
+		trajectory_completed.emit()
 		return
 
 	_execute_current_point()

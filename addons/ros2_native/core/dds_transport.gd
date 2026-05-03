@@ -30,10 +30,10 @@ signal disconnected()
 static func is_available() -> bool:
 	# Check if Fast DDS or cyclonedds is available
 	var result = OS.execute("python3", ["-c", "import fastdds; print('available')"], [], true)
-	if result[0] == OK:
+	if result == OK:
 		return true
 	result = OS.execute("python3", ["-c", "import cyclonedds; print('available')"], [], true)
-	return result[0] == OK
+	return result == OK
 
 
 ## ===== Configuration =====

@@ -136,40 +136,12 @@ func discover_robot_files() -> Array:
 	var extensions = ["gd", "tscn", "tres", "urdf", "glb", "gltf", "obj", "stl", "vrm"]
 
 	for search_path in search_paths:
-		files.append_array(_scan_directory(search_path, extensions))
+		files.append_array(FileUtils.scan_directory(search_path, extensions))
 
 	return files
 
 
 ## Scan a directory for files with given extensions
-func _scan_directory(dir_path: String, extensions: Array) -> Array:
-	var files: Array = []
-
-	if not DirAccess.dir_exists_absolute(dir_path):
-		return files
-
-	var dir = DirAccess.open(dir_path)
-	if not dir:
-		return files
-
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-
-	while not file_name.is_empty():
-		if dir.current_is_dir():
-			if not file_name.begins_with("."):
-				files.append_array(_scan_directory(dir_path + "/" + file_name, extensions))
-		else:
-			var ext = file_name.get_extension().to_lower()
-			if extensions.has(ext):
-				files.append(dir_path + "/" + file_name)
-
-		file_name = dir.get_next()
-
-	dir.list_dir_end()
-	return files
-
-
 ## ===== Git/ARIADNE Operations =====
 
 ## Create or update git repo for ARIADNE
@@ -248,7 +220,7 @@ func _create_bundle(files: Array) -> String:
 			continue
 
 		var ext = file_path.get_extension().to_lower()
-		var content_type = _get_content_type(ext)
+		var content_type = FileUtils.get_content_type(ext)
 
 		# Upload directly to Arweave
 		var upload_result = _ao.upload_asset(file_path, {"Content-Type": content_type})
@@ -287,26 +259,6 @@ func _get_relative_path(file_path: String) -> String:
 		return file_path.substr(res_prefix.length())
 
 	return file_path.get_file()
-
-
-func _get_content_type(extension: String) -> String:
-	match extension:
-		"gd": return "text/x-gdscript"
-		"tscn": return "text/plain"
-		"tres": return "text/plain"
-		"urdf": return "application/xml"
-		"glb": return "model/gltf-binary"
-		"gltf": return "model/gltf+json"
-		"obj": return "model/obj"
-		"stl": return "model/stl"
-		"vrm": return "model/vrm"
-		"png": return "image/png"
-		"jpg", "jpeg": return "image/jpeg"
-		"json": return "application/json"
-		"md": return "text/markdown"
-		_: return "application/octet-stream"
-
-
 func _emit_progress(stage: String, percent: float) -> void:
 	publish_progress.emit(stage, percent)
 

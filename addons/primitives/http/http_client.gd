@@ -32,7 +32,7 @@ func _process(delta: float) -> void:
 	if _pending_request and _request_completed:
 		_pending_request = false
 		_request_completed = false
-		emit_signal("completed", _request_result)
+		completed.emit(_request_result)
 
 
 func set_base_url(url: String) -> void:

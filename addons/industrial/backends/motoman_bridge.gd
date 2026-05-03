@@ -109,11 +109,11 @@ func connect(address: String) -> bool:
 
 		if _socket.get_status() == StreamPeerTCP.STATUS_CONNECTED:
 			_connected = true
-			emit_signal("connection_changed", true)
+			connection_changed.emit(true)
 			return true
 
 	_connected = false
-	emit_signal("error_occurred", "Failed to connect to MOTOMAN at %s:%d" % [_robot_ip, _port])
+	error_occurred.emit("Failed to connect to MOTOMAN at %s:%d" % [_robot_ip, _port])
 	return false
 
 
@@ -124,7 +124,7 @@ func disconnect() -> void:
 	_abort_trajectory_internal()
 	_socket.disconnect_from_host()
 	_connected = false
-	emit_signal("connection_changed", false)
+	connection_changed.emit(false)
 
 
 func is_connected() -> bool:
@@ -211,7 +211,7 @@ func execute_trajectory(points: Array) -> bool:
 
 		if response.size() == 0 or response[0] != 0:
 			_is_trajectory_running = false
-			emit_signal("trajectory_complete", false)
+			trajectory_complete.emit(false)
 			return false
 
 		# Wait for point timing
@@ -219,7 +219,7 @@ func execute_trajectory(points: Array) -> bool:
 		await get_tree().create_timer(time_from_start).timeout
 
 	_is_trajectory_running = false
-	emit_signal("trajectory_complete", true)
+	trajectory_complete.emit(true)
 	return true
 
 
@@ -303,7 +303,7 @@ func _compute_simple_ik(target_pos: Vector3, target_orient: Quaternion) -> Array
 
 ## ===== Safety =====
 
-func trigger_eston() -> void:
+func trigger_estop() -> void:
 	if not is_connected():
 		return
 
@@ -312,10 +312,10 @@ func trigger_eston() -> void:
 		_e_stop_triggered = true
 		_mode = 2  # STOP
 		abort_trajectory()
-		emit_signal("error_occurred", "E-Stop triggered via INRC4")
+		error_occurred.emit("E-Stop triggered via INRC4")
 
 
-func clear_eston() -> void:
+func clear_estop() -> void:
 	if not is_connected():
 		return
 

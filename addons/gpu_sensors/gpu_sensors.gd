@@ -38,7 +38,7 @@ func _exit_tree() -> void:
 static func is_cuda_available() -> bool:
 	# Check if CUDA is available
 	var result = OS.execute("nvidia-smi", [], [], true)
-	return result[0] == OK
+	return result == OK
 
 
 static func get_supported_lidar_models() -> Array:

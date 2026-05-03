@@ -34,8 +34,8 @@ static func is_available() -> bool:
 
 
 static func _check_ros2_available() -> bool:
-	var result = OS.execute("ros2", ["pkg", "list"], true)
-	return result[0] == 0
+	var output = []; var result = OS.execute("ros2", ["pkg", "list"], output, true)
+	return result == 0
 
 
 static func get_requirements() -> String:
@@ -196,19 +196,20 @@ with open('%s', 'w') as f:
 
 ## ===== Static Helpers =====
 
-static func check_navigation_stack() -> Dictionary:
-	var status = {
-		"nav2_available": false,
-		"planner_available": false,
-		"controller_available": false,
-		"amcl_available": false
-	}
+	static func check_navigation_stack() -> Dictionary:
+		var status = {
+			"nav2_available": false,
+			"planner_available": false,
+			"controller_available": false,
+			"amcl_available": false
+		}
 
-	var result = OS.execute("ros2", ["pkg", "list"], true)
-	if result[0] == 0:
-		var output = result[1]
-		status.nav2_available = "navigation2" in output
-		status.planner_available = "nav2_bringup" in output
-		status.amcl_available = "nav2_amcl" in output
+		var output = []
+		var result = OS.execute("ros2", ["pkg", "list"], output, true)
+		if result == 0 and output.size() > 0:
+			var output_str = output[0]
+			status.nav2_available = "navigation2" in output_str
+			status.planner_available = "nav2_bringup" in output_str
+			status.amcl_available = "nav2_amcl" in output_str
 
-	return status
+		return status

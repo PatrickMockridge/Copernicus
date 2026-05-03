@@ -42,7 +42,7 @@ signal task_error(message: String)
 static func is_isaac_gym_available() -> bool:
 	# Check if Isaac Gym Python package is available
 	var result = OS.execute("python3", ["-c", "import isaacgym; print('available')"], [], true)
-	return result[0] == OK
+	return result == OK
 
 
 static func get_available_tasks() -> Array:

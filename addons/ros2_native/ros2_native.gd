@@ -56,11 +56,11 @@ static func is_isaac_available() -> bool:
 
 ## Get ROS2 distro
 static func get_ros_distro() -> String:
-	var result = OS.execute("echo", ["$ROS_DISTRO"], true)
-	if result[0] == OK:
-		var output = result[1].strip_edges()
-		if output != "":
-			return output
+	var output = []; var result = OS.execute("echo", ["$ROS_DISTRO"], output, true)
+	if result == OK and output.size() > 0:
+		var distro = output[0].strip_edges()
+		if distro != "":
+			return distro
 	return "unknown"
 
 

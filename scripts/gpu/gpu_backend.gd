@@ -128,19 +128,19 @@ func batch_raycast_from_points(origins: Array, directions: Array) -> Array:
 ## ===== Static Helpers =====
 
 static func check_cuda_available() -> bool:
-	var result = OS.execute("python3", ["-c", "import torch; print(torch.cuda.is_available())"], true)
-	return result[0] == 0 and "True" in result[1]
+	var output = []; var result = OS.execute("python3", ["-c", "import torch; print(torch.cuda.is_available())"], output, true)
+	return result == 0 and output.size() > 0 and "True" in output[0]
 
 
 static func check_pytorch_available() -> bool:
-	var result = OS.execute("python3", ["-c", "import torch; print('ok')"], true)
-	return result[0] == 0
+	var output = []; var result = OS.execute("python3", ["-c", "import torch; print('ok')"], output, true)
+	return result == 0
 
 
 static func check_pybullet_cuda_available() -> bool:
-	var result = OS.execute("python3", ["-c", "import pybullet; print(hasattr(pybullet, 'CUDA'))"], true)
-	if result[0] == 0:
-		return "True" in result[1] or "1" in result[1]
+	var output = []; var result = OS.execute("python3", ["-c", "import pybullet; print(hasattr(pybullet, 'CUDA'))"], output, true)
+	if result == 0 and output.size() > 0:
+		return "True" in output[0] or "1" in output[0]
 	return false
 
 

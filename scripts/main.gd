@@ -246,10 +246,10 @@ func _on_topic_explained(result: GameAIResult) -> void:
 func _on_diagnosis_completed(result: GameAIResult) -> void:
 	_display_result(result, "diagnosis")
 
-func _on_state_machine_generated(result) -> void:
+func _on_state_machine_generated(result: GameAIResult) -> void:
 	_display_result(result, "state machine")
 
-func _on_vision_pipeline_generated(result) -> void:
+func _on_vision_pipeline_generated(result: GameAIResult) -> void:
 	_display_result(result, "vision pipeline")
 
 func _on_waypoint_controller_generated(result) -> void:

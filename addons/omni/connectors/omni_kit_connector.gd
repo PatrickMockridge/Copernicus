@@ -82,24 +82,24 @@ func disconnect() -> void:
 
 	_connected = false
 	_set_connection_state(ConnectionState.DISCONNECTED)
-	emit_signal("disconnected")
+	disconnected.emit()
 
 
 func _set_connection_state(state: ConnectionState) -> void:
 	match state:
 		ConnectionState.DISCONNECTED:
 			_connected = false
-			emit_signal("connection_status_changed", "disconnected")
+			connection_status_changed.emit("disconnected")
 		ConnectionState.CONNECTING:
-			emit_signal("connection_status_changed", "connecting")
+			connection_status_changed.emit("connecting")
 		ConnectionState.CONNECTED:
 			_connected = true
-			emit_signal("connected")
-			emit_signal("connection_status_changed", "connected")
+			connected.emit()
+			connection_status_changed.emit("connected")
 		ConnectionState.ERROR:
 			_connected = false
-			emit_signal("error_occurred", "Connection error")
-			emit_signal("connection_status_changed", "error")
+			error_occurred.emit("Connection error")
+			connection_status_changed.emit("error")
 
 
 ## ===== Message Handling =====
@@ -145,7 +145,7 @@ func _handle_packet(packet: PackedByteArray) -> void:
 			"scene_update":
 				_handle_scene_update(message)
 			"error":
-				emit_signal("error_occurred", message.get("message", "Unknown"))
+				error_occurred.emit(message.get("message", "Unknown"))
 			_:
 				_pass
 
@@ -154,9 +154,9 @@ func _handle_sync_response(response: Dictionary) -> void:
 	var success = response.get("success", false)
 	if success:
 		_last_sync_time = Time.get_ticks_msec() / 1000.0
-		emit_signal("scene_synced")
+		scene_synced.emit()
 	else:
-		emit_signal("error_occurred", "Sync failed: " + response.get("error", "Unknown"))
+		error_occurred.emit("Sync failed: " + response.get("error", "Unknown"))
 
 
 func _handle_scene_update(update: Dictionary) -> void:

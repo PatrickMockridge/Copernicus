@@ -81,7 +81,7 @@ func initialize(config: Dictionary) -> bool:
 		_joint_velocities.append(0.0)
 		_joint_torques.append(0.0)
 
-	emit_signal("backend_initialized", true)
+	backend_initialized.emit(true)
 	return true
 
 
@@ -101,7 +101,7 @@ func connect(address: String) -> bool:
 	_connected = true
 	_connecting = false
 
-	emit_signal("connection_changed", true)
+	connection_changed.emit(true)
 	return true
 
 
@@ -111,7 +111,7 @@ func disconnect() -> void:
 
 	_abort_trajectory_internal()
 	_connected = false
-	emit_signal("connection_changed", false)
+	connection_changed.emit(false)
 
 
 func is_connected() -> bool:
@@ -214,14 +214,14 @@ func move_cartesian(position: Vector3, orientation: Quaternion) -> bool:
 
 ## ===== Safety =====
 
-func trigger_eston() -> void:
+func trigger_estop() -> void:
 	_e_stop_triggered = true
 	_mode = 2  # STOP
 	_abort_trajectory_internal()
-	emit_signal("error_occurred", "E-Stop triggered")
+	error_occurred.emit("E-Stop triggered")
 
 
-func clear_eston() -> void:
+func clear_estop() -> void:
 	_e_stop_triggered = false
 	_mode = 1  # RUN
 	_error_code = 0
@@ -282,13 +282,13 @@ func _process_trajectory() -> void:
 					_joint_positions[i] = positions[i]
 
 			_current_trajectory_index += 1
-			emit_signal("point_reached", _current_trajectory_index - 1)
+			point_reached.emit(_current_trajectory_index - 1)
 		else:
 			break
 
 	if _current_trajectory_index >= _trajectory_points.size():
 		_is_trajectory_running = false
-		emit_signal("trajectory_complete", true)
+		trajectory_complete.emit(true)
 	else:
 		## Schedule next check
 		await get_tree().create_timer(0.016).timeout
@@ -319,4 +319,4 @@ func set_error_code(code: int) -> void:
 func trigger_simulated_error() -> void:
 	_error_code = 999
 	_mode = 3  # ERROR
-	emit_signal("error_occurred", "Simulated error 999")
+	error_occurred.emit("Simulated error 999")

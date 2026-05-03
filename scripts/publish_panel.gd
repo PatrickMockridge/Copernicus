@@ -249,39 +249,9 @@ func _discover_robot_files() -> Array:
 	var extensions = ["gd", "tscn", "tres", "urdf", "glb", "gltf", "obj", "stl", "vrm"]
 
 	for search_path in search_paths:
-		files.append_array(_scan_directory(search_path, extensions))
+		files.append_array(FileUtils.scan_directory(search_path, extensions))
 
 	return files
-
-
-func _scan_directory(dir_path: String, extensions: Array) -> Array:
-	var files: Array = []
-
-	if not DirAccess.dir_exists_absolute(dir_path):
-		return files
-
-	var dir = DirAccess.open(dir_path)
-	if not dir:
-		return files
-
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
-
-	while not file_name.is_empty():
-		if dir.current_is_dir():
-			if not file_name.begins_with("."):
-				files.append_array(_scan_directory(dir_path + "/" + file_name, extensions))
-		else:
-			var ext = file_name.get_extension().to_lower()
-			if extensions.has(ext):
-				files.append(dir_path + "/" + file_name)
-
-		file_name = dir.get_next()
-
-	dir.list_dir_end()
-	return files
-
-
 func _get_display_path(path: String) -> String:
 	if path.begins_with("res://"):
 		return path.substr(6)

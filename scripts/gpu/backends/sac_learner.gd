@@ -36,8 +36,8 @@ static func get_backend_description() -> String:
 
 
 static func is_available() -> bool:
-	var result = OS.execute("python3", ["-c", "import torch; print(torch.__version__)"], true)
-	return result[0] == 0
+	var output = []; var result = OS.execute("python3", ["-c", "import torch; print(torch.__version__)"], output, true)
+	return result == 0
 
 
 static func get_requirements() -> String:
