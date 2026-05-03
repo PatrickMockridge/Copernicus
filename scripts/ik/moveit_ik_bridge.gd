@@ -24,11 +24,11 @@ var _python_process: int = -1
 var _connection: StreamPeerTCP
 
 
-static func get_solver_name() -> String:
+static func get_module_name() -> String:
 	return "MoveIt IK"
 
 
-static func get_solver_description() -> String:
+static func get_module_description() -> String:
 	return "Industry-grade IK via ROS2/MoveIt. Requires ROS2 and MoveIt configured."
 
 
@@ -43,6 +43,12 @@ static func get_requirements() -> String:
 	return "Requires: ROS2 + MoveIt configured with robot_description"
 
 
+
+static func get_module_category() -> String:
+	return "ik"
+
+static func _static_init():
+	ModuleRegistry.register("ik", "MoveItIKBridge", preload("res://scripts/ik/moveit_ik_bridge.gd"))
 func initialize(config: Dictionary) -> bool:
 	_robot_description = config.get("robot_description", "robot_description")
 	_group_name = config.get("group_name", "manipulator")

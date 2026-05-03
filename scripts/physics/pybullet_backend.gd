@@ -24,11 +24,11 @@ var _pending_commands: Array = []
 var _pending_results: Dictionary = {}
 
 
-static func get_backend_name() -> String:
+static func get_module_name() -> String:
 	return "PyBullet"
 
 
-static func get_backend_description() -> String:
+static func get_module_description() -> String:
 	return "Bullet Physics via Python/PyBullet. Research-grade accuracy for robotics simulation."
 
 
@@ -43,6 +43,12 @@ static func get_requirements() -> String:
 	return "Requires: pip install pybullet"
 
 
+
+static func get_module_category() -> String:
+	return "physics"
+
+static func _static_init():
+	ModuleRegistry.register("physics", "PyBulletBackend", preload("res://scripts/physics/pybullet_backend.gd"))
 ## ===== Initialization =====
 
 func initialize(config: Dictionary) -> bool:

@@ -3,7 +3,7 @@
 # All IK solvers (CCD, FABRIK, MoveIt) must implement this
 
 class_name IKSolver
-extends RefCounted
+extends CopernicusModule
 
 ## Signals
 
@@ -101,16 +101,20 @@ func set_rotation_constraints(allow_x: bool, allow_y: bool, allow_z: bool) -> vo
 	_allow_rotation_z = allow_z
 
 
-## ===== Static Helpers =====
 
-## Get solver name for display
-static func get_solver_name() -> String:
-	return "Unknown"
+	## ===== Module Identity =====
+
+	static func get_module_category() -> String:
+		return "ik"
+
+	static func get_solver_name() -> String:
+		return get_module_name()
+
+	static func get_solver_description() -> String:
+		return get_module_description()
 
 
-## Get solver description for UI
-static func get_solver_description() -> String:
-	return ""
+
 
 
 ## Check if this solver is available (dependencies installed, etc)

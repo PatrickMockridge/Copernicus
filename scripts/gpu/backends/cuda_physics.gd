@@ -15,11 +15,11 @@ var _cuda_available: bool = false
 var _use_cuda: bool = true
 
 
-static func get_backend_name() -> String:
+static func get_module_name() -> String:
 	return "PyBullet CUDA"
 
 
-static func get_backend_description() -> String:
+static func get_module_description() -> String:
 	return "GPU-accelerated physics via PyBullet with CUDA support"
 
 
@@ -35,6 +35,12 @@ static func get_requirements() -> String:
 	return "PyBullet with CUDA support: pip install pybullet torch"
 
 
+
+static func get_module_category() -> String:
+	return "gpu"
+
+static func _static_init():
+	ModuleRegistry.register("gpu", "CUDAPhysics", preload("res://scripts/gpu/backends/cuda_physics.gd"))
 func initialize(config: Dictionary) -> bool:
 	_use_cuda = config.get("use_cuda", true)
 

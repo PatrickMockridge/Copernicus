@@ -106,21 +106,27 @@ func _create_mock_listing(data: Dictionary) -> Listing:
 	return listing
 
 
-func get_marketplace_name() -> String:
+static func get_module_name() -> String:
 	return "Mock Marketplace"
 
 
-func get_marketplace_description() -> String:
+static func get_module_description() -> String:
 	return "Testing marketplace with sample data. No real transactions."
 
 
-func is_available() -> bool:
+static func is_available() -> bool:
 	return true
 
 
-func get_requirements() -> String:
+static func get_requirements() -> String:
 	return "None - mock marketplace for testing"
 
+
+static func get_module_category() -> String:
+	return "marketplace"
+
+static func _static_init():
+	ModuleRegistry.register("marketplace", "MockMarketplace", preload("res://scripts/marketplace/backends/mock_marketplace.gd"))
 
 func is_connected() -> bool:
 	return true

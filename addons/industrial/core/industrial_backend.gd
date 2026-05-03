@@ -3,7 +3,7 @@
 # All industrial backends (MOTOMAN, ABB, UR, etc.) must implement this
 
 class_name IndustrialBackend
-extends RefCounted
+extends CopernicusModule
 
 ## Signals
 
@@ -16,15 +16,20 @@ signal io_changed(input_index: int, value: bool)
 
 ## ===== Core Methods =====
 
-## Get backend name for display
-static func get_backend_name() -> String:
-	push_error("IndustrialBackend.get_backend_name() must be implemented by subclass")
-	return "Unknown"
+
+	## ===== Module Identity =====
+
+	static func get_module_category() -> String:
+		return "industrial"
+
+	static func get_backend_name() -> String:
+		return get_module_name()
+
+	static func get_backend_description() -> String:
+		return get_module_description()
 
 
-## Get backend description for UI
-static func get_backend_description() -> String:
-	return ""
+
 
 
 ## Check if this backend is available (dependencies installed, etc)

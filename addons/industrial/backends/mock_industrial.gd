@@ -48,11 +48,11 @@ var _trajectory_start_time: float = 0.0
 
 ## ===== Static Methods =====
 
-static func get_backend_name() -> String:
+static func get_module_name() -> String:
 	return "MockIndustrial"
 
 
-static func get_backend_description() -> String:
+static func get_module_description() -> String:
 	return "Mock industrial robot for testing. Simulates MOTOMAN/ABB behavior without hardware."
 
 
@@ -64,6 +64,12 @@ static func get_requirements() -> String:
 	return "No requirements - always available for testing."
 
 
+
+static func get_module_category() -> String:
+	return "industrial"
+
+static func _static_init():
+	ModuleRegistry.register("industrial", "MockIndustrial", preload("res://addons/industrial/backends/mock_industrial.gd"))
 ## ===== Initialization =====
 
 func initialize(config: Dictionary) -> bool:

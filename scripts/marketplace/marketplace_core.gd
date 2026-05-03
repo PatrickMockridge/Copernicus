@@ -3,7 +3,7 @@
 # All marketplace backends must implement this
 
 class_name MarketplaceCore
-extends RefCounted
+extends CopernicusModule
 
 ## Signals
 
@@ -110,10 +110,18 @@ func get_config() -> Dictionary:
 	return {}
 
 
-## ===== Static Helpers =====
 
-static func get_marketplace_name() -> String:
-	return "Unknown Marketplace"
+	## ===== Module Identity =====
+
+	static func get_module_category() -> String:
+		return "marketplace"
+
+	static func get_marketplace_name() -> String:
+		return get_module_name()
+
+	static func get_marketplace_description() -> String:
+		return get_module_description()
+
 
 
 static func get_marketplace_description() -> String:

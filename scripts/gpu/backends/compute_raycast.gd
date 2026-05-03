@@ -13,11 +13,11 @@ var _max_distance: float = 30.0
 var _noise_stddev: float = 0.0
 
 
-static func get_backend_name() -> String:
+static func get_module_name() -> String:
 	return "GPU Compute Raycast"
 
 
-static func get_backend_description() -> String:
+static func get_module_description() -> String:
 	return "GPU-accelerated batch raycasting using PyTorch for sensor simulation"
 
 
@@ -29,6 +29,12 @@ static func get_requirements() -> String:
 	return "PyTorch: pip install torch"
 
 
+
+static func get_module_category() -> String:
+	return "gpu"
+
+static func _static_init():
+	ModuleRegistry.register("gpu", "ComputeRaycast", preload("res://scripts/gpu/backends/compute_raycast.gd"))
 func initialize(config: Dictionary) -> bool:
 	_max_distance = config.get("max_distance", 30.0)
 	_noise_stddev = config.get("noise_stddev", 0.0)

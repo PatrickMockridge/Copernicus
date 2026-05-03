@@ -54,49 +54,20 @@ func _on_selector_cancelled() -> void:
 
 ## Create an industrial backend by name
 static func create_backend(backend_id: String, config: Dictionary) -> IndustrialBackend:
-	match backend_id:
-		"MockIndustrial":
-			var backend = MockIndustrial.new()
-			backend.initialize(config)
-			return backend
-		"MOTOMAN":
-			var backend = MotomanBridge.new()
-			backend.initialize(config)
-			return backend
-		_:
-			push_warning("Industrial plugin: unknown backend ", backend_id, ", using MockIndustrial")
-			var backend = MockIndustrial.new()
-			backend.initialize(config)
-			return backend
+	return ModuleRegistry.create("industrial", backend_id, config)
 
 
 ## Get list of available backends
 static func get_available_backends() -> Array:
-	var available = ["MockIndustrial"]
-	if MotomanBridge.is_available():
-		available.append("MOTOMAN")
-	return available
+	var result: Array = []
+	for info in ModuleRegistry.get_available("industrial"):
+		result.append(info["id"])
+	return result
 
 
 ## Get backend info
 static func get_backend_info(backend_id: String) -> Dictionary:
-	match backend_id:
-		"MockIndustrial":
-			return {
-				"name": MockIndustrial.get_backend_name(),
-				"description": MockIndustrial.get_backend_description(),
-				"available": MockIndustrial.is_available(),
-				"requirements": MockIndustrial.get_requirements()
-			}
-		"MOTOMAN":
-			return {
-				"name": MotomanBridge.get_backend_name(),
-				"description": MotomanBridge.get_backend_description(),
-				"available": MotomanBridge.is_available(),
-				"requirements": MotomanBridge.get_requirements()
-			}
-		_:
-			return {}
+	return ModuleRegistry.get_info("industrial", backend_id)
 
 
 ## ===== Joint Trajectory Handler =====

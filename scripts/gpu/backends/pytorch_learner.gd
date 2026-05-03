@@ -25,11 +25,11 @@ var _python_process: int = -1
 var _initialized: bool = false
 
 
-static func get_backend_name() -> String:
+static func get_module_name() -> String:
 	return "PyTorch Q-Learning"
 
 
-static func get_backend_description() -> String:
+static func get_module_description() -> String:
 	return "Deep Q-network (DQN) reinforcement learning via PyTorch with CUDA"
 
 
@@ -42,6 +42,12 @@ static func get_requirements() -> String:
 	return "PyTorch: pip install torch"
 
 
+
+static func get_module_category() -> String:
+	return "gpu"
+
+static func _static_init():
+	ModuleRegistry.register("gpu", "PyTorchLearner", preload("res://scripts/gpu/backends/pytorch_learner.gd"))
 func initialize(config: Dictionary) -> bool:
 	_state_dim = config.get("state_dim", 24)
 	_action_dim = config.get("action_dim", 4)

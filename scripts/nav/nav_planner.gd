@@ -3,7 +3,7 @@
 # All navigation backends (A*, Nav2) must implement this
 
 class_name NavPlanner
-extends RefCounted
+extends CopernicusModule
 
 ## Signals
 
@@ -91,16 +91,20 @@ func set_smooth_path(smooth: bool) -> void:
 	_smooth_path = smooth
 
 
-## ===== Static Helpers =====
 
-## Get planner name for display
-static func get_planner_name() -> String:
-	return "Unknown"
+	## ===== Module Identity =====
+
+	static func get_module_category() -> String:
+		return "nav"
+
+	static func get_planner_name() -> String:
+		return get_module_name()
+
+	static func get_planner_description() -> String:
+		return get_module_description()
 
 
-## Get planner description for UI
-static func get_planner_description() -> String:
-	return ""
+
 
 
 ## Check if this planner is available (dependencies installed, etc)

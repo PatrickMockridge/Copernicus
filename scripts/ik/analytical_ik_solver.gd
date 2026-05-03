@@ -16,11 +16,11 @@ var _final_distance: float = INF
 var _iterations_used: int = 0
 
 
-static func get_solver_name() -> String:
+static func get_module_name() -> String:
 	return "Analytical IK"
 
 
-static func get_solver_description() -> String:
+static func get_module_description() -> String:
 	return "Pure GDScript IK solvers (CCD, FABRIK). No external dependencies. Good for simple chains."
 
 
@@ -32,6 +32,12 @@ static func get_requirements() -> String:
 	return "None - pure GDScript implementation"
 
 
+
+static func get_module_category() -> String:
+	return "ik"
+
+static func _static_init():
+	ModuleRegistry.register("ik", "AnalyticalIKSolver", preload("res://scripts/ik/analytical_ik_solver.gd"))
 func initialize(config: Dictionary) -> bool:
 	super.initialize(config)
 	_algorithm = config.get("algorithm", Algorithm.CCD)

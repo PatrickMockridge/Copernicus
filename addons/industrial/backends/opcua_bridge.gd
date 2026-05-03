@@ -45,11 +45,11 @@ const NODEID_OBJECTS: String = "ns=0;i=85"  # Objects folder
 
 ## ===== Static Methods =====
 
-static func get_backend_name() -> String:
+static func get_module_name() -> String:
 	return "OPC-UA"
 
 
-static func get_backend_description() -> String:
+static func get_module_description() -> String:
 	return "OPC-UA industrial robot bridge. Supports any robot with OPC-UA server."
 
 
@@ -64,6 +64,12 @@ static func get_requirements() -> String:
 	return "Requires robot OPC-UA server endpoint and opcua package."
 
 
+
+static func get_module_category() -> String:
+	return "industrial"
+
+static func _static_init():
+	ModuleRegistry.register("industrial", "OpcuaBridge", preload("res://addons/industrial/backends/opcua_bridge.gd"))
 ## ===== Initialization =====
 
 func initialize(config: Dictionary) -> bool:

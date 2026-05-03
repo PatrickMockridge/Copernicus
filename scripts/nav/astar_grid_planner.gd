@@ -19,11 +19,11 @@ var _last_path: Array = []
 var _use_diagonals: bool = true
 
 
-static func get_planner_name() -> String:
+static func get_module_name() -> String:
 	return "A* Grid Planner"
 
 
-static func get_planner_description() -> String:
+static func get_module_description() -> String:
 	return "Pure GDScript A* path planner. Works on grid maps. No external dependencies."
 
 
@@ -35,6 +35,12 @@ static func get_requirements() -> String:
 	return "None - pure GDScript implementation"
 
 
+
+static func get_module_category() -> String:
+	return "nav"
+
+static func _static_init():
+	ModuleRegistry.register("nav", "AStarGridPlanner", preload("res://scripts/nav/astar_grid_planner.gd"))
 func initialize(config: Dictionary) -> bool:
 	super.initialize(config)
 	_use_diagonals = config.get("use_diagonals", true)

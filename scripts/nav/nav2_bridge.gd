@@ -21,11 +21,11 @@ var _planner_id: String = "GridBased"
 var _use_astar: bool = false
 
 
-static func get_planner_name() -> String:
+static func get_module_name() -> String:
 	return "Nav2 (ROS2)"
 
 
-static func get_planner_description() -> String:
+static func get_module_description() -> String:
 	return "Industry-standard navigation via ROS2 Nav2. Provides SLAM, path planning, and localization."
 
 
@@ -42,6 +42,12 @@ static func get_requirements() -> String:
 	return "ROS2 + Nav2 packages installed. Run: sudo apt install ros-{DISTRO}-navigation2 ros-{DISTRO}-nav2-bringup"
 
 
+
+static func get_module_category() -> String:
+	return "nav"
+
+static func _static_init():
+	ModuleRegistry.register("nav", "Nav2Bridge", preload("res://scripts/nav/nav2_bridge.gd"))
 func initialize(config: Dictionary) -> bool:
 	super.initialize(config)
 	_planner_id = config.get("planner_id", "GridBased")

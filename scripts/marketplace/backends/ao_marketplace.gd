@@ -35,23 +35,29 @@ func initialize(config: Dictionary) -> bool:
 	return _ao != null
 
 
-func get_marketplace_name() -> String:
+static func get_module_name() -> String:
 	return "AO Marketplace"
 
 
-func get_marketplace_description() -> String:
+static func get_module_description() -> String:
 	return "Decentralized marketplace via AO Hyperobjects and Arweave"
 
 
-func is_available() -> bool:
+static func is_available() -> bool:
 	# Check if AO SDK is available
 	var output = []; var result = OS.execute("node", ["--version"], output, true)
 	return result == 0
 
 
-func get_requirements() -> String:
+static func get_requirements() -> String:
 	return "AO SDK, Arweave wallet with AR tokens, Node.js for CLI bridge"
 
+
+static func get_module_category() -> String:
+	return "marketplace"
+
+static func _static_init():
+	ModuleRegistry.register("marketplace", "AOMarketplace", preload("res://scripts/marketplace/backends/ao_marketplace.gd"))
 
 func is_connected() -> bool:
 	return _ao != null and _wallet != null

@@ -18,11 +18,11 @@ var _timestep: float = 0.001
 var _is_simulating: bool = false
 
 
-static func get_backend_name() -> String:
+static func get_module_name() -> String:
 	return "Godot Native"
 
 
-static func get_backend_description() -> String:
+static func get_module_description() -> String:
 	return "Godot's built-in physics engine (Jolt). Fast, game-focused physics with VehicleBody3D support."
 
 
@@ -34,6 +34,12 @@ static func get_requirements() -> String:
 	return "None - built into Godot"
 
 
+
+static func get_module_category() -> String:
+	return "physics"
+
+static func _static_init():
+	ModuleRegistry.register("physics", "GodotPhysicsBackend", preload("res://scripts/physics/godot_physics_backend.gd"))
 ## ===== Initialization =====
 
 func initialize(config: Dictionary) -> bool:

@@ -56,11 +56,11 @@ const INRC4_REGISTER_WRITE: int = 0x41
 
 ## ===== Static Methods =====
 
-static func get_backend_name() -> String:
+static func get_module_name() -> String:
 	return "MOTOMAN"
 
 
-static func get_backend_description() -> String:
+static func get_module_description() -> String:
 	return "MOTOMAN industrial robots via INRC4 protocol (port 50230). Requires MOTOMAN robot controller with INRC4 support."
 
 
@@ -73,6 +73,12 @@ static func get_requirements() -> String:
 	return "Requires ROS 2 motoman_driver package and MOTOMAN robot controller with INRC4 protocol enabled."
 
 
+
+static func get_module_category() -> String:
+	return "industrial"
+
+static func _static_init():
+	ModuleRegistry.register("industrial", "MotomanBridge", preload("res://addons/industrial/backends/motoman_bridge.gd"))
 ## ===== Initialization =====
 
 func initialize(config: Dictionary) -> bool:
