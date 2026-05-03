@@ -8,10 +8,7 @@ extends PhysicsBackend
 ## PyBullet subprocess physics
 ## Uses Python's PyBullet library for accurate physics simulation
 
-var _python_process: int = -1
-var _input_pipe: Pipe
-var _output_pipe: Pipe
-var _buffer: String = ""
+var _bridge: PythonBridge
 var _is_simulating: bool = false
 
 var _body_ids: Dictionary = {}  # name -> pybullet body id
@@ -60,25 +57,14 @@ func initialize(config: Dictionary) -> bool:
 	_gravity = config.get("gravity", Vector3(0, -9.81, 0))
 	_timestep = config.get("timestep", 0.001)
 
-	# Start Python subprocess with the bridge script
+	_bridge = PythonBridge.new()
 	var script_path = ProjectSettings.globalize_path("res://scripts/physics/pybullet_bridge.py")
-	var arguments = [script_path]
-
-	var process_create = Engine.get_main_loop().root.get_tree().create_timer(0.1)
-	await process_create.timeout
-
-	_python_process = OS.execute("python3", arguments, [], true)
-
-	if _python_process < 0:
-		backend_error.emit("Failed to start PyBullet subprocess")
+	if not _bridge.start(script_path):
+		backend_error.emit("Failed to start PyBullet bridge")
 		backend_initialized.emit(false)
 		return false
 
-	# Wait for initialization
-	await get_tree().create_timer(0.5).timeout
-
-	# Send init command
-	var init_result = _send_command({
+	var init_result = _bridge.send({
 		"cmd": "init",
 		"gravity": [_gravity.x, _gravity.y, _gravity.z],
 		"timestep": _timestep
@@ -95,26 +81,17 @@ func initialize(config: Dictionary) -> bool:
 
 
 func is_running() -> bool:
-	return _is_simulating and _python_process >= 0
+	return _is_simulating and _bridge and _bridge.is_connected()
 
 
 func shutdown() -> void:
 	_is_simulating = false
-
-	# Send shutdown command
-	_send_command({"cmd": "shutdown"})
-
-	# Kill the process
-	if _python_process >= 0:
-		OS.kill(_python_process)
-		_python_process = -1
-
+	if _bridge:
+		_bridge.shutdown()
+		_bridge = null
 	_body_ids.clear()
 	_pending_commands.clear()
 	_pending_results.clear()
-
-
-## ===== Simulation =====
 
 func step_simulation(delta: float) -> void:
 	if not _is_simulating:
@@ -285,57 +262,9 @@ func get_contacts(body_name: String) -> Array:
 ## ===== Internal Helpers =====
 
 func _send_command(cmd: Dictionary) -> Dictionary:
-	# Use temp files for command communication since Godot lacks easy pipe access
-	var temp_dir = "/tmp/copernicus_pybullet_%d" % OS.get_process_id()
-	var cmd_file = temp_dir + "/cmd.json"
-	var resp_file = temp_dir + "/resp.json"
-
-	# Create temp directory
-	OS.execute("mkdir", ["-p", temp_dir], [], true)
-
-	# Write command to temp file
-	var f = FileAccess.open(cmd_file, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(cmd))
-		f.close()
-	else:
-		return {"status": "error", "message": "Failed to write command"}
-
-	# Execute Python bridge to process command
-	var script_path = ProjectSettings.globalize_path("res://scripts/physics/pybullet_bridge.py")
-	var output = []
-	var result = OS.execute("python3", ["-c", """
-import sys, os, json
-sys.path.insert(0, os.path.dirname('%s'))
-
-# Import the bridge module
-import importlib.util
-spec = importlib.util.spec_from_file_location('pybullet_bridge', '%s')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-
-# Read command
-with open('%s', 'r') as f:
-    cmd = json.load(f)
-
-# Create bridge and process command
-bridge = module.PyBulletBridge()
-bridge.process_command(cmd)
-""" % (script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\"))], output, true)
-
-	# Clean up temp files
-	OS.execute("rm", ["-rf", temp_dir], [], true)
-
-	# Parse response
-	if result == 0 and output.size() > 0:
-		var parsed = JSON.parse_string(output[0])
-		if parsed is Dictionary:
-			return parsed
-
-	# Fallback response for when Python isn't available
-	return {"status": "ok"}
-
-
+	if not _bridge or not _bridge.is_connected():
+		return {"status": "error", "message": "Bridge not connected"}
+	return _bridge.send(cmd)
 func _vec3_to_list(v: Vector3) -> Array:
 	return [v.x, v.y, v.z]
 

@@ -7,6 +7,8 @@ import sys
 import json
 import random
 import math
+import socket
+import argparse
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
@@ -440,74 +442,129 @@ def sac_get_action(cmd: Dict) -> Dict:
     return sac_get_action.sac_node.get_action(cmd.get('observations', []))
 
 
-def main():
-    """Main loop - process commands from stdin"""
+def process_cmd(cmd, node, stdout_fn):
+    """Process a single command. Returns updated node."""
+    action = cmd.get("cmd", "")
+    response = None
+
+    if action == "init":
+        state_dim = cmd.get("state_dim", 24)
+        action_dim = cmd.get("action_dim", 4)
+        hidden_dim = cmd.get("hidden_dim", 128)
+        device = cmd.get("device", "cuda")
+        node = LearningNode(state_dim, action_dim, hidden_dim, device)
+        response = {"status": "ok", "cmd": "init", "device": str(node.device)}
+    elif action == "train_step" and node:
+        response = node.train_step(
+            cmd.get("observations", []), cmd.get("actions", []),
+            cmd.get("rewards", []), cmd.get("gamma", 0.99))
+    elif action == "get_action" and node:
+        act = node.get_action(cmd.get("observations", []))
+        response = {"status": "ok", "action": act}
+    elif action == "save_model" and node:
+        success = node.save_model(cmd.get("path", "model.pt"))
+        response = {"status": "ok" if success else "error"}
+    elif action == "load_model" and node:
+        success = node.load_model(cmd.get("path", "model.pt"))
+        response = {"status": "ok" if success else "error"}
+    elif action == "batch_raycast" and node:
+        ranges = node.batch_raycast(
+            cmd.get("origin", [0, 0, 0]), cmd.get("directions", []),
+            cmd.get("max_distance", 30.0), cmd.get("noise_stddev", 0.0))
+        response = {"status": "ok", "ranges": ranges}
+    elif action == "ppo_train_step":
+        response = ppo_train_step(cmd)
+    elif action == "ppo_get_action":
+        response = ppo_get_action(cmd)
+    elif action == "sac_train_step":
+        response = sac_train_step(cmd)
+    elif action == "sac_get_action":
+        response = sac_get_action(cmd)
+    elif action == "shutdown":
+        response = {"status": "ok", "cmd": "shutdown"}
+    else:
+        response = {"status": "error", "message": f"Unknown command: {action}"}
+
+    if response:
+        stdout_fn(json.dumps(response) + "
+")
+    return node, response.get("cmd") == "shutdown" if response else False
+
+
+def run_tcp_server(port):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("127.0.0.1", port))
+    server.listen(1)
+    sys.stderr.write(f"PyTorch learning node listening on 127.0.0.1:{port}
+")
+    sys.stderr.flush()
+    conn, addr = server.accept()
+
     node = None
-
-    try:
-        for line in sys.stdin:
-            line = line.strip()
-            if not line:
-                continue
-
-            try:
-                cmd = json.loads(line)
-            except json.JSONDecodeError:
-                print(json.dumps({"status": "error", "message": "Invalid JSON"}))
-                continue
-
-            action = cmd.get("cmd", "")
-
-            if action == "init":
-                state_dim = cmd.get("state_dim", 24)
-                action_dim = cmd.get("action_dim", 4)
-                hidden_dim = cmd.get("hidden_dim", 128)
-                device = cmd.get("device", "cuda")
-                node = LearningNode(state_dim, action_dim, hidden_dim, device)
-                print(json.dumps({"status": "ok", "cmd": "init",
-                                 "device": str(node.device)}))
-
-            elif action == "train_step" and node:
-                result = node.train_step(
-                    cmd.get("observations", []),
-                    cmd.get("actions", []),
-                    cmd.get("rewards", []),
-                    cmd.get("gamma", 0.99)
-                )
-                print(json.dumps(result))
-
-            elif action == "get_action" and node:
-                action = node.get_action(cmd.get("observations", []))
-                print(json.dumps({"status": "ok", "action": action}))
-
-            elif action == "save_model" and node:
-                success = node.save_model(cmd.get("path", "model.pt"))
-                print(json.dumps({"status": "ok" if success else "error"}))
-
-            elif action == "load_model" and node:
-                success = node.load_model(cmd.get("path", "model.pt"))
-                print(json.dumps({"status": "ok" if success else "error"}))
-
-            elif action == "batch_raycast" and node:
-                ranges = node.batch_raycast(
-                    cmd.get("origin", [0, 0, 0]),
-                    cmd.get("directions", []),
-                    cmd.get("max_distance", 30.0),
-                    cmd.get("noise_stddev", 0.0)
-                )
-                print(json.dumps({"status": "ok", "ranges": ranges}))
-
-            elif action == "shutdown":
-                print(json.dumps({"status": "ok", "cmd": "shutdown"}))
+    buffer = ""
+    while True:
+        try:
+            data = conn.recv(4096).decode("utf-8")
+            if not data:
                 break
+            buffer += data
+            while "
+" in buffer:
+                line, buffer = buffer.split("
+", 1)
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    cmd = json.loads(line)
+                except json.JSONDecodeError:
+                    conn.sendall((json.dumps({"status": "error", "message": "Invalid JSON"}) + "
+").encode())
+                    continue
+                def send_fn(s):
+                    conn.sendall(s.encode("utf-8"))
+                node, shutdown = process_cmd(cmd, node, send_fn)
+                if shutdown:
+                    conn.close()
+                    server.close()
+                    return
+        except (ConnectionResetError, BrokenPipeError):
+            break
+    conn.close()
+    server.close()
 
-            else:
-                print(json.dumps({"status": "error", "message": f"Unknown command: {action}"}))
 
-    except KeyboardInterrupt:
-        pass
-    except EOFError:
-        pass
+def main():
+    parser = argparse.ArgumentParser(description="PyTorch RL learning node")
+    parser.add_argument("--tcp", action="store_true", help="Run in TCP server mode")
+    parser.add_argument("--port", type=int, default=9877, help="TCP port (default: 9877)")
+    args = parser.parse_args()
+
+    if args.tcp:
+        run_tcp_server(args.port)
+    else:
+        node = None
+        try:
+            for line in sys.stdin:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    cmd = json.loads(line)
+                except json.JSONDecodeError:
+                    print(json.dumps({"status": "error", "message": "Invalid JSON"}))
+                    continue
+                def stdout_fn(s):
+                    sys.stdout.write(s)
+                    sys.stdout.flush()
+                node, shutdown = process_cmd(cmd, node, stdout_fn)
+                if shutdown:
+                    break
+        except KeyboardInterrupt:
+            pass
+        except EOFError:
+            pass
 
 
 if __name__ == "__main__":

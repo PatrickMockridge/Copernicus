@@ -16,14 +16,19 @@ var _cam_pivot: Node3D
 var _cam_distance: float = 3.0
 var _cam_yaw: float = 0.0
 var _cam_pitch: float = -30.0
+var _cam_pan: Vector2 = Vector2.ZERO
 var _show_debug: bool = false
 var _joint_nodes: Array = []  # Track joint nodes for slider control
+var _grid_node: MeshInstance3D
+var _axes_node: Node3D
 
 
 func _ready() -> void:
 	_setup_camera()
 	_setup_lighting()
 	_setup_environment()
+	_setup_grid()
+	_setup_axes()
 	_load_demo_robot()
 
 
@@ -47,7 +52,8 @@ func _update_camera_transform() -> void:
 	var y = _cam_distance * sin(rad_pitch)
 	var z = _cam_distance * cos(rad_pitch) * cos(rad_yaw)
 	_camera.position = Vector3(x, y, z)
-	_cam_pivot.look_at(Vector3.ZERO, Vector3.UP)
+	_cam_pivot.position = Vector3(_cam_pan.x, _cam_pan.y, 0.0)
+	_cam_pivot.look_at(Vector3(_cam_pan.x, _cam_pan.y, 0.0), Vector3.UP)
 
 
 func _setup_lighting() -> void:
@@ -103,6 +109,69 @@ func _setup_environment() -> void:
 	ground_static.add_child(ground_collision)
 
 	add_child(ground_static)
+
+
+func _setup_grid() -> void:
+	_grid_node = MeshInstance3D.new()
+	_grid_node.set_name("GridOverlay")
+	var grid_mesh = ImmediateMesh.new()
+	_grid_node.mesh = grid_mesh
+	_grid_node.material_override = _make_grid_material()
+	add_child(_grid_node)
+	_draw_grid_lines(grid_mesh)
+
+
+func _make_grid_material() -> StandardMaterial3D:
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = Color(0.35, 0.35, 0.4, 0.4)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.flags_unshaded = true
+	mat.flags_no_depth_test = true
+	return mat
+
+
+func _draw_grid_lines(mesh: ImmediateMesh) -> void:
+	var grid_size = 20
+	var step = 1.0
+	mesh.clear_surfaces()
+	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
+	for i in range(-grid_size, grid_size + 1):
+		var major = (i % 5 == 0)
+		var color = Color(0.4, 0.4, 0.45, 0.5) if major else Color(0.3, 0.3, 0.35, 0.25)
+		mesh.surface_set_color(color)
+		mesh.surface_add_vertex(Vector3(i * step, 0.001, -grid_size * step))
+		mesh.surface_add_vertex(Vector3(i * step, 0.001, grid_size * step))
+		mesh.surface_set_color(color)
+		mesh.surface_add_vertex(Vector3(-grid_size * step, 0.001, i * step))
+		mesh.surface_add_vertex(Vector3(grid_size * step, 0.001, i * step))
+	mesh.surface_end()
+
+
+func _setup_axes() -> void:
+	_axes_node = Node3D.new()
+	_axes_node.set_name("AxesIndicator")
+	var axis_length = 0.5
+	var axis_radius = 0.01
+	_create_axis_cylinder(_axes_node, Vector3(axis_length / 2.0, 0, 0), Vector3(1, 0, 0), Vector3(0, 0, 90), axis_length, axis_radius, Color.RED)
+	_create_axis_cylinder(_axes_node, Vector3(0, axis_length / 2.0, 0), Vector3(0, 1, 0), Vector3.ZERO, axis_length, axis_radius, Color.GREEN)
+	_create_axis_cylinder(_axes_node, Vector3(0, 0, axis_length / 2.0), Vector3(0, 0, 1), Vector3(90, 0, 0), axis_length, axis_radius, Color.BLUE)
+	add_child(_axes_node)
+
+
+func _create_axis_cylinder(parent: Node3D, pos: Vector3, _dir: Vector3, rot: Vector3, length: float, radius: float, col: Color) -> void:
+	var cyl = MeshInstance3D.new()
+	var cyl_mesh = CylinderMesh.new()
+	cyl_mesh.height = length
+	cyl_mesh.top_radius = radius
+	cyl_mesh.bottom_radius = radius
+	cyl.mesh = cyl_mesh
+	cyl.position = pos
+	cyl.rotation_degrees = rot
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = col
+	mat.flags_unshaded = true
+	cyl.material_override = mat
+	parent.add_child(cyl)
 
 
 # ===== Robot Loading =====
@@ -286,6 +355,18 @@ func get_joint_rotation(index: int) -> float:
 	return _joint_nodes[index].rotation_degrees.y
 
 
+func get_joint_limits(index: int) -> Dictionary:
+	if index < 0 or index >= _joint_nodes.size():
+		return {}
+	var joint = _joint_nodes[index]
+	if joint.has_meta("has_limits") and joint.get_meta("has_limits"):
+		return {
+			"lower": joint.get_meta("limit_lower", -180.0),
+			"upper": joint.get_meta("limit_upper", 180.0)
+		}
+	return {"lower": -180.0, "upper": 180.0}
+
+
 func get_robot_root() -> Node3D:
 	return _robot_root
 
@@ -313,22 +394,31 @@ func orbit_camera(delta_yaw: float, delta_pitch: float) -> void:
 	_update_camera_transform()
 
 
+func pan_camera(delta_x: float, delta_y: float) -> void:
+	var pan_speed = _cam_distance * 0.005
+	_cam_pan.x += delta_x * pan_speed
+	_cam_pan.y += delta_y * pan_speed
+	_update_camera_transform()
+
+
 # ===== Input Handling =====
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mouse_event = event as InputEventMouseButton
-		if mouse_event.button_index == MOUSE_BUTTON_RIGHT:
-			# Orbit camera on right mouse drag
-			pass
-		elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			set_camera_distance(_cam_distance - 0.3)
 		elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			set_camera_distance(_cam_distance + 0.3)
 	elif event is InputEventMouseMotion:
 		var motion = event as InputEventMouseMotion
 		if motion.button_mask & MOUSE_BUTTON_MASK_RIGHT:
-			orbit_camera(-motion.relative_x * 0.3, -motion.relative_y * 0.3)
+			if Input.is_key_pressed(KEY_SHIFT) or motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+				pan_camera(-motion.relative_x * 0.005, motion.relative_y * 0.005)
+			else:
+				orbit_camera(-motion.relative_x * 0.3, -motion.relative_y * 0.3)
+		elif motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+			pan_camera(-motion.relative_x * 0.005, motion.relative_y * 0.005)
 
 
 # ===== Debug =====

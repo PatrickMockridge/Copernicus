@@ -114,8 +114,28 @@ func get_scan_message(header: Dictionary) -> Dictionary:
 
 
 func _get_ranges() -> Array:
-	# Override in subclass to return actual ranges with noise applied
-	return []
+	if not _parent_node:
+		return []
+	var space_state = _parent_node.get_world_3d().direct_space_state
+	var origin = _parent_node.global_position
+	var forward = -_parent_node.global_transform.basis.z  # Godot -Z is forward
+	var ranges: Array = []
+	for i in range(_ray_count):
+		var angle = _angle_min + i * _angle_increment
+		var noisy_angle = _apply_beam_divergence(angle)
+		var direction = forward.rotated(Vector3.UP, noisy_angle)
+		var to = origin + direction * _range_max
+		var query = PhysicsRayQueryParameters3D.create(origin, to)
+		query.exclude = [_parent_node]
+		var result = space_state.intersect_ray(query)
+		var range_val = _range_max
+		if result:
+			range_val = result.position.distance_to(origin)
+		if range_val < _range_min:
+			range_val = _range_max
+		range_val = _apply_range_noise(range_val)
+		ranges.append(range_val)
+	return ranges
 
 
 func _get_intensities() -> Array:

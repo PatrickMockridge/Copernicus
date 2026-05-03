@@ -86,8 +86,21 @@ func _add_joint_slider(joint_name: String, joint_index: int) -> void:
 
 	var slider = HSlider.new()
 	slider.custom_minimum_size.x = 150
-	slider.min_value = -180.0
-	slider.max_value = 180.0
+
+	# Read joint limits from the viewer if available, URDF limits are in radians
+	var limits = {"lower": -180.0, "upper": 180.0}
+	var use_radians = false
+	if _viewer and _viewer.has_method("get_joint_limits"):
+		limits = _viewer.get_joint_limits(joint_index)
+	if _viewer and _viewer.has_method("get_robot_root") and _viewer.get_robot_root():
+		var root = _viewer.get_robot_root()
+		if root and root.has_meta("urdf_loaded"):
+			use_radians = true
+	if use_radians:
+		limits["lower"] = rad_to_deg(limits["lower"])
+		limits["upper"] = rad_to_deg(limits["upper"])
+	slider.min_value = limits["lower"]
+	slider.max_value = limits["upper"]
 	slider.step = 1.0
 	slider.value = 0.0
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL

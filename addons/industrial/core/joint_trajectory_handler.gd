@@ -191,6 +191,10 @@ func _schedule_interpolation(from_positions: Array, duration: float) -> void:
 	_interpolation_start = Time.get_ticks_msec() / 1000.0 - _start_time
 	_interpolation_duration = duration
 	_interpolation_from = from_positions
+	if _current_point_index + 1 < _trajectory.size():
+		_interpolation_to = _trajectory[_current_point_index + 1].get("positions", [])
+	else:
+		_interpolation_to = from_positions
 
 
 ## Get interpolated joint positions at current time

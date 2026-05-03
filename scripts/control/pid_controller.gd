@@ -21,6 +21,7 @@ var _output_max: float = INF
 
 ## Derivative filter
 var _derivative_filter: float = 0.0  # 0-1, higher = more smoothing
+var _kff: float = 0.0  # Feed-forward gain
 
 ## Anti-windup
 var _windup_limit: float = INF
@@ -51,6 +52,10 @@ func set_output_limits(min_val: float, max_val: float) -> void:
 func set_anti_windup(limit: float) -> void:
 	_windup_limit = limit
 	_use_anti_windup = true
+
+
+func set_feed_forward(kff: float) -> void:
+	_kff = kff
 
 
 func set_derivative_filter(alpha: float) -> void:
@@ -100,6 +105,11 @@ func compute_output_with_setpoint(current: float, target: float, dt: float) -> f
 	"""Convenience method that computes error from current and target values"""
 	var error = target - current
 	return compute_output(error, dt)
+
+
+func compute_output_with_feed_forward(error: float, dt: float, ff_target: float = 0.0) -> float:
+	var pid_out = compute_output(error, dt)
+	return pid_out + _kff * ff_target
 
 
 class PositionPID:

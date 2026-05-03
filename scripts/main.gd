@@ -43,6 +43,11 @@ func _ready() -> void:
 	_setup_ui()
 	_connect_signals()
 	_update_ai_status(false, "Not connected")
+	var timer = Timer.new()
+	timer.wait_time = 2.0
+	timer.timeout.connect(_refresh_context)
+	add_child(timer)
+	timer.start()
 
 func _init_ai_instances() -> void:
 	_gameai = GameAI.new()
@@ -304,6 +309,36 @@ func _on_open_turtle_demo() -> void:
 
 func _on_open_marketplace() -> void:
 	get_tree().change_scene_to_file("res://scenes/marketplace/marketplace_panel.tscn")
+
+func _refresh_context() -> void:
+	var lines = []
+	lines.append("Robot: " + _get_robot_status())
+	lines.append("Physics: " + _get_physics_status())
+	lines.append("ROS2: " + _get_ros2_status())
+	lines.append("AI: " + ("Connected" if _api_configured else "Not connected"))
+	_context_label.text = " | ".join(lines)
+
+
+func _get_robot_status() -> String:
+	var viewer = get_node_or_null("RobotViewer")
+	if viewer and viewer.has_method("get_robot_root") and viewer.get_robot_root():
+		return viewer.get_robot_root().name
+	return "None loaded"
+
+
+func _get_physics_status() -> String:
+	var reg = get_node_or_null("/root/ModuleRegistry")
+	if reg and reg.has_module("physics", "GodotPhysicsBackend"):
+		return "Godot Native"
+	return "None active"
+
+
+func _get_ros2_status() -> String:
+	var bridge = get_node_or_null("/root/GodotROS2")
+	if bridge and bridge.has_method("is_bridge_connected") and bridge.is_bridge_connected():
+		return "Connected"
+	return "Disconnected"
+
 
 func _process(delta: float) -> void:
 	pass

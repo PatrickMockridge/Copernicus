@@ -140,6 +140,7 @@ static func parse(urdf_path: String) -> Node3D:
 static func _build_scene_tree(link_data: Dictionary, joint_data: Array) -> Node3D:
 	var root = Node3D.new()
 	root.set_name("Robot")
+	root.set_meta("urdf_loaded", true)
 
 	# Create a dictionary to hold link nodes
 	var link_nodes: Dictionary = {}
@@ -300,6 +301,14 @@ static func _create_joint_node(j: Dictionary, link_nodes: Dictionary) -> Node3D:
 		t.basis = basis
 	joint_node.transform = t
 
+	# Store joint limits as metadata for the UI to read
+	var limit_lower = j.get("limit_lower", -INF)
+	var limit_upper = j.get("limit_upper", INF)
+	if limit_lower > -INF or limit_upper < INF:
+		joint_node.set_meta("limit_lower", limit_lower)
+		joint_node.set_meta("limit_upper", limit_upper)
+		joint_node.set_meta("has_limits", true)
+
 	return joint_node
 
 
@@ -387,5 +396,29 @@ static func _resolve_mesh_path(uri: String) -> String:
 		for prefix in prefixes:
 			if FileAccess.file_exists(prefix):
 				return prefix
+
+		# Check ROS_PACKAGE_PATH environment variable
+		var ros_pkg_path = OS.get_environment("ROS_PACKAGE_PATH")
+		if not ros_pkg_path.is_empty():
+			for pkg_dir in ros_pkg_path.split(":"):
+				var candidate = pkg_dir.trim_suffix("/") + file_path
+				if FileAccess.file_exists(candidate):
+					return candidate
+
+		# Check AMENT_PREFIX_PATH (ROS2)
+		var ament_path = OS.get_environment("AMENT_PREFIX_PATH")
+		if not ament_path.is_empty():
+			for ament_dir in ament_path.split(":"):
+				var candidate = ament_dir.trim_suffix("/") + "/share/" + package_name + file_path
+				if FileAccess.file_exists(candidate):
+					return candidate
+
+		# Check COLCON_PREFIX_PATH
+		var colcon_path = OS.get_environment("COLCON_PREFIX_PATH")
+		if not colcon_path.is_empty():
+			for colcon_dir in colcon_path.split(":"):
+				var candidate = colcon_dir.trim_suffix("/") + "/share/" + package_name + file_path
+				if FileAccess.file_exists(candidate):
+					return candidate
 
 	return uri

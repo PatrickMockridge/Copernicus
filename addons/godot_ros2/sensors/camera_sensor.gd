@@ -26,6 +26,9 @@ var _cy_offset: float = 0.0  # Principal point offset Y
 var _noise_stddev: float = 0.0
 var _salt_pepper_prob: float = 0.0
 
+var _internal_camera: Camera3D
+var _internal_viewport: SubViewport
+
 
 func _init(name: String) -> void:
 	super(name)
@@ -122,6 +125,29 @@ func apply_noise_to_pixel(value: float) -> float:
 		elif randf() < _salt_pepper_prob:
 			return 255.0
 	return clamp(value, 0.0, 255.0)
+
+
+func setup_camera() -> void:
+	_internal_viewport = SubViewport.new()
+	_internal_viewport.size = Vector2i(_width, _height)
+	_internal_viewport.transparent_bg = true
+	_internal_camera = Camera3D.new()
+	_internal_camera.fov = _fov
+	_internal_camera.near = _near
+	_internal_camera.far = _far
+	_internal_camera.current = true
+	_internal_viewport.add_child(_internal_camera)
+	_parent_node.add_child(_internal_viewport)
+
+
+func capture() -> Image:
+	if not _internal_viewport:
+		setup_camera()
+	# Force render
+	var texture = _internal_viewport.get_texture()
+	if texture:
+		return texture.get_image()
+	return null
 
 
 func render_viewport(camera: Camera3D) -> Image:

@@ -7,6 +7,7 @@ extends GPUBackend
 
 ## SAC configuration
 var _state_dim: int = 0
+var _bridge: PythonBridge
 var _action_dim: int = 0
 var _hidden_dim: int = 128
 var _learning_rate: float = 0.0003
@@ -55,12 +56,21 @@ func initialize(config: Dictionary) -> bool:
 	_auto_alpha = config.get("auto_alpha", true)
 	_device = config.get("device", "cuda" if check_cuda_available() else "cpu")
 
+	_bridge = PythonBridge.new()
+	var script_path = ProjectSettings.globalize_path("res://scripts/gpu/pytorch_learning_node.py")
+	if not _bridge.start(script_path, 9879):
+		push_error("SACLearner: Failed to start Python bridge")
+		return false
+
 	_initialized = true
 	backend_ready.emit()
 	return true
 
 
 func shutdown() -> void:
+	if _bridge:
+		_bridge.shutdown()
+		_bridge = null
 	_initialized = false
 
 
@@ -124,42 +134,9 @@ func get_action(observations: Array, deterministic: bool = false) -> Dictionary:
 
 
 func _send_command(cmd: Dictionary) -> Dictionary:
-	var json_str = JSON.stringify(cmd)
-
-	var script_path = ProjectSettings.globalize_path("res://scripts/gpu/pytorch_learning_node.py")
-	var output = []
-
-	var python_code = """
-import sys, json, os
-sys.path.insert(0, os.path.dirname('%s'))
-
-import importlib.util
-spec = importlib.util.spec_from_file_location('pytorch_node', '%s')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-
-cmd = json.loads('''%s''')
-action = cmd.get('cmd', '')
-
-if action == 'sac_train_step':
-    result = module.sac_train_step(cmd)
-    print(json.dumps(result))
-elif action == 'sac_get_action':
-    result = module.sac_get_action(cmd)
-    print(json.dumps(result))
-else:
-    print(json.dumps({'status': 'error', 'message': 'unknown cmd'}))
-""" % (script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), json_str.replace("\\", "\\\\").replace("'", "\\'"))
-
-	var result = OS.execute("python3", ["-c", python_code], output, true)
-
-	if result == 0 and output.size() > 0:
-		var parsed = JSON.parse_string(output[0])
-		if parsed is Dictionary:
-			return parsed
-	return {"status": "error"}
-
-
+	if not _bridge or not _bridge.is_connected():
+		return {"status": "error", "message": "Bridge not connected"}
+	return _bridge.send(cmd)
 func save_model(path: String) -> bool:
 	if not _initialized:
 		return false

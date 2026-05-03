@@ -9,6 +9,8 @@ import pybullet_data
 import json
 import sys
 import os
+import socket
+import argparse
 
 
 class PyBulletBridge:
@@ -397,26 +399,84 @@ class PyBulletBridge:
         sys.exit(0)
 
 
-def main():
+def run_tcp_server(port):
+    """Run as a TCP server for persistent connection with Godot."""
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("127.0.0.1", port))
+    server.listen(1)
+    sys.stderr.write(f"PyBullet bridge listening on 127.0.0.1:{port}
+")
+    sys.stderr.flush()
+    conn, addr = server.accept()
+    sys.stderr.write(f"Connected: {addr}
+")
+    sys.stderr.flush()
+
     bridge = PyBulletBridge()
-
-    # Read commands from stdin
-    for line in sys.stdin:
-        line = line.strip()
-        if not line:
-            continue
-
+    buffer = ""
+    while bridge.running:
         try:
-            cmd = json.loads(line)
-            bridge.process_command(cmd)
-        except json.JSONDecodeError as e:
-            print(json.dumps({
-                "status": "error",
-                "message": f"Invalid JSON: {e}"
-            }), flush=True)
-
-        if not bridge.running:
+            data = conn.recv(4096).decode("utf-8")
+            if not data:
+                break
+            buffer += data
+            while "
+" in buffer:
+                line, buffer = buffer.split("
+", 1)
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    cmd = json.loads(line)
+                    bridge.send_response_impl = lambda resp: conn.sendall(
+                        (json.dumps(resp) + "
+").encode("utf-8")
+                    )
+                    # Override send_response to write to socket
+                    old_send = bridge.send_response
+                    def socket_send(resp):
+                        conn.sendall((json.dumps(resp) + "
+").encode("utf-8"))
+                    bridge.send_response = socket_send
+                    bridge.process_command(cmd)
+                except json.JSONDecodeError as e:
+                    conn.sendall((json.dumps({"status": "error", "message": str(e)}) + "
+").encode("utf-8"))
+        except (ConnectionResetError, BrokenPipeError):
             break
+        except Exception as e:
+            sys.stderr.write(f"Error: {e}
+")
+            sys.stderr.flush()
+            break
+
+    conn.close()
+    server.close()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="PyBullet IPC bridge")
+    parser.add_argument("--tcp", action="store_true", help="Run in TCP server mode")
+    parser.add_argument("--port", type=int, default=9876, help="TCP port (default: 9876)")
+    args = parser.parse_args()
+
+    if args.tcp:
+        run_tcp_server(args.port)
+    else:
+        bridge = PyBulletBridge()
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                cmd = json.loads(line)
+                bridge.process_command(cmd)
+            except json.JSONDecodeError as e:
+                print(json.dumps({"status": "error", "message": f"Invalid JSON: {e}"}), flush=True)
+            if not bridge.running:
+                break
 
 
 if __name__ == "__main__":
