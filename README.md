@@ -184,8 +184,12 @@ Copernicus aims for **Pareto efficiency** — maximum functionality with minimum
 - [Quick Start](docs/quick-start.md) — Run your first demo
 - [Getting Started Guide](docs/01-getting-started.md) — Detailed setup
 - [Core Concepts](docs/02-concepts.md) — Robots, physics, sensors, control
+- [Design Philosophy](docs/design-philosophy.md) — Pareto efficiency, modularity
 
 ### Feature Guides
+- [URDF Import](docs/robots/urdf-import.md) — Load robot models from URDF
+- [Robot Control](docs/robots/control.md) — Joint control, PID, trajectories
+- [Composite Workspace](docs/README.md#quick-commands) — Unified 3D viewer + joint panel + toolbar
 - [Physics Backends](docs/physics/backends.md) — Godot vs PyBullet vs CUDA
 - [Sensors Overview](docs/sensors/overview.md) — LIDAR, camera, IMU
 - [Sensor Noise Models](docs/sensors/noise-models.md) — Realistic noise

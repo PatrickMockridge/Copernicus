@@ -409,6 +409,6 @@ python3 -c "import omni.replicator; print('Replicator available')"
 ## See Also
 
 - [PPO and SAC](ppo-sac.md) - RL algorithm details
-- [GPU Raycasting](../gpu/compute_raycast.md) - GPU-accelerated raycasting
+- [GPU Raycasting](../gpu/rtx_sensors.md) - GPU-accelerated raycasting
 - [Omniverse Integration](../omni/overview.md) - USD pipeline
 - [RTX Sensors](../gpu/rtx_sensors.md) - GPU sensor simulation

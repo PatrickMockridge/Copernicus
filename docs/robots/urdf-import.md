@@ -258,5 +258,5 @@ func load_turtlebot():
 ## See Also
 
 - [Control](control.md) — Joint control and PID
-- [Sensors Overview](sensors/overview.md) — Sensor simulation
-- [Physics Backends](physics/backends.md) — Physics engine options
+- [Sensors Overview](../sensors/overview.md) — Sensor simulation
+- [Physics Backends](../physics/backends.md) — Physics engine options

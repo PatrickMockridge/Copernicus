@@ -369,3 +369,118 @@ After creating a new backend, verify:
 - [ ] Cancel button without changes closes immediately
 - [ ] Apply button emits the correct signal with the selected ID
 - [ ] `godot --headless --quit` produces no parse errors
+
+---
+
+## PythonBridge
+
+The PythonBridge (`scripts/core/python_bridge.gd`) is a persistent TCP subprocess bridge used by all Python-backed modules. Instead of spawning a new Python process per command (~200ms overhead), the bridge keeps a single process alive and communicates via line-delimited JSON over a local TCP socket.
+
+### Purpose
+
+Five backends use PythonBridge:
+- **PyBulletBackend** (port 9876) — physics simulation
+- **PyTorchLearner** (port 9877) — DQN training
+- **PPOLearner** (port 9878) — PPO training
+- **SACLearner** (port 9879) — SAC training
+
+### API
+
+```gdscript
+var bridge = PythonBridge.new()
+
+# Start a Python script in TCP server mode
+var ok = bridge.start("res://scripts/physics/pybullet_bridge.py", 9876)
+# extra_args forwarded to the Python process
+
+# Send a command dict, get a response dict (line-delimited JSON)
+var response = bridge.send({"cmd": "step"})
+
+# Check connection health
+if bridge.is_connected():
+    pass
+
+# Graceful shutdown (sends {"cmd": "shutdown"}, then OS.kill)
+bridge.shutdown()
+```
+
+Signals: `bridge_ready()`, `bridge_error(message: String)`
+
+### Adding TCP Server Mode to a Python Script
+
+Your Python script needs three things to work with PythonBridge:
+
+**1. Parse `--tcp --port` CLI args:**
+
+```python
+import argparse, socket, json, sys
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tcp", action="store_true")
+    parser.add_argument("--port", type=int, default=9876)
+    args = parser.parse_args()
+
+    if args.tcp:
+        run_tcp_server(args.port)
+    else:
+        run_stdin_loop()  # legacy mode
+```
+
+**2. Implement `run_tcp_server(port)`:**
+
+```python
+def run_tcp_server(port):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("127.0.0.1", port))
+    server.listen(1)
+
+    conn, addr = server.accept()
+    buf = ""
+    while True:
+        data = conn.recv(4096).decode("utf-8")
+        if not data:
+            break
+        buf += data
+        while "\n" in buf:
+            line, buf = buf.split("\n", 1)
+            cmd = json.loads(line)
+            response = process_cmd(cmd)
+            conn.sendall((json.dumps(response) + "\n").encode("utf-8"))
+            if cmd.get("cmd") == "shutdown":
+                conn.close()
+                server.close()
+                return
+```
+
+**3. Keep `process_cmd()` stateless** — it receives a dict and returns a dict. The PythonBridge sends one command at a time (synchronous request-response), so no locking is needed.
+
+### Example Integration
+
+```gdscript
+# scripts/my_backend.gd
+class_name MyBackend
+extends CopernicusModule
+
+var _bridge: PythonBridge
+
+func initialize(config: Dictionary) -> bool:
+    _bridge = PythonBridge.new()
+    var script = ProjectSettings.globalize_path("res://scripts/my_python_node.py")
+    if not _bridge.start(script, 9880):
+        return false
+
+    var result = _bridge.send({"cmd": "init", "param": config.get("param", 1)})
+    return result.get("status") == "ok"
+
+func do_work(data: Array) -> Dictionary:
+    return _bridge.send({"cmd": "work", "data": data})
+
+func shutdown() -> void:
+    if _bridge:
+        _bridge.shutdown()
+        _bridge = null
+```
+
+PythonBridge replaces the old pattern of `OS.execute("python3", ["script.py", json_input], output, true)` which spawned a cold Python process for every command. For a physics backend stepping at 100 Hz, that means 200ms × 100 = 20 seconds of overhead per second of simulation. The persistent bridge eliminates this entirely.

@@ -353,7 +353,7 @@ export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
 ## See Also
 
-- [ROS2 Bridge](ros2/bridge.md) - TCP/UDP bridge documentation
+- [ROS2 Bridge](../ros2/bridge.md) - TCP/UDP bridge documentation
 - [Navigation Planners](../navigation/planners.md) - Nav2 integration
 - [IK Solvers](../navigation/ik-solvers.md) - MoveIt integration
 - [Industrial Plugin](../industrial/overview.md) - Industrial robot control

@@ -64,10 +64,10 @@ CCD, FABRIK, and MoveIt for inverse kinematics.
 ### [ROS 2 Bridge](ros2/bridge.md)
 TCP/UDP bridge setup for sensor streaming and control.
 
-### [AI Code Generation](../ai-codegen.md)
+### [AI Code Generation](ai/ai-codegen.md)
 AI behavior generation + ROS Coder IDE.
 
-### [Marketplace](../blockchain/marketplace.md)
+### [Marketplace](blockchain/marketplace.md)
 Trade robot designs via AO Hyperobjects.
 
 ### [Industrial Robot Plugin](industrial/overview.md)
@@ -87,7 +87,12 @@ Native rclpy integration, Isaac ROS messages, DDS transport.
 docs/
 ├── 01-getting-started.md    # Setup and first demo
 ├── 02-concepts.md           # Core concepts
-├── 03-architecture.md         # System design
+├── 03-architecture.md       # System design
+├── design-philosophy.md     # Pareto efficiency, modularity
+├── quick-start.md           # Quick start guide
+├── simulation.md            # Simulation overview
+├── testing.md               # Testing guide
+├── license.md               # AGPLv3 license
 ├── robots/                   # Robot-related docs
 │   ├── urdf-import.md       # URDF loading
 │   └── control.md           # Joint control, PID
@@ -95,19 +100,34 @@ docs/
 │   └── backends.md          # Backend comparison
 ├── sensors/                  # Sensor docs
 │   ├── overview.md          # LIDAR, camera, IMU
-│   └── noise-models.md     # Realistic noise
+│   └── noise-models.md      # Realistic noise
 ├── rl/                       # Reinforcement learning
-│   ├── overview.md         # RL introduction
-│   ├── dqn.md             # DQN algorithm
-│   └── ppo-sac.md         # PPO and SAC
+│   ├── overview.md          # RL introduction
+│   ├── dqn.md               # DQN algorithm
+│   ├── ppo-sac.md           # PPO and SAC
+│   └── isaac-gym.md         # Isaac Gym RL tasks
 ├── navigation/               # Navigation docs
-│   ├── planners.md        # A*, Nav2
-│   └── ik-solvers.md      # CCD, FABRIK, MoveIt
-├── ros2/                    # ROS 2 integration
+│   ├── planners.md          # A*, Nav2
+│   └── ik-solvers.md        # CCD, FABRIK, MoveIt
+├── ros2/                     # ROS 2 integration
+│   └── bridge.md            # TCP/UDP bridge
 ├── ros2_native/              # Native rclpy integration
-├── industrial/              # Industrial robot plugins
-├── omni/                    # Omniverse integration
-└── blockchain/              # Marketplace docs
+│   └── overview.md          # RclNode, DDS, Isaac ROS
+├── industrial/               # Industrial robot plugins
+│   └── overview.md          # MOTOMAN, ABB, OPC-UA
+├── omni/                     # Omniverse integration
+│   └── overview.md          # USD pipeline, digital twin
+├── blockchain/               # Marketplace docs
+│   ├── blockchain.md        # ARIADNE storage
+│   └── marketplace.md       # AO Hyperobjects trading
+├── ai/                       # AI code generation
+│   └── ai-codegen.md        # AI behavior + ROS Coder
+├── gpu/                      # GPU sensors
+│   └── rtx_sensors.md       # RTX LIDAR, camera, fusion
+└── development/              # Developer guides
+    ├── plugin-guide.md      # Build your own backend
+    ├── contributing.md      # Contribution guidelines
+    └── code-patterns.md     # Coding conventions
 ```
 
 ---
@@ -119,6 +139,7 @@ docs/
 godot scenes/turtle_demo.tscn      # Navigation (no ROS 2)
 godot scenes/robot_viewer.tscn      # URDF visualization
 godot scenes/physics_demo.tscn     # Vehicle dynamics
+godot scenes/composite_workspace.tscn  # Unified workspace (viewer + joint panel + toolbar)
 
 # GPU learning
 godot scenes/gpu/gpu_backend_selector.tscn

@@ -300,5 +300,5 @@ python3 -c "import torch; print(torch.cuda.is_available())"
 
 - [Sensor Overview](../sensors/overview.md) - LIDAR, camera, IMU simulation
 - [Sensor Noise Models](../sensors/noise-models.md) - Realistic noise modeling
-- [GPU Raycasting](../gpu/compute_raycast.md) - GPU-accelerated raycasting
-- [Isaac Gym](isaac-gym.md) - GPU training with synthetic sensors
+- [GPU Raycasting](../rl/overview.md) - Deep reinforcement learning
+- [Isaac Gym](../rl/isaac-gym.md) - GPU training with synthetic sensors
