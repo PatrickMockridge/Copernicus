@@ -18,9 +18,15 @@ var _cam_yaw: float = 0.0
 var _cam_pitch: float = -30.0
 var _cam_pan: Vector2 = Vector2.ZERO
 var _show_debug: bool = false
-var _joint_nodes: Array = []  # Track joint nodes for slider control
+var _joint_nodes: Array = []
 var _grid_node: MeshInstance3D
 var _axes_node: Node3D
+
+## Domain randomization
+var _domain_randomizer: RefCounted = null
+var _domain_randomize_enabled: bool = false
+var _domain_randomize_interval: float = 0.5
+var _domain_randomize_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -298,6 +304,36 @@ func _create_sensor_mount() -> Node3D:
 	mount.add_child(mesh_instance)
 
 	return mount
+
+
+# ===== Domain Randomization =====
+
+func _process(delta: float) -> void:
+	if not _domain_randomize_enabled or not _domain_randomizer:
+		return
+	_domain_randomize_timer += delta
+	if _domain_randomize_timer >= _domain_randomize_interval:
+		_domain_randomize_timer = 0.0
+		_domain_randomize_all()
+
+
+func enable_domain_randomization(enabled: bool) -> void:
+	_domain_randomize_enabled = enabled
+	if enabled:
+		if not _domain_randomizer:
+			var DomainRandomizer = load("res://scripts/sensors/domain_randomizer.gd")
+			_domain_randomizer = DomainRandomizer.new()
+			_domain_randomizer.setup(self, _camera, [])
+		_domain_randomize_timer = _domain_randomize_interval
+
+
+func set_randomization_interval(sec: float) -> void:
+	_domain_randomize_interval = sec
+
+
+func _domain_randomize_all() -> void:
+	if _domain_randomizer:
+		_domain_randomizer.randomize_all()
 
 
 # ===== URDF Loading =====

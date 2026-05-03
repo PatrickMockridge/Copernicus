@@ -54,30 +54,9 @@ func set_physics_space(space_state: PhysicsDirectSpaceState3D) -> void:
 
 
 func batch_raycast(origin: Vector3, directions: Array) -> Array:
-	# GPU-accelerated raycast for LIDAR/camera
-	# Convert to PyTorch tensors, process on GPU, return ranges
-
 	if directions.is_empty():
 		return []
 
-	# Convert directions to JSON for Python
-	var dir_vectors = []
-	for d in directions:
-		dir_vectors.append([d.x, d.y, d.z])
-
-	var cmd = {
-		"cmd": "batch_raycast",
-		"origin": [origin.x, origin.y, origin.z],
-		"directions": dir_vectors,
-		"max_distance": _max_distance,
-		"noise_stddev": _noise_stddev
-	}
-
-	var response = _send_command(cmd)
-	if response.get("status") == "ok":
-		return response.get("ranges", [])
-
-	# Fallback to CPU raycast
 	return _cpu_raycast_batch(origin, directions)
 
 
@@ -117,20 +96,6 @@ func batch_raycast_from_points(origins: Array, directions: Array) -> Array:
 		results.append(batch_raycast(origins[i], directions))
 
 	return results
-
-
-func _send_command(cmd: Dictionary) -> Dictionary:
-	var json_str = JSON.stringify(cmd)
-	var output = []; var result = OS.execute("python3", ["-c", """
-import sys, json
-print(json.dumps(%s))
-""" % json_str], output, true)
-
-	if result == 0 and output.size() > 0:
-		var parsed = JSON.parse_string(output[0])
-		if parsed is Dictionary:
-			return parsed
-	return {"status": "error"}
 
 
 func get_model_info() -> Dictionary:

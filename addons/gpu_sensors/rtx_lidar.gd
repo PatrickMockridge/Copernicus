@@ -143,8 +143,8 @@ func _cast_rays_at_angle(angle_degrees: float) -> Array:
 		var vertical_angle = _laser_angles[i] if i < _laser_angles.size() else 0.0
 		var direction = _compute_ray_direction(angle_degrees, vertical_angle)
 
-		# GPU raycast via Python subprocess
-		var hit = _gpu_raycast(global_position, direction)
+		# CPU raycast via Godot physics
+		var hit = _cpu_raycast_fallback(global_position, direction)
 
 		if hit.size() > 0:
 			var range = hit[0]
@@ -156,66 +156,6 @@ func _cast_rays_at_angle(angle_degrees: float) -> Array:
 				rays.append(point)
 
 	return rays
-
-
-func _gpu_raycast(origin: Vector3, direction: Vector3) -> Array:
-	# GPU-accelerated raycast via PyTorch CUDA
-	var temp_dir = "/tmp/copernicus_lidar_%d" % OS.get_process_id()
-	var cmd_file = temp_dir + "/cmd.json"
-	var resp_file = temp_dir + "/resp.json"
-
-	OS.execute("mkdir", ["-p", temp_dir], [], true)
-
-	var cmd = {
-		"cmd": "raycast",
-		"origin": [origin.x, origin.y, origin.z],
-		"direction": [direction.x, direction.y, direction.z],
-		"max_distance": _max_range
-	}
-
-	var f = FileAccess.open(cmd_file, FileAccess.WRITE)
-	if f == null:
-		return []
-	f.store_string(JSON.stringify(cmd))
-	f.close()
-
-	var script_path = ProjectSettings.globalize_path("res://scripts/gpu/backends/compute_raycast.py")
-	if not FileAccess.file_exists(script_path):
-		# Fallback to CPU raycast
-		return _cpu_raycast_fallback(origin, direction)
-
-	var escaped_script = script_path.replace("\\", "\\\\").replace("'", "\\'")
-
-	var output = []
-	OS.execute("python3", ["-c", """
-import sys, os, json
-sys.path.insert(0, os.path.dirname('%s'))
-
-import importlib.util
-spec = importlib.util.spec_from_file_location('compute_raycast', '%s')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-
-with open('%s', 'r') as f:
-    cmd = json.load(f)
-
-raycaster = module.ComputeRaycast()
-result = raycaster.raycast(cmd['origin'], cmd['direction'], cmd['max_distance'])
-
-with open('%s', 'w') as f:
-    json.dump({'ranges': result}, f)
-""" % (escaped_script, escaped_script, cmd_file.replace("\\", "\\\\").replace("'", "\\'"), resp_file.replace("\\", "\\\\").replace("'", "\\'"))], output, true)
-
-	f = FileAccess.open(resp_file, FileAccess.READ)
-	if f:
-		var content = f.get_as_text()
-		f.close()
-		OS.execute("rm", ["-rf", temp_dir], [], true)
-		var parsed = JSON.parse_string(content)
-		if parsed is Dictionary:
-			return parsed.get("ranges", [])
-
-	return []
 
 
 func _cpu_raycast_fallback(origin: Vector3, direction: Vector3) -> Array:
