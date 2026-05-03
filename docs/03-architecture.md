@@ -77,6 +77,17 @@ Copernicus IS:
 ```
 Copernicus/
 ├── scripts/                          # Core GDScript
+│   ├── core/                        # Plugin integration system
+│   │   ├── module.gd                # CopernicusModule — 5 static methods
+│   │   └── module_registry.gd       # ModuleRegistry — self-registration autoload
+│   │
+│   ├── ui/                          # Shared UI components
+│   │   ├── base_selector.gd          # Reusable selector (extended by domain selectors)
+│   │   ├── copernicus_theme.gd       # Color system + factory methods
+│   │   ├── toast.gd                  # Non-blocking notifications
+│   │   ├── confirm_dialog.gd          # Modal confirmation
+│   │   └── loading_overlay.gd         # Full-screen spinner
+│   │
 │   ├── urdf_to_godot.gd             # URDF → Godot scene
 │   ├── robot_viewer_controller.gd   # 3D viewer + orbit camera
 │   ├── physics_demo.gd              # VehicleBody3D + differential drive
@@ -218,21 +229,48 @@ Godot Scene Tree
 RobotViewer displays it
 ```
 
+### Backend Selection Flow (Registry-Based)
+
+All domain selectors follow the same pattern — backends self-register, selectors auto-populate:
+
+```
+Backend._static_init()
+    │
+    ▼
+ModuleRegistry.register("category", "id", script)
+    │
+    ▼
+Selector opens ─→ ModuleRegistry.get_available("category")
+    │                    │
+    │                    ├── Calls get_module_name() on each script
+    │                    ├── Calls is_available() on each script
+    │                    └── Returns sorted: available first
+    │
+    ▼
+BaseSelector populates radio list automatically
+    │
+    ▼
+User clicks Apply ─→ Selector emits backend_selected("id")
+    │
+    ▼
+ModuleRegistry.create("category", "id", config)
+    │
+    ▼
+Returns configured instance (calls initialize() if defined)
+```
+
 ### Physics Selection Flow
 
 ```
-PhysicsSelector (UI)
+PhysicsSelector (extends BaseSelector, ~30 lines)
     │
-    ▼ select backend
+    ▼ _get_category() returns "physics"
     │
-    ├── Godot Native ─→ godot_physics_backend.gd
-    │                        └── Uses VehicleBody3D, RigidBody3D
+ModuleRegistry.get_available("physics")
     │
-    ├── PyBullet ─→ pybullet_backend.gd
-    │                    └── Communicates with pybullet_bridge.py
-    │
-    └── PyBullet CUDA ─→ cuda_physics.gd
-                            └── GPU-accelerated physics via CUDA
+    ├── GodotPhysicsBackend (available) ─→ Godot's Jolt engine
+    ├── PyBulletBackend   (conditional) ─→ Bullet via Python subprocess
+    └── GazeboBackend     (unavailable) ─→ hardcoded placeholder
 ```
 
 ### RL Training Flow
@@ -303,47 +341,81 @@ ROS 2 receives /robot/scan
 
 ---
 
-## Adding New Modules
+## Plugin Integration System
 
-### 1. Create Module Directory
+Copernicus uses a zero-touch plugin architecture. Backends self-register; selectors auto-populate.
+
+### Three-Part Architecture
 
 ```
-scripts/my_module/
-├── my_module.gd           # class_name MyModule
-├── my_backend.gd         # Optional backend
-└── plugin.cfg            # If Godot plugin
+CopernicusModule          ModuleRegistry           BaseSelector
+(abstract base)           (autoload singleton)      (reusable UI)
+      |                         |                        |
+ Concrete backend -----> register("cat","id",script)     |
+                              |                        |
+                         get_available("cat") ------> populate radio list
+                              |
+                         create("cat","id",config) --> return instance
 ```
 
-### 2. Implement Abstract Interface
+### CopernicusModule (scripts/core/module.gd)
+
+Every backend extends `CopernicusModule` (via a domain abstract base) and implements 5 static methods:
 
 ```gdscript
-class_name MyModule
-extends Node
-
-static func is_available() -> bool:
-    return true
-
-func initialize(config: Dictionary) -> bool:
-    return true
-
-func shutdown() -> void:
-    pass
+static func get_module_name() -> String        # Display name
+static func get_module_description() -> String  # Shown below name in selector
+static func is_available() -> bool             # Real dependency check
+static func get_requirements() -> String       # Install instructions
+static func get_module_category() -> String    # Which selector category
 ```
 
-### 3. Register in Selector
+### ModuleRegistry (scripts/core/module_registry.gd)
+
+Autoload singleton. Backends self-register in `_static_init()`:
 
 ```gdscript
-# In my_module_selector.gd
-_add_module_option("MyModule", "My Module", "Description", MyModule.is_available())
+static func _static_init():
+    ModuleRegistry.register("physics", "GazeboBackend", preload("res://scripts/physics/gazebo_backend.gd"))
 ```
 
-### 4. Document
+That's it. The backend appears in the physics selector automatically.
 
-```markdown
-## My Module
+### BaseSelector (scripts/ui/base_selector.gd)
 
-Explain what it does, how to use it, and example code.
+Domain selectors extend `BaseSelector` and override 5-6 virtual methods. A full selector:
+
+```gdscript
+class_name PhysicsSelector
+extends BaseSelector
+
+signal backend_selected(backend_class: String)
+
+func _get_title() -> String:          return "Select Physics Backend"
+func _get_info_text() -> String:      return "Godot Native is fast..."
+func _get_button_group_name() -> String: return "physics_backend"
+func _get_category() -> String:       return "physics"
+
+func _on_apply_pressed() -> void:
+    backend_selected.emit(_selected_id)
+    queue_free()
+
+static func create_backend(id: String, config: Dictionary = {}) -> PhysicsBackend:
+    return ModuleRegistry.create("physics", id, config)
 ```
+
+~25 lines. The base class handles all UI construction, option population from the registry, default selection, cancel confirmation, and the apply button.
+
+### Adding a New Backend
+
+One file. That's it:
+
+1. Create `scripts/physics/my_backend.gd` extending `PhysicsBackend`
+2. Override the 5 static methods
+3. Add `_static_init()` calling `ModuleRegistry.register()`
+4. Restart Godot
+
+See the [Plugin Developer Guide](development/plugin-guide.md) for a complete walkthrough with code examples.
 
 ---
 
@@ -376,6 +448,7 @@ signal solving_finished(success: bool, iterations: int)
 
 ## Further Reading
 
+- [Plugin Developer Guide](development/plugin-guide.md) — Build your own backend
 - [Core Concepts](02-concepts.md) — Robots, sensors, control systems
 - [Getting Started](01-getting-started.md) — Quick setup guide
 - [Physics Backends](physics/backends.md) — Detailed backend comparison

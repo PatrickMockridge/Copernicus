@@ -111,6 +111,15 @@ godot scenes/physics_selector.tscn
 ```
 Copernicus
 ├── scripts/
+│   ├── core/                         # Plugin integration system
+│   │   ├── module.gd                 # CopernicusModule base class
+│   │   └── module_registry.gd        # Self-registration autoload
+│   ├── ui/                           # Shared UI components
+│   │   ├── base_selector.gd           # Reusable selector UI
+│   │   ├── copernicus_theme.gd        # Color/font/helper system
+│   │   ├── toast.gd                  # Non-blocking notifications
+│   │   ├── confirm_dialog.gd          # Modal confirmation dialog
+│   │   └── loading_overlay.gd         # Full-screen spinner
 │   ├── urdf_to_godot.gd           # URDF parser
 │   ├── robot_viewer_controller.gd
 │   ├── physics_demo.gd            # VehicleBody3D + differential drive
@@ -140,6 +149,15 @@ Copernicus
 │   └── omni/                       # Omniverse USD integration
 └── docs/                           # Documentation
 ```
+
+### Plugin System
+
+Copernicus uses a zero-touch plugin architecture built on three components:
+- **CopernicusModule** — 5 static methods every backend implements (`get_module_name`, `get_module_description`, `is_available`, `get_requirements`, `get_module_category`)
+- **ModuleRegistry** — autoload singleton where backends self-register via `_static_init()`; selectors query `get_available(category)` to populate their UI automatically
+- **BaseSelector** — reusable selector UI that domain selectors extend by overriding 5-6 virtual methods (~25 lines per selector, down from ~190)
+
+Adding a new backend means writing one class. No wiring up selectors, no match statements, no touching 3-4 files. See the [Plugin Developer Guide](docs/development/plugin-guide.md) for a step-by-step walkthrough.
 
 ### Design Philosophy
 
@@ -174,6 +192,9 @@ Copernicus aims for **Pareto efficiency** — maximum functionality with minimum
 - [Reinforcement Learning](docs/rl/overview.md) — DQN, PPO, SAC
 - [Isaac Gym RL Tasks](docs/rl/isaac-gym.md) — GPU training with Isaac Gym
 - [RTX Sensors](docs/gpu/rtx_sensors.md) — GPU sensors
+
+### Development
+- [Plugin Developer Guide](docs/development/plugin-guide.md) — Build your own backend
 
 ### Reference
 - [Architecture](docs/03-architecture.md) — System design
