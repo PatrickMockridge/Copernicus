@@ -71,7 +71,7 @@ func _setup_ui() -> void:
 
 	# Header with title and close button
 	var header = HBoxContainer.new()
-	header.alignment = Box.ALIGNMENT_END
+	header.alignment = BoxContainer.ALIGNMENT_END
 	main_vbox.add_child(header)
 
 	var title = Label.new()
@@ -268,18 +268,27 @@ func _create_listing_card(listing: Listing) -> Control:
 	var vbox = VBoxContainer.new()
 	container.add_child(vbox)
 
-	# Preview area (placeholder)
+	# Asset type indicator
 	var preview = PanelContainer.new()
 	preview.custom_minimum_size.y = 80
 	var preview_style = StyleBoxFlat.new()
-	preview_style.bg_color = Color(0.2, 0.2, 0.25, 1)
+	var type_str = listing.get_asset_type_string()
+	var type_colors = {
+		"ROBOT": Color(0.15, 0.35, 0.6, 1),
+		"PART": Color(0.2, 0.5, 0.2, 1),
+		"WORLD": Color(0.5, 0.3, 0.15, 1),
+	}
+	preview_style.bg_color = type_colors.get(type_str, Color(0.2, 0.2, 0.25, 1))
+	preview_style.set_corner_radius_all(4)
 	preview.add_theme_stylebox_override("panel", preview_style)
 	vbox.add_child(preview)
-
+	
 	var preview_lbl = Label.new()
-	preview_lbl.text = "[Preview]"
+	preview_lbl.text = type_str
 	preview_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	preview_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	preview_lbl.add_theme_font_size_override("font_size", 18)
+	preview_lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 	preview.add_child(preview_lbl)
 
 	# Name
@@ -388,13 +397,55 @@ func _show_detail_panel(listing: Listing) -> void:
 
 
 func _show_create_panel() -> void:
-	# Placeholder - would show create listing UI
-	var msg = Label.new()
-	msg.text = "Create listing panel coming soon.\n\nUse File > Publish to create a new listing."
-	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	msg.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	msg.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	_listings_container.add_child(msg)
+	var form = VBoxContainer.new()
+	form.add_theme_constant_override("separation", 12)
+	_listings_container.add_child(form)
+
+	var title = Label.new()
+	title.text = "Create New Listing"
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	form.add_child(title)
+
+	# Name field
+	var name_label = Label.new()
+	name_label.text = "Asset Name"
+	name_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	form.add_child(name_label)
+	var name_input = LineEdit.new()
+	name_input.placeholder_text = "e.g., Robot Arm v2"
+	form.add_child(name_input)
+
+	# Description
+	var desc_label = Label.new()
+	desc_label.text = "Description"
+	desc_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	form.add_child(desc_label)
+	var desc_input = TextEdit.new()
+	desc_input.custom_minimum_size.y = 80
+	desc_input.placeholder_text = "Describe your asset..."
+	form.add_child(desc_input)
+
+	# Price
+	var price_label = Label.new()
+	price_label.text = "Price (AR)"
+	price_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	form.add_child(price_label)
+	var price_input = SpinBox.new()
+	price_input.min_value = 0.0
+	price_input.max_value = 1000000.0
+	price_input.step = 0.1
+	form.add_child(price_input)
+
+	var publish_btn = Button.new()
+	publish_btn.text = "Publish Listing"
+	publish_btn.pressed.connect(func():
+		if name_input.text.strip_edges().is_empty():
+			ToastClass.show_toast(self, "Please enter an asset name", Toast.Level.WARNING)
+			return
+		ToastClass.show_toast(self, "Publishing will be available in a future update", Toast.Level.INFO)
+	)
+	form.add_child(publish_btn)
 
 
 func _on_close_pressed() -> void:

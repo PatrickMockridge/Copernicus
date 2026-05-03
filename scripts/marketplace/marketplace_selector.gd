@@ -4,6 +4,8 @@
 class_name MarketplaceSelector
 extends Control
 
+const ConfirmDialogClass = preload("res://scripts/ui/confirm_dialog.gd")
+
 signal backend_selected(backend_class: String)
 signal cancelled()
 
@@ -18,6 +20,7 @@ var _marketplace_list: VBoxContainer
 var _backend_options: Array = []
 
 var _selected_backend: String = "MockMarketplace"
+var _default_backend: String = "MockMarketplace"
 var _cancel_btn: Button
 var _apply_btn: Button
 
@@ -54,7 +57,7 @@ func _setup_ui() -> void:
 
 	# Marketplace list
 	_marketplace_list = VBoxContainer.new()
-	_marketplace_list.custom_minimum_size.y = 150
+	_marketplace_list.custom_minimum_size.y = 220
 	content.add_child(_marketplace_list)
 
 	# Add marketplace options
@@ -73,13 +76,13 @@ func _setup_ui() -> void:
 	# Info label
 	var info = Label.new()
 	info.text = "Mock marketplace is great for testing. AO Marketplace requires a wallet with AR tokens."
-	info.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	info.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(info)
 
 	# Buttons
 	var btn_hbox = HBoxContainer.new()
-	btn_hbox.alignment = Box.ALIGNMENT_END
+	btn_hbox.alignment = BoxContainer.ALIGNMENT_END
 	content.add_child(btn_hbox)
 
 	_cancel_btn = Button.new()
@@ -127,15 +130,15 @@ func _add_marketplace_option(backend_id: String, title: String, description: Str
 	var title_label = Label.new()
 	title_label.text = title + (" (Unavailable)" if not available else "")
 	if not available:
-		title_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		title_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_DISABLED)
 	else:
-		title_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+		title_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
 	vbox.add_child(title_label)
 
 	var desc_label = Label.new()
 	desc_label.text = description
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	desc_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	vbox.add_child(desc_label)
 
 	_marketplace_list.add_child(option_container)
@@ -157,8 +160,15 @@ func _on_backend_toggled(toggled: bool, backend_id: String) -> void:
 
 
 func _on_cancel_pressed() -> void:
-	cancelled.emit()
-	queue_free()
+	if _selected_backend != _default_backend:
+		var dialog = ConfirmDialogClass.ask(self, "Discard Changes?", "You changed your selection. Discard it?", "Discard", "Keep Editing")
+		dialog.confirmed.connect(func():
+			cancelled.emit()
+			queue_free()
+		)
+	else:
+		cancelled.emit()
+		queue_free()
 
 
 func _on_apply_pressed() -> void:

@@ -4,6 +4,9 @@
 
 extends Control
 
+const ToastClass = preload("res://scripts/ui/toast.gd")
+const LoadingOverlayClass = preload("res://scripts/ui/loading_overlay.gd")
+
 # Preload AI classes instead of using autoloads
 const GameAI = preload("res://addons/GameAI/core/ai.gd")
 const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
@@ -269,12 +272,16 @@ func _display_result(result, operation: String) -> void:
 		_code_output.text = str(content)
 		_add_to_scene_btn.disabled = false
 		_status_label.text = operation.capitalize() + " generated successfully"
+		_dismiss_loading_overlay()
+		ToastClass.show_toast(self, operation.capitalize() + " generated", ToastClass.Level.SUCCESS)
 	else:
 		var err = result.err_value()
 		var msg = err.get("message", str(err)) if err is Dictionary else str(err)
 		_code_output.text = "Error: " + msg
 		_add_to_scene_btn.disabled = true
+		_dismiss_loading_overlay()
 		_status_label.text = "Error generating " + operation
+		ToastClass.show_toast(self, "Failed to generate " + operation, ToastClass.Level.ERROR)
 
 # ===== Action Buttons =====
 
@@ -300,3 +307,7 @@ func _on_open_marketplace() -> void:
 
 func _process(delta: float) -> void:
 	pass
+func _dismiss_loading_overlay() -> void:
+	for child in get_tree().current_scene.get_children():
+		if child.get_script() == LoadingOverlayClass:
+			child.dismiss()

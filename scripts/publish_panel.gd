@@ -5,6 +5,8 @@
 class_name PublishPanel
 extends Control
 
+const LoadingOverlayClass = preload("res://scripts/ui/loading_overlay.gd")
+
 signal publish_requested(config: Dictionary)
 signal cancelled()
 
@@ -31,6 +33,7 @@ var _publisher: RobotPublisher
 var _selected_files: Array = []
 var _all_files: Array = []
 var _is_publishing: bool = false
+var _loading_overlay = null
 
 
 func _ready() -> void:
@@ -124,7 +127,7 @@ func _setup_ui() -> void:
 	price_hint.text = " (0 = not for sale)"
 	price_hint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	price_hbox.add_child(price_hint)
-	price_hbox.add_child(Box.new())  # Spacer
+	price_hbox.add_child(Control.new())  # Spacer
 
 	# Files section
 	var files_header = HBoxContainer.new()
@@ -164,7 +167,7 @@ func _setup_ui() -> void:
 	_status_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	summary_hbox.add_child(_status_label)
 
-	summary_hbox.add_child(Box.new())  # Spacer
+	summary_hbox.add_child(Control.new())  # Spacer
 
 	var cost_label = Label.new()
 	cost_label.text = "Est. cost: ~0 AR"
@@ -187,11 +190,11 @@ func _setup_ui() -> void:
 
 	# Footer buttons
 	_footer = HBoxContainer.new()
-	_footer.alignment = Box.ALIGNMENT_END
+	_footer.alignment = BoxContainer.ALIGNMENT_END
 	_footer.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_content.add_child(_footer)
 
-	_footer.add_child(Box.new())  # Spacer
+	_footer.add_child(Control.new())  # Spacer
 
 	_cancel_btn = Button.new()
 	_cancel_btn.text = "Cancel"
@@ -294,6 +297,12 @@ func _on_refresh_pressed() -> void:
 	_populate_file_list()
 
 
+func _dismiss_loading() -> void:
+	if _loading_overlay:
+		_loading_overlay.dismiss()
+		_loading_overlay = null
+
+
 func _on_cancel_pressed() -> void:
 	cancelled.emit()
 	queue_free()
@@ -323,6 +332,7 @@ func _on_publish_pressed() -> void:
 
 func _start_publish(config: Dictionary) -> void:
 	_is_publishing = true
+	_loading_overlay = LoadingOverlayClass.show_overlay(self, "Publishing to blockchain...")
 	_publish_btn.disabled = true
 	_cancel_btn.disabled = true
 	_progress_bar.visible = true
@@ -346,6 +356,7 @@ func _on_publish_progress(stage: String, percent: float) -> void:
 
 func _on_publish_complete(hyperobject: RobotHyperobject) -> void:
 	_is_publishing = false
+	_dismiss_loading()
 	_progress_bar.value = 100.0
 	_progress_label.text = "Complete!"
 
@@ -359,6 +370,7 @@ func _on_publish_complete(hyperobject: RobotHyperobject) -> void:
 
 func _on_publish_failed(error: String) -> void:
 	_is_publishing = false
+	_dismiss_loading()
 	_publish_btn.disabled = false
 	_cancel_btn.disabled = false
 	_progress_bar.visible = false

@@ -55,7 +55,7 @@ func _setup_ui() -> void:
 
 	# Backend list
 	_backend_list = VBoxContainer.new()
-	_backend_list.custom_minimum_size.y = 250
+	_backend_list.custom_minimum_size.y = 220
 	content.add_child(_backend_list)
 
 	# Add backend options
@@ -90,7 +90,7 @@ func _setup_ui() -> void:
 	# Info label
 	var info = Label.new()
 	info.text = "Mock Industrial is for testing. Real industrial connections require ROS 2 industrial packages."
-	info.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	info.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(info)
 
@@ -144,15 +144,15 @@ func _add_backend_option(backend_id: String, title: String, description: String,
 	var title_label = Label.new()
 	title_label.text = title + (" (Unavailable)" if not available else "")
 	if not available:
-		title_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		title_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_DISABLED)
 	else:
-		title_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+		title_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
 	vbox.add_child(title_label)
 
 	var desc_label = Label.new()
 	desc_label.text = description
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	desc_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	vbox.add_child(desc_label)
 
 	_backend_list.add_child(option_container)
