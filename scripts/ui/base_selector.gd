@@ -90,6 +90,9 @@ func _setup_ui() -> void:
 
 	_populate_options(_option_list)
 
+	if _option_widgets.is_empty():
+		option_scroll.add_child(CopernicusTheme.make_empty_state("No modules available", "No backends are registered for this category."))
+
 	content.add_child(CopernicusTheme.make_separator())
 
 	var info_text = _get_info_text()
@@ -98,13 +101,14 @@ func _setup_ui() -> void:
 		content.add_child(info_label)
 
 	var btn_row = CopernicusTheme.make_button_row("Cancel", _get_apply_text())
-	content.add_child(btn_row)
-
-	var children = btn_row.get_children()
-	_cancel_btn = children[1]  # after spacer
-	_apply_btn = children[2]
+	content.add_child(btn_row["row"])
+	_cancel_btn = btn_row["cancel"]
+	_apply_btn = btn_row["confirm"]
 	_cancel_btn.pressed.connect(_on_cancel_pressed)
 	_apply_btn.pressed.connect(_on_apply_pressed)
+
+	if _option_widgets.is_empty():
+		_apply_btn.disabled = true
 
 
 func _add_option(id: String, name: String, description: String, available: bool, container: VBoxContainer) -> void:
