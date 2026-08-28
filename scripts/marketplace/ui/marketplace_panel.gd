@@ -8,6 +8,7 @@ extends Control
 signal listing_viewed(listing: Listing)
 signal purchase_initiated(listing: Listing)
 signal create_listing_requested()
+signal closed()
 
 const Listing = preload("res://scripts/marketplace/listing.gd")
 const MarketplaceCore = preload("res://scripts/marketplace/marketplace_core.gd")
@@ -25,6 +26,8 @@ var _listings_container: GridContainer
 var _status_label: Label
 var _detail_panel: Control
 var _create_panel: Control
+var _scroll: ScrollContainer
+var _loading_overlay: LoadingOverlay = null
 
 ## State
 var _current_tab: int = 0
@@ -53,6 +56,8 @@ func set_backend(backend: MarketplaceCore) -> void:
 	_marketplace.purchase_failed.connect(_on_purchase_failed)
 	_marketplace.listing_created.connect(_on_listing_created)
 	_marketplace.error_occurred.connect(_on_error)
+	_marketplace.loading_started.connect(_on_loading_started)
+	_marketplace.loading_finished.connect(_on_loading_finished)
 
 
 func _setup_ui() -> void:
@@ -141,16 +146,23 @@ func _setup_ui() -> void:
 	filter_bar.add_child(search_btn)
 
 	# Listings grid (scrollable)
-	var scroll = ScrollContainer.new()
-	scroll.custom_minimum_size.y = 300
-	scroll.set_horizontal_scroll_mode(ScrollContainer.SCROLL_MODE_DISABLED)
-	main_vbox.add_child(scroll)
+	_scroll = ScrollContainer.new()
+	_scroll.custom_minimum_size.y = 300
+	_scroll.set_horizontal_scroll_mode(ScrollContainer.SCROLL_MODE_DISABLED)
+	main_vbox.add_child(_scroll)
 
 	_listings_container = GridContainer.new()
 	_listings_container.custom_minimum_size.y = 300
 	var columns = COLUMNS
 	_listings_container.columns = columns
-	scroll.add_child(_listings_container)
+	_scroll.add_child(_listings_container)
+
+	# Create panel (shown only on the Create tab)
+	_create_panel = PanelContainer.new()
+	_create_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_create_panel.visible = false
+	CopernicusTheme.style_card(_create_panel)
+	main_vbox.add_child(_create_panel)
 
 	# Status label
 	_status_label = Label.new()
@@ -186,6 +198,8 @@ func _get_current_filter() -> Dictionary:
 func _on_tab_selected(tab_index: int) -> void:
 	_current_tab = tab_index
 	_clear_listings()
+	_scroll.visible = true
+	_create_panel.visible = false
 
 	match tab_index:
 		0:  # Browse
@@ -294,7 +308,7 @@ func _create_listing_card(listing: Listing) -> Control:
 		"Part": Color(0.2, 0.5, 0.2, 1),
 		"World": Color(0.5, 0.3, 0.15, 1),
 	}
-	preview_style.bg_color = type_colors.get(type_str, Color(0.2, 0.2, 0.25, 1))
+	preview_style.bg_color = type_colors.get(type_str, CopernicusTheme.BG_CARD)
 	preview_style.set_corner_radius_all(4)
 	preview.add_theme_stylebox_override("panel", preview_style)
 	vbox.add_child(preview)
@@ -304,7 +318,7 @@ func _create_listing_card(listing: Listing) -> Control:
 	preview_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	preview_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	preview_lbl.add_theme_font_size_override("font_size", 18)
-	preview_lbl.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	preview_lbl.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
 	preview.add_child(preview_lbl)
 
 	# Name
@@ -344,6 +358,7 @@ func _create_listing_card(listing: Listing) -> Control:
 	buy_btn.pressed.connect(_on_buy_pressed.bind(listing))
 	if not listing.is_for_sale() or listing.get_owner() == _marketplace.get_my_address():
 		buy_btn.disabled = true
+		buy_btn.tooltip_text = "You own this" if listing.get_owner() == _marketplace.get_my_address() else "Not for sale"
 	btn_hbox.add_child(buy_btn)
 
 	container.set_meta("listing", listing)
@@ -371,11 +386,8 @@ func _show_detail_panel(listing: Listing) -> void:
 
 	var panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	CopernicusTheme.style_panel(panel)
 	_detail_panel.add_child(panel)
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.1, 0.12, 0.98)
-	panel.add_theme_stylebox_override("panel", style)
 
 	var close_btn = Button.new()
 	close_btn.text = "X"
@@ -414,20 +426,26 @@ func _show_detail_panel(listing: Listing) -> void:
 
 
 func _show_create_panel() -> void:
+	_scroll.visible = false
+	_create_panel.visible = true
+
+	for child in _create_panel.get_children():
+		child.queue_free()
+
 	var form = VBoxContainer.new()
 	form.add_theme_constant_override("separation", 12)
-	_listings_container.add_child(form)
+	_create_panel.add_child(form)
 
 	var title = Label.new()
 	title.text = "Create New Listing"
-	title.add_theme_font_size_override("font_size", 18)
-	title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	title.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_HEADING)
+	title.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
 	form.add_child(title)
 
 	# Name field
 	var name_label = Label.new()
 	name_label.text = "Asset Name"
-	name_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	name_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	form.add_child(name_label)
 	var name_input = LineEdit.new()
 	name_input.placeholder_text = "e.g., Robot Arm v2"
@@ -436,7 +454,7 @@ func _show_create_panel() -> void:
 	# Description
 	var desc_label = Label.new()
 	desc_label.text = "Description"
-	desc_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	desc_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	form.add_child(desc_label)
 	var desc_input = TextEdit.new()
 	desc_input.custom_minimum_size.y = 80
@@ -446,7 +464,7 @@ func _show_create_panel() -> void:
 	# Price
 	var price_label = Label.new()
 	price_label.text = "Price (AR)"
-	price_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	price_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	form.add_child(price_label)
 	var price_input = SpinBox.new()
 	price_input.min_value = 0.0
@@ -457,15 +475,38 @@ func _show_create_panel() -> void:
 	var publish_btn = Button.new()
 	publish_btn.text = "Publish Listing"
 	publish_btn.pressed.connect(func():
-		if name_input.text.strip_edges().is_empty():
+		var asset_name = name_input.text.strip_edges()
+		if asset_name.is_empty():
 			Toast.show_toast(self, "Please enter an asset name", Toast.Level.WARNING)
 			return
-		Toast.show_toast(self, "Publishing will be available in a future update", Toast.Level.INFO)
+		var config = {
+			"name": asset_name,
+			"asset_type": "ROBOT",
+			"description": desc_input.text,
+			"price": int(price_input.value * 1e12),
+			"files": []
+		}
+		var listing = _marketplace.create_listing(config)
+		if listing:
+			Toast.show_toast(self, "Listing created", Toast.Level.SUCCESS)
+		_on_tab_selected(0)
 	)
 	form.add_child(publish_btn)
 
 
+func _on_loading_started() -> void:
+	if _loading_overlay == null:
+		_loading_overlay = LoadingOverlay.show_overlay(self, "Loading...")
+
+
+func _on_loading_finished() -> void:
+	if _loading_overlay:
+		_loading_overlay.dismiss()
+		_loading_overlay = null
+
+
 func _on_close_pressed() -> void:
+	closed.emit()
 	hide()
 
 

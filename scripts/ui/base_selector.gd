@@ -8,8 +8,6 @@ extends Control
 signal option_selected(id: String)
 signal cancelled()
 
-const ConfirmDialogClass = preload("res://scripts/ui/confirm_dialog.gd")
-
 var _selected_id: String = ""
 var _default_id: String = ""
 var _option_list: VBoxContainer
@@ -154,7 +152,7 @@ func _on_option_toggled(id: String) -> void:
 
 func _on_cancel_pressed() -> void:
 	if _selected_id != _default_id and not _default_id.is_empty():
-		var dialog = ConfirmDialogClass.ask(self, "Discard Changes?", "You changed your selection. Discard it?", "Discard", "Keep Editing")
+		var dialog = ConfirmDialog.ask(self, "Discard Changes?", "You changed your selection. Discard it?", "Discard", "Keep Editing")
 		dialog.confirmed.connect(func():
 			cancelled.emit()
 			queue_free()

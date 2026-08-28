@@ -5,8 +5,6 @@
 class_name AiAssistantPanel
 extends Control
 
-const ToastClass = preload("res://scripts/ui/toast.gd")
-
 const GameAIResult = preload("res://addons/GameAI/core/result.gd")
 
 # ===== UI References =====
@@ -25,7 +23,6 @@ var _behavior_select: OptionButton
 var _output_label: Label
 var _code_output: TextEdit
 var _copy_btn: Button
-var _add_to_scene_btn: Button
 var _explain_btn: Button
 var _debug_btn: Button
 
@@ -163,13 +160,6 @@ func _setup_ui() -> void:
 	_copy_btn.pressed.connect(_on_copy_code)
 	action_hbox.add_child(_copy_btn)
 
-	_add_to_scene_btn = Button.new()
-	_add_to_scene_btn.text = "Add to Scene"
-	_add_to_scene_btn.pressed.connect(_on_add_to_scene)
-	_add_to_scene_btn.disabled = true
-	_add_to_scene_btn.tooltip_text = "Not yet implemented"
-	action_hbox.add_child(_add_to_scene_btn)
-
 func _connect_signals() -> void:
 	_rosai.behavior_generated.connect(_on_behavior_generated)
 	_rosai.topic_explained.connect(_on_topic_explained)
@@ -206,7 +196,7 @@ func _on_connect_ai() -> void:
 
 func _on_generate_behavior() -> void:
 	if not _api_configured:
-		_code_output.text = "Error: Not connected to AI"
+		Toast.show_toast(self, "Not connected to AI", Toast.Level.WARNING)
 		return
 	var behavior = BEHAVIOR_TYPES[_behavior_select.get_selected_id()]
 	_code_output.text = "Generating " + behavior + " behavior..."
@@ -215,7 +205,7 @@ func _on_generate_behavior() -> void:
 
 func _on_explain_topic() -> void:
 	if not _api_configured:
-		_code_output.text = "Error: Not connected to AI"
+		Toast.show_toast(self, "Not connected to AI", Toast.Level.WARNING)
 		return
 	_code_output.text = "Explaining topic..."
 	var task = _task_input.text if not _task_input.text.is_empty() else "Explain PID control math"
@@ -223,7 +213,7 @@ func _on_explain_topic() -> void:
 
 func _on_debug_issue() -> void:
 	if not _api_configured:
-		_code_output.text = "Error: Not connected to AI"
+		Toast.show_toast(self, "Not connected to AI", Toast.Level.WARNING)
 		return
 	_code_output.text = "Diagnosing issue..."
 	var issue = _task_input.text if not _task_input.text.is_empty() else "robot drifts left"
@@ -268,14 +258,13 @@ func _display_result(result, operation: String) -> void:
 			content = content.get("content", str(content))
 		_code_output.text = str(content)
 		_status_label.text = operation.capitalize() + " generated successfully"
-		ToastClass.show_toast(self, operation.capitalize() + " generated", ToastClass.Level.SUCCESS)
+		Toast.show_toast(self, operation.capitalize() + " generated", Toast.Level.SUCCESS)
 	else:
 		var err = result.err_value()
 		var msg = err.get("message", str(err)) if err is Dictionary else str(err)
 		_code_output.text = "Error: " + msg
-		_add_to_scene_btn.disabled = true
 		_status_label.text = "Error generating " + operation
-		ToastClass.show_toast(self, "Failed to generate " + operation, ToastClass.Level.ERROR)
+		Toast.show_toast(self, "Failed to generate " + operation, Toast.Level.ERROR)
 
 # ===== Action Buttons =====
 
@@ -284,9 +273,6 @@ func _on_copy_code() -> void:
 		return
 	DisplayServer.clipboard_set(_code_output.text)
 	_status_label.text = "Code copied to clipboard"
-
-func _on_add_to_scene() -> void:
-	_status_label.text = "Add to Scene: Feature not yet implemented"
 
 func _on_open_ros_coder() -> void:
 	var ros_coder_scene = preload("res://scenes/ros_coder.tscn")

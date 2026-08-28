@@ -123,12 +123,14 @@ func _setup_ui() -> void:
 
 	_start_btn = Button.new()
 	_start_btn.text = "Start Training"
+	_start_btn.tooltip_text = "Start a training run"
 	_start_btn.pressed.connect(_on_start_training)
 	btn_container.add_child(_start_btn)
 
 	_stop_btn = Button.new()
 	_stop_btn.text = "Stop"
 	_stop_btn.disabled = true
+	_stop_btn.tooltip_text = "Stop the current training run"
 	_stop_btn.pressed.connect(_on_stop_training)
 	btn_container.add_child(_stop_btn)
 
@@ -138,6 +140,7 @@ func _setup_ui() -> void:
 
 	_save_btn = Button.new()
 	_save_btn.text = "Save Model"
+	_save_btn.tooltip_text = "Save the trained policy to disk"
 	_save_btn.pressed.connect(_on_save_model)
 	btn_container.add_child(_save_btn)
 

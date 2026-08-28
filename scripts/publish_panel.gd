@@ -5,8 +5,6 @@
 class_name PublishPanel
 extends Control
 
-const LoadingOverlayClass = preload("res://scripts/ui/loading_overlay.gd")
-
 signal publish_requested(config: Dictionary)
 signal cancelled()
 
@@ -336,7 +334,7 @@ func _on_publish_pressed() -> void:
 
 func _start_publish(config: Dictionary) -> void:
 	_is_publishing = true
-	_loading_overlay = LoadingOverlayClass.show_overlay(self, "Publishing to blockchain...")
+	_loading_overlay = LoadingOverlay.show_overlay(self, "Publishing to blockchain...")
 	_publish_btn.disabled = true
 	_cancel_btn.disabled = true
 	_progress_bar.visible = true

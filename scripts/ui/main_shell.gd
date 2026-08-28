@@ -76,7 +76,10 @@ func _setup_panels() -> void:
 	if robot_viewer:
 		ai.set_viewer(robot_viewer)
 
-	_add_panel("marketplace", MarketplacePanel.new())
+	var marketplace = MarketplacePanel.new()
+	_add_panel("marketplace", marketplace)
+	marketplace.closed.connect(func() -> void: _select("viewer"))
+
 	_add_panel("wallet", WalletPanel.new())
 	_add_panel("coordination", CoordinationPanel.new())
 
