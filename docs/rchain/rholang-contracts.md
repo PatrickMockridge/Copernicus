@@ -8,6 +8,11 @@ Convention: a contract is a `contract` listening on a public name; each message
 is a tuple whose first element is a method tag `@"method"`; query methods take a
 final `*ret` channel and respond on it.
 
+Contracts are declared directly on the public name (`contract @"copernicus:…"(…)`),
+not bound with `new x(@"…")` — that `new` form expects a URI (backtick), not a
+quoted name. Complex values (records, specs, results) are stored as **hex-encoded
+JSON strings** because rholang string literals have no escape sequences.
+
 ## `registry.rho`
 
 - **Public name:** `@"copernicus:registry"`

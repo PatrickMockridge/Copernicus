@@ -7,8 +7,9 @@ fallible operations, mirroring the existing Arweave/AO SDK.
 ## `RNodeClient` (extends `RefCounted`)
 
 Typed HTTP client for the RNode public/admin API (`protocol.md`). Configured from
-`EnvService` (`RCHAIN_HOST`/`RCHAIN_PUBLIC_PORT`/`RCHAIN_ADMIN_PORT`, defaults
-`localhost` / `40403` / `40405`).
+OS environment variables (`RCHAIN_HOST`/`RCHAIN_PUBLIC_PORT`/`RCHAIN_ADMIN_PORT`,
+defaults `localhost` / `40403` / `40405`). OS env is used (not `EnvService`) so the
+client also works in `--script`/headless contexts where autoloads are not globals.
 
 ```
 var base_url: String
@@ -52,6 +53,10 @@ func build_transfer_rev(to: String, amount: int) -> String
 Term builders are string templates (like `~/RWallet/r-wallet/src/utils/rho.ts`);
 each embeds the canonical contract name from `rholang-contracts.md` and the
 `*return` channel pattern for query-style calls.
+
+Complex values (records, job specs, channel data) are **hex-encoded JSON strings**:
+rholang string literals have no escape sequences, so raw JSON cannot be embedded
+directly. Decode with `String.hex_decode()` + `JSON.parse_string()` on read.
 
 ## `RChainWallet` (extends `Wallet` from `addons/primitives/wallet/wallet.gd`)
 

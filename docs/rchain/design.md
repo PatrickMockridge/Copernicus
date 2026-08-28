@@ -93,3 +93,14 @@ GDScript
    `data-at-name` on a timer (default 1 s) and diffs.
 5. **Deterministic names.** Public coordination names are quoted names under a
    `copernicus:` namespace; private/robot channels are unforgeable (`new`).
+
+## Build & test
+
+```bash
+bash addons/rchain/build.sh                          # build the crypto GDExtension (.so)
+tools/rchain_devnet.sh up --validators 1             # boot a local RNode (Docker)
+godot --headless --script res://scripts/test_rchain.gd  # e2e: deploy -> register -> query
+```
+
+The crypto unit tests (`cd addons/rchain/gdext && cargo test`) verify signing and
+REV-address derivation byte-for-byte against `~/RWallet/r-wallet` vectors.

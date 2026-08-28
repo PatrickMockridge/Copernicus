@@ -19,7 +19,7 @@ Given the uncompressed public key bytes `pk` (65 bytes, `pk[0] == 0x04`):
 1. `eth_hex = hex(keccak256(pk[1..]))` (hash the 64 bytes after `0x04`).
 2. `eth_address = eth_hex[last 40 hex chars]`.
 3. `key_hash = keccak256(hex_decode(eth_address))` (32 bytes).
-4. `payload = hex_decode("000000" ++ "00") ++ key_hash`  (`coinId=000000`, `version=00`; 34 bytes).
+4. `payload = hex_decode("000000" ++ "00") ++ key_hash`  (`coinId=000000`, `version=00`; 4-byte prefix + 32-byte key hash = 36 bytes).
 5. `checksum = blake2b-256(payload)[0..4]` (first 4 bytes).
 6. `rev_address = base58(payload ++ checksum)`.
 
@@ -40,7 +40,9 @@ against the uncompressed public key.
 
 ## `RChainCrypto` (GDExtension) method surface
 
-Exposed as a Godot class with static methods (all pure, no node I/O):
+The Rust GDExtension registers the native class `RChainCryptoNative`; a thin GDScript
+wrapper `RChainCrypto` returns `Result` and delegates to it. All methods are static
+and pure (no node I/O):
 
 ```
 generate_keypair() -> Dictionary                       # { private_key: String, public_key: String }

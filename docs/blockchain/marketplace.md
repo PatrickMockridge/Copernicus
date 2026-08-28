@@ -31,6 +31,7 @@ scripts/marketplace/
 ├── listing.gd                    # Listing data structure
 ├── backends/
 │   ├── ao_marketplace.gd          # Real AO Hyperobject marketplace
+│   ├── rchain_marketplace.gd      # RChain coordination backend
 │   └── mock_marketplace.gd        # Testing marketplace
 └── ui/
     └── marketplace_panel.gd       # Main marketplace panel UI
@@ -68,6 +69,22 @@ var listings = marketplace.load_listings()
 ```
 
 Real decentralized marketplace using AO Hyperobjects.
+
+### RChain Marketplace (Coordination)
+
+```gdscript
+var marketplace = RChainMarketplace.new()
+marketplace.initialize({"coordination": coordination})
+var listings = marketplace.load_listings()
+```
+
+On-chain marketplace backed by RChain/RNode. A listing is a **capability transfer**:
+`create_listing` mints a robot capability and registers it in the rholang registry;
+`purchase_listing` transfers that capability to the buyer. Asset blobs still upload
+to Arweave (via `Storage`); only the TX id, metadata, and authority live on RChain.
+See [RChain Coordination](../../rchain/design.md) for the full model.
+
+```
 
 ---
 
@@ -276,6 +293,7 @@ The marketplace integrates with the existing robot publishing:
 | No AR tokens | MockMarketplace |
 | Production use | AOMarketplace |
 | Small transactions | AOMarketplace |
+| On-chain capability coordination | RChainMarketplace |
 
 ---
 
@@ -319,6 +337,7 @@ scripts/marketplace/
 ├── listing.gd                    # Listing data class
 ├── backends/
 │   ├── ao_marketplace.gd          # AO Hyperobject backend
+│   ├── rchain_marketplace.gd      # RChain coordination backend
 │   └── mock_marketplace.gd        # Mock backend for testing
 └── ui/
     └── marketplace_panel.gd       # Main UI panel

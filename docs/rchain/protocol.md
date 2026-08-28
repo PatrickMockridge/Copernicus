@@ -35,6 +35,9 @@ is reserved for block-pinned reads in `SignalBridge`.
 - `deploy` / `propose` return a **JSON-encoded string** (`Json<String>`), so parse
   the response body as a string, not an object. The deploy id is the trailing hex
   in `"…DeployId is: <hex>"`.
+- The **deploy id is the signature** (`DeployId is: <signature-hex>`), not a separate
+  hash. `get_status` fields are **camelCase** (`shardId`, `minPhloPrice`,
+  `latestBlockNumber`).
 - `DeployExecStatus` is externally tagged:
   - `{"ProcessedWithSuccess":{"deployResult":RhoExpr[],"block":LightBlockInfo}}`
   - `{"ProcessedWithError":{"deployError":string,"block":LightBlockInfo}}`

@@ -105,6 +105,7 @@ godot scenes/physics_selector.tscn
 ### Blockchain & Marketplace
 - **ARIADNE** — Git-on-Arweave for permanent robot design storage
 - **AO Hyperobjects** — Trade robot designs as digital assets
+- **RChain Coordination** — On-chain coordination via RChain/RNode: capabilities, jobs, and event channels (the marketplace becomes one coordination primitive)
 
 ---
 
@@ -127,6 +128,15 @@ Copernicus
 │   ├── physics_demo.gd            # VehicleBody3D + differential drive
 │   ├── control/
 │   │   └── pid_controller.gd      # PID closed-loop control
+│   ├── coordination/              # RChain coordination layer
+│   │   ├── coordination_core.gd   # Abstract coordination interface
+│   │   ├── rchain_coordination.gd # RChain backend (capabilities, jobs)
+│   │   └── mock_coordination.gd   # Offline mock
+│   ├── rchain/                    # RChain SDK
+│   │   ├── rchain_wallet.gd       # Key lifecycle + deploy signing
+│   │   ├── rnode_client.gd        # RNode HTTP client
+│   │   ├── rholang_sdk.gd         # Rholang term builder
+│   │   └── signal_bridge.gd       # Signal <-> channel adapter
 │   ├── gpu/
 │   │   ├── backends/              # GPU acceleration backends
 │   │   │   ├── pytorch_learner.gd      # DQN
@@ -146,6 +156,7 @@ Copernicus
 │   ├── godot_ros2/                 # ROS 2 TCP/UDP bridge
 │   ├── ros2_native/               # Native rclpy integration
 │   ├── hyperobject/                # AO Hyperobjects SDK
+│   ├── rchain/                     # RChain crypto GDExtension + rholang contracts
 │   ├── gpu_sensors/                # RTX LIDAR, camera, fusion
 │   ├── industrial/                 # Industrial robot backends
 │   └── omni/                       # Omniverse USD integration
@@ -172,6 +183,8 @@ Copernicus aims for **Pareto efficiency** — maximum functionality with minimum
 | Component | Version | Notes |
 |-----------|---------|-------|
 | Godot | 4.4+ | Headless mode supported |
+| Rust | 1.95+ | For the RChain crypto GDExtension |
+| RNode | latest | Optional, for on-chain coordination |
 | Python | 3.10+ | For PyBullet/PyTorch backends |
 | ROS 2 | Jazzy/Humble | Optional |
 | CUDA | 11.8+ | For GPU acceleration |
@@ -211,6 +224,7 @@ Copernicus aims for **Pareto efficiency** — maximum functionality with minimum
 - [Industrial Robots](docs/industrial/overview.md) — MOTOMAN, ABB, OPC-UA
 - [Omniverse](docs/omni/overview.md) — USD pipeline and digital twin
 - [Marketplace](docs/blockchain/marketplace.md) — Trading robot designs
+- [RChain Coordination](docs/rchain/design.md) — On-chain coordination via RChain/RNode
 
 ---
 

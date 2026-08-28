@@ -114,7 +114,7 @@ fires without the app having to be the one that deployed the register.
 |---|---|
 | `create_listing` | `issue_capability` + list under `@"copernicus:marketplace"` with a price |
 | `purchase_listing` | `transfer_capability(to)` gated on REV escrow |
-| `load_listings` / `search` | `list_robots` / registry query |
+| `load_listings` / `search_listings` | `list_robots` / registry query |
 | `get_listing` | `get_robot` + `get_holder` |
 
 Asset blobs still upload to Arweave; only the TX id + metadata + authority live

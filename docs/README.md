@@ -70,6 +70,9 @@ AI behavior generation + ROS Coder IDE.
 ### [Marketplace](blockchain/marketplace.md)
 Trade robot designs via AO Hyperobjects.
 
+### [RChain Coordination](rchain/design.md)
+On-chain coordination: capabilities, jobs, and event channels via RChain/RNode.
+
 ### [Industrial Robot Plugin](industrial/overview.md)
 Connect to MOTOMAN, ABB, UR, FANUC industrial robots.
 
@@ -120,6 +123,13 @@ docs/
 ├── blockchain/               # Marketplace docs
 │   ├── blockchain.md        # ARIADNE storage
 │   └── marketplace.md       # AO Hyperobjects trading
+├── rchain/                   # RChain coordination docs
+│   ├── design.md            # Design intent + architecture
+│   ├── protocol.md          # RNode HTTP + signing
+│   ├── wallet-spec.md       # Wallet & crypto spec
+│   ├── sdk-spec.md          # GDScript SDK spec
+│   ├── coordination-model.md # Coordination model
+│   └── rholang-contracts.md  # Contract specs
 ├── ai/                       # AI code generation
 │   └── ai-codegen.md        # AI behavior + ROS Coder
 ├── gpu/                      # GPU sensors
@@ -149,6 +159,10 @@ godot scenes/physics_selector.tscn
 godot scenes/nav_selector.tscn
 godot scenes/ik_selector.tscn
 godot scenes/industrial_selector.tscn
+
+# RChain coordination
+tools/rchain_devnet.sh up        # Boot a local RNode (requires Docker)
+godot --headless --script res://scripts/test_rchain.gd  # End-to-end test
 ```
 
 ---
