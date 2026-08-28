@@ -80,11 +80,27 @@ func sign_deploy(term: String, node_status: Dictionary = {}) -> Result:
 	if not is_ready():
 		return Result.err("wallet has no private key")
 	var timestamp: int = node_status.get("timestamp", int(Time.get_unix_time_from_system() * 1000.0))
-	var phlo_price: int = node_status.get("min_phlo_price", 1)
-	var phlo_limit: int = node_status.get("phlo_limit", 1000000)
-	var valid_after: int = node_status.get("latest_block_number", 0)
-	var shard_id: String = node_status.get("shard_id", "root")
-	return RChainCrypto.sign_deploy(term, timestamp, phlo_price, phlo_limit, valid_after, shard_id, _private_key)
+	var phlo_price: int = node_status.get("minPhloPrice", 1)
+	var phlo_limit: int = node_status.get("phloLimit", 1000000)
+	var valid_after: int = node_status.get("latestBlockNumber", 0)
+	var shard_id: String = node_status.get("shardId", "root")
+	var sig: Result = RChainCrypto.sign_deploy(term, timestamp, phlo_price, phlo_limit, valid_after, shard_id, _private_key)
+	if sig.is_err():
+		return sig
+	var s: Dictionary = sig.get_data()
+	return Result.ok({
+		"data": {
+			"term": term,
+			"timestamp": timestamp,
+			"phloPrice": phlo_price,
+			"phloLimit": phlo_limit,
+			"validAfterBlockNumber": valid_after,
+			"shardId": shard_id,
+		},
+		"deployer": s.get("deployer", ""),
+		"signature": s.get("signature", ""),
+		"sigAlgorithm": s.get("sig_algorithm", "secp256k1"),
+	})
 
 
 ## Check balance via the native revVault getBalance term.

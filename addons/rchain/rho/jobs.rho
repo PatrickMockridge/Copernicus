@@ -6,16 +6,16 @@
 //   ("claim",    @job_id, @robot)   write — state = "claimed" (only if published)
 //   ("complete", @job_id, @result)  write — state = "completed"
 //   ("cancel",   @job_id)           write — state = "cancelled"
-new jobs(@"copernicus:jobs"), jobsCh in {
+new jobsCh in {
   jobsCh!({}) |
 
-  contract jobs(@"publish", @job_id, @spec) = {
+  contract @"copernicus:jobs"(@"publish", @job_id, @spec) = {
     for (map <- jobsCh) {
       jobsCh!(*map.set(job_id, "published"))
     }
   } |
 
-  contract jobs(@"claim", @job_id, @robot) = {
+  contract @"copernicus:jobs"(@"claim", @job_id, @robot) = {
     for (map <- jobsCh) {
       if (*map.get(job_id) == "published") {
         jobsCh!(*map.set(job_id, "claimed"))
@@ -25,13 +25,13 @@ new jobs(@"copernicus:jobs"), jobsCh in {
     }
   } |
 
-  contract jobs(@"complete", @job_id, @result) = {
+  contract @"copernicus:jobs"(@"complete", @job_id, @result) = {
     for (map <- jobsCh) {
       jobsCh!(*map.set(job_id, "completed"))
     }
   } |
 
-  contract jobs(@"cancel", @job_id) = {
+  contract @"copernicus:jobs"(@"cancel", @job_id) = {
     for (map <- jobsCh) {
       jobsCh!(*map.set(job_id, "cancelled"))
     }

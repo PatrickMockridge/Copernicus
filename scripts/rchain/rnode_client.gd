@@ -42,7 +42,7 @@ func _request(method: HTTPClient.Method, url: String, body: String = "") -> Resu
 
 	var headers: Array[String] = ["Content-Type: application/json"]
 	if not body.is_empty():
-		headers.append("Content-Length: %d" % body.length())
+		headers.append("Content-Length: %d" % body.to_utf8_buffer().size())
 
 	var path: String = parsed["path"]
 	var req_err := client.request(method, path, headers, body)
@@ -114,7 +114,7 @@ func get_status() -> Result:
 
 ## POST /api/explore-deploy -> {expr, block}.
 func explore_deploy(term: String) -> Result:
-	var r := _post(base_url + "/api/explore-deploy", term)
+	var r := _post(base_url + "/api/explore-deploy", JSON.stringify(term))
 	if r.is_err():
 		return r
 	var d: Dictionary = r.get_data()
@@ -134,7 +134,11 @@ func deploy(request: Dictionary) -> Result:
 	var d: Dictionary = r.get_data()
 	if d.get("status", 0) != 200:
 		return Result.err("deploy %d: %s" % [d.get("status", 0), d.get("body", "")])
-	var deploy_id := _parse_deploy_id(d.get("body", ""))
+	var body: String = d.get("body", "")
+	var parsed_body = JSON.parse_string(body)
+	if typeof(parsed_body) == TYPE_STRING:
+		body = parsed_body
+	var deploy_id := _parse_deploy_id(body)
 	if deploy_id.is_empty():
 		return Result.err("could not parse deploy id from: " + d.get("body", ""))
 

@@ -4,16 +4,16 @@
 // Messages:
 //   ("write", @addr, @message)   write — append a message
 //   ("read",  @addr, ret)        read  — ret!(messages) and clear
-new inbox(@"copernicus:inbox"), inboxCh in {
+new inboxCh in {
   inboxCh!({}) |
 
-  contract inbox(@"write", @addr, @message) = {
+  contract @"copernicus:inbox"(@"write", @addr, @message) = {
     for (map <- inboxCh) {
       inboxCh!(*map.set(addr, *map.get(addr) ++ [message]))
     }
   } |
 
-  contract inbox(@"read", @addr, ret) = {
+  contract @"copernicus:inbox"(@"read", @addr, ret) = {
     for (map <- inboxCh) {
       ret!(*map.get(addr)) |
       inboxCh!(*map.set(addr, []))

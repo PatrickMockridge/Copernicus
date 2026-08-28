@@ -4,22 +4,22 @@
 //   ("register", @name, @record)   write — record is a JSON string (a quoted name)
 //   ("query",    @name, ret)       read  — ret!(record) (Nil if absent)
 //   ("list",     ret)              read  — ret!(map)
-new registry(@"copernicus:registry"), registryCh in {
+new registryCh in {
   registryCh!({}) |
 
-  contract registry(@"register", @name, @record) = {
+  contract @"copernicus:registry"(@"register", @name, @record) = {
     for (map <- registryCh) {
       registryCh!(*map.set(name, record))
     }
   } |
 
-  contract registry(@"query", @name, ret) = {
+  contract @"copernicus:registry"(@"query", @name, ret) = {
     for (map <<- registryCh) {
       ret!(*map.get(name))
     }
   } |
 
-  contract registry(@"list", ret) = {
+  contract @"copernicus:registry"(@"list", ret) = {
     for (map <<- registryCh) {
       ret!(*map)
     }

@@ -4,16 +4,16 @@
 // Messages:
 //   ("list", @robot, @price)   write — record asking price
 //   ("buy",  @robot, @buyer)   write — remove the listing (capability transfer handled by ownership)
-new marketplace(@"copernicus:marketplace"), priceCh in {
+new priceCh in {
   priceCh!({}) |
 
-  contract marketplace(@"list", @robot, @price) = {
+  contract @"copernicus:marketplace"(@"list", @robot, @price) = {
     for (map <- priceCh) {
       priceCh!(*map.set(robot, price))
     }
   } |
 
-  contract marketplace(@"buy", @robot, @buyer) = {
+  contract @"copernicus:marketplace"(@"buy", @robot, @buyer) = {
     for (map <- priceCh) {
       priceCh!(*map.delete(robot))
     }

@@ -1,22 +1,21 @@
 // Ownership — capability ledger. robot -> holder address (a quoted name).
-// v1: the holder is tracked as a name; "revoked" is a sentinel holder value.
-// (The unforgeable-capability-token transfer via inbox is a v2 refinement.)
+// v1: holder tracked as a name; "revoked" is a sentinel holder value.
 // Public name: @"copernicus:ownership"
 // Messages:
 //   ("issue",    @robot, @holder)   write — bind holder
 //   ("transfer", @robot, @to)       write — update holder (rejected if revoked)
 //   ("holder",   @robot, ret)       read  — ret!(holder)
 //   ("revoke",   @robot)            write — set holder = "revoked"
-new ownership(@"copernicus:ownership"), ledgerCh in {
+new ledgerCh in {
   ledgerCh!({}) |
 
-  contract ownership(@"issue", @robot, @holder) = {
+  contract @"copernicus:ownership"(@"issue", @robot, @holder) = {
     for (ledger <- ledgerCh) {
       ledgerCh!(*ledger.set(robot, holder))
     }
   } |
 
-  contract ownership(@"transfer", @robot, @to) = {
+  contract @"copernicus:ownership"(@"transfer", @robot, @to) = {
     for (ledger <- ledgerCh) {
       if (*ledger.get(robot) == "revoked") {
         ledgerCh!(*ledger)
@@ -26,13 +25,13 @@ new ownership(@"copernicus:ownership"), ledgerCh in {
     }
   } |
 
-  contract ownership(@"holder", @robot, ret) = {
+  contract @"copernicus:ownership"(@"holder", @robot, ret) = {
     for (ledger <<- ledgerCh) {
       ret!(*ledger.get(robot))
     }
   } |
 
-  contract ownership(@"revoke", @robot) = {
+  contract @"copernicus:ownership"(@"revoke", @robot) = {
     for (ledger <- ledgerCh) {
       ledgerCh!(*ledger.set(robot, "revoked"))
     }

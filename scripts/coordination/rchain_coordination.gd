@@ -87,7 +87,10 @@ func list_robots(_filter: Dictionary = {}) -> Result:
 
 func _decode_record(v: Variant) -> Variant:
 	if typeof(v) == TYPE_STRING:
-		var parsed = JSON.parse_string(str(v))
+		var bytes: PackedByteArray = str(v).hex_decode()
+		if bytes.is_empty():
+			return v
+		var parsed = JSON.parse_string(bytes.get_string_from_utf8())
 		return parsed if parsed != null else v
 	return v
 

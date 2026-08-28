@@ -4,22 +4,22 @@
 //   ("open",      @name)          write — create a channel (empty list)
 //   ("send",      @name, @data)   write — append data to the channel history
 //   ("subscribe", @name, ret)     read  — ret!(history)
-new channels(@"copernicus:channels"), channelsCh in {
+new channelsCh in {
   channelsCh!({}) |
 
-  contract channels(@"open", @name) = {
+  contract @"copernicus:channels"(@"open", @name) = {
     for (map <- channelsCh) {
       channelsCh!(*map.set(name, []))
     }
   } |
 
-  contract channels(@"send", @name, @data) = {
+  contract @"copernicus:channels"(@"send", @name, @data) = {
     for (map <- channelsCh) {
       channelsCh!(*map.set(name, *map.get(name) ++ [data]))
     }
   } |
 
-  contract channels(@"subscribe", @name, ret) = {
+  contract @"copernicus:channels"(@"subscribe", @name, ret) = {
     for (map <<- channelsCh) {
       ret!(*map.get(name))
     }
