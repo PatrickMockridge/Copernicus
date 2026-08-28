@@ -13,6 +13,9 @@ var _sliders: Dictionary = {}
 var _labels: Dictionary = {}
 var _layout: VBoxContainer
 var _title: Label
+var _slider_scroll: ScrollContainer
+var _slider_list: VBoxContainer
+var _empty_state: Control
 
 
 func _ready() -> void:
@@ -20,13 +23,23 @@ func _ready() -> void:
 	_layout.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_layout)
 
-	_title = Label.new()
-	_title.text = "Joint Control"
-	_title.add_theme_font_size_override("font_size", 16)
+	_title = CopernicusTheme.make_heading("Joint Control")
 	_layout.add_child(_title)
 
 	var separator = HSeparator.new()
 	_layout.add_child(separator)
+
+	_slider_scroll = ScrollContainer.new()
+	_slider_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_slider_scroll.set_horizontal_scroll_mode(ScrollContainer.SCROLL_MODE_DISABLED)
+	_layout.add_child(_slider_scroll)
+
+	_slider_list = VBoxContainer.new()
+	_slider_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_slider_scroll.add_child(_slider_list)
+
+	_empty_state = CopernicusTheme.make_empty_state("No robot loaded", "Load a robot to control its joints.")
+	_slider_list.add_child(_empty_state)
 
 	# Try to find robot viewer in scene
 	var viewer = find_viewer()
@@ -73,6 +86,8 @@ func _populate_from_viewer() -> void:
 			if not name.is_empty():
 				_add_joint_slider(name, i)
 
+	_empty_state.visible = _sliders.is_empty()
+
 
 func _add_joint_slider(joint_name: String, joint_index: int) -> void:
 	var container = HBoxContainer.new()
@@ -118,7 +133,7 @@ func _add_joint_slider(joint_name: String, joint_index: int) -> void:
 	container.add_child(value_label)
 	_labels[joint_name + "_value"] = value_label
 
-	_layout.add_child(container)
+	_slider_list.add_child(container)
 
 
 func _on_slider_changed(value: float, joint_index: int, joint_name: String) -> void:
@@ -130,13 +145,9 @@ func _on_slider_changed(value: float, joint_index: int, joint_name: String) -> v
 
 
 func _clear_sliders() -> void:
-	for slider in _sliders.values():
-		if is_instance_valid(slider) and slider.get_parent():
-			slider.get_parent().queue_free()
+	for child in _slider_list.get_children():
+		if child != _empty_state:
+			child.queue_free()
 	_sliders.clear()
 	_labels.clear()
-
-	# Remove all children from layout except the title and separator
-	for child in _layout.get_children():
-		if child != _title and child.get_index() > 1:
-			child.queue_free()
+	_empty_state.visible = true

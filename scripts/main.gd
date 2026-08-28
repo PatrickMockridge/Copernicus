@@ -26,6 +26,8 @@ var _output_label: Label
 var _code_output: TextEdit
 var _copy_btn: Button
 var _add_to_scene_btn: Button
+var _explain_btn: Button
+var _debug_btn: Button
 
 # ===== AI Instances =====
 var _gameai: Node
@@ -61,8 +63,7 @@ func _setup_ui() -> void:
 	_header = HBoxContainer.new()
 	_main_vbox.add_child(_header)
 
-	var title = Label.new()
-	title.text = "Robot AI Assistant"
+	var title = CopernicusTheme.make_heading("Robot AI Assistant")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_header.add_child(title)
 
@@ -131,15 +132,15 @@ func _setup_ui() -> void:
 	_generate_btn.disabled = true
 	generate_hbox.add_child(_generate_btn)
 
-	var explain_btn = Button.new()
-	explain_btn.text = "Explain Topic"
-	explain_btn.pressed.connect(_on_explain_topic)
-	generate_hbox.add_child(explain_btn)
+	_explain_btn = Button.new()
+	_explain_btn.text = "Explain Topic"
+	_explain_btn.pressed.connect(_on_explain_topic)
+	generate_hbox.add_child(_explain_btn)
 
-	var debug_btn = Button.new()
-	debug_btn.text = "Debug Issue"
-	debug_btn.pressed.connect(_on_debug_issue)
-	generate_hbox.add_child(debug_btn)
+	_debug_btn = Button.new()
+	_debug_btn.text = "Debug Issue"
+	_debug_btn.pressed.connect(_on_debug_issue)
+	generate_hbox.add_child(_debug_btn)
 
 	# ---- Code Output ----
 	_output_label = Label.new()
@@ -149,6 +150,8 @@ func _setup_ui() -> void:
 	_code_output = TextEdit.new()
 	_code_output.custom_minimum_size.y = 200
 	_code_output.editable = false
+	if CopernicusTheme.mono_font():
+		_code_output.add_theme_font_override("font", CopernicusTheme.mono_font())
 	_main_vbox.add_child(_code_output)
 
 	# ---- Action Buttons ----
@@ -176,6 +179,8 @@ func _update_ai_status(configured: bool, message: String) -> void:
 	_api_configured = configured
 	_status_label.text = message
 	_generate_btn.disabled = not configured
+	_explain_btn.disabled = not configured
+	_debug_btn.disabled = not configured
 	if configured:
 		_connect_ai_btn.text = "Connected"
 		_connect_ai_btn.disabled = true

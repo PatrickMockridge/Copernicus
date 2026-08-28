@@ -59,15 +59,8 @@ func _setup_ui() -> void:
 	# Main panel
 	var panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	CopernicusTheme.style_panel(panel)
 	add_child(panel)
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.1, 0.12, 0.98)
-	style.set_corner_radius_all(8)
-	style.set_border_width_all(1)
-	style.border_color = Color(0.2, 0.2, 0.25, 1)
-	style.set_content_margin_all(12)
-	panel.add_theme_stylebox_override("panel", style)
 
 	var main_vbox = VBoxContainer.new()
 	panel.add_child(main_vbox)
@@ -170,7 +163,7 @@ func _setup_ui() -> void:
 
 
 func _refresh_listings() -> void:
-	_status_label.text = "Loading..."
+	_set_status("Loading...", CopernicusTheme.TEXT_SECONDARY)
 	var filter = _get_current_filter()
 	_all_listings = _marketplace.load_listings(filter)
 
@@ -220,14 +213,19 @@ func _on_filter_changed(index: int) -> void:
 	_refresh_listings()
 
 
+func _set_status(text: String, color: Color) -> void:
+	_status_label.text = text
+	_status_label.add_theme_color_override("font_color", color)
+
+
 func _on_listings_loaded(listings: Array) -> void:
 	_display_listings(_apply_sort(listings))
-	_status_label.text = "%d listings found" % listings.size()
+	_set_status("%d listings found" % listings.size(), CopernicusTheme.TEXT_SECONDARY)
 
 
 func _on_search_completed(results: Array) -> void:
 	_display_listings(_apply_sort(results))
-	_status_label.text = "%d results found" % results.size()
+	_set_status("%d results found" % results.size(), CopernicusTheme.TEXT_SECONDARY)
 
 
 func _apply_sort(listings: Array) -> Array:
@@ -245,28 +243,29 @@ func _apply_sort(listings: Array) -> Array:
 
 
 func _on_listing_purchased(listing: Listing, buyer: String) -> void:
-	_status_label.text = "Purchased: " + listing.get_name()
+	_set_status("Purchased: " + listing.get_name(), CopernicusTheme.SUCCESS)
 	_refresh_listings()
 
 
 func _on_purchase_failed(listing: Listing, reason: String) -> void:
-	_status_label.text = "Purchase failed: " + reason
-	_status_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.4))
+	_set_status("Purchase failed: " + reason, CopernicusTheme.ERROR)
 
 
 func _on_listing_created(listing: Listing) -> void:
-	_status_label.text = "Created listing: " + listing.get_name()
-	_status_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4))
+	_set_status("Created listing: " + listing.get_name(), CopernicusTheme.SUCCESS)
 	_refresh_listings()
 
 
 func _on_error(message: String) -> void:
-	_status_label.text = "Error: " + message
-	_status_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.4))
+	_set_status("Error: " + message, CopernicusTheme.ERROR)
 
 
 func _display_listings(listings: Array) -> void:
 	_clear_listings()
+
+	if listings.is_empty():
+		_listings_container.add_child(CopernicusTheme.make_empty_state("No listings", "Try adjusting your search or filters."))
+		return
 
 	for listing in listings:
 		var card = _create_listing_card(listing)
@@ -280,14 +279,7 @@ func _clear_listings() -> void:
 
 func _create_listing_card(listing: Listing) -> Control:
 	var container = PanelContainer.new()
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.15, 0.18, 0.9)
-	style.set_corner_radius_all(6)
-	style.set_border_width_all(1)
-	style.border_color = Color(0.25, 0.25, 0.3, 1)
-	style.set_content_margin_all(8)
-	container.add_theme_stylebox_override("panel", style)
+	CopernicusTheme.style_card(container)
 
 	var vbox = VBoxContainer.new()
 	container.add_child(vbox)
@@ -365,7 +357,8 @@ func _on_view_pressed(listing: Listing) -> void:
 
 func _on_buy_pressed(listing: Listing) -> void:
 	purchase_initiated.emit(listing)
-	_marketplace.purchase_listing(listing.get_id())
+	var dialog = ConfirmDialog.ask(self, "Confirm Purchase", "Buy \"" + listing.get_name() + "\" for " + MarketplaceCore.format_price(listing.get_price()) + "?", "Buy", "Cancel")
+	dialog.confirmed.connect(func() -> void: _marketplace.purchase_listing(listing.get_id()))
 
 
 func _show_detail_panel(listing: Listing) -> void:

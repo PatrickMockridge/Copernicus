@@ -50,14 +50,11 @@ func _setup_ui() -> void:
 	add_child(vbox)
 
 	# Header
-	var header = Label.new()
-	header.text = "PyTorch RL Training"
-	header.add_theme_font_size_override("font_size", 20)
-	vbox.add_child(header)
+	vbox.add_child(CopernicusTheme.make_heading("PyTorch RL Training"))
 
 	var desc = Label.new()
 	desc.text = "Train robot policies using DQN, PPO, or SAC with GPU acceleration."
-	desc.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	desc.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(desc)
 
@@ -65,9 +62,9 @@ func _setup_ui() -> void:
 	var sep = HSeparator.new()
 	vbox.add_child(sep)
 
-	# Stats grid - 3 columns for more metrics
+	# Stats grid
 	var stats_grid = GridContainer.new()
-	stats_grid.columns = 4
+	stats_grid.columns = 2
 	stats_grid.add_theme_constant_override("h_separation", 30)
 	stats_grid.add_theme_constant_override("v_separation", 8)
 	vbox.add_child(stats_grid)
@@ -83,12 +80,8 @@ func _setup_ui() -> void:
 	# Chart area (placeholder - would need shader or Line2D for actual chart)
 	var chart_container = PanelContainer.new()
 	chart_container.custom_minimum_size.y = 120
+	CopernicusTheme.style_card(chart_container)
 	vbox.add_child(chart_container)
-
-	var chart_style = StyleBoxFlat.new()
-	chart_style.bg_color = Color(0.08, 0.08, 0.12, 0.9)
-	chart_style.set_corner_radius_all(4)
-	chart_container.add_theme_stylebox_override("panel", chart_style)
 
 	var chart_label = Label.new()
 	chart_label.text = "Episode Reward History"
@@ -151,7 +144,7 @@ func _setup_ui() -> void:
 	# Info
 	var info = Label.new()
 	info.text = "Supports DQN, PPO, and SAC algorithms. Metrics tracked for episode reward, loss, and policy entropy."
-	info.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	info.add_theme_color_override("font_color", CopernicusTheme.TEXT_DISABLED)
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(info)
 

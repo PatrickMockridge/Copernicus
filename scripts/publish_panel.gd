@@ -53,13 +53,7 @@ func _setup_ui() -> void:
 	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_panel)
 
-	var panel_style = StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.15, 0.15, 0.18, 0.95)
-	panel_style.set_corner_radius_all(8)
-	panel_style.set_border_width_all(1)
-	panel_style.border_color = Color(0.3, 0.3, 0.35, 1)
-	panel_style.set_content_margin_all(16)
-	_panel.add_theme_stylebox_override("panel", panel_style)
+	CopernicusTheme.style_panel(_panel)
 
 	# Content container
 	_content = VBoxContainer.new()
@@ -71,9 +65,7 @@ func _setup_ui() -> void:
 	_title_bar.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_content.add_child(_title_bar)
 
-	var title = Label.new()
-	title.text = "Publish Robot to Blockchain"
-	title.add_theme_font_size_override("font_size", 18)
+	var title = CopernicusTheme.make_heading("Publish Robot to Blockchain")
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title_bar.add_child(title)
 
@@ -132,7 +124,7 @@ func _setup_ui() -> void:
 
 	var price_hint = Label.new()
 	price_hint.text = " (0 = not for sale)"
-	price_hint.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	price_hint.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	price_hbox.add_child(price_hint)
 	price_hbox.add_child(Control.new())  # Spacer
 
@@ -171,14 +163,14 @@ func _setup_ui() -> void:
 
 	_status_label = Label.new()
 	_status_label.text = "0 files selected"
-	_status_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	_status_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	summary_hbox.add_child(_status_label)
 
 	summary_hbox.add_child(Control.new())  # Spacer
 
 	_cost_label = Label.new()
 	_cost_label.text = "Est. cost: ~$0.00"
-	_cost_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	_cost_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	summary_hbox.add_child(_cost_label)
 
 	# Progress bar
@@ -224,6 +216,11 @@ func _populate_file_list() -> void:
 		child.queue_free()
 
 	_all_files = _discover_robot_files()
+
+	if _all_files.is_empty():
+		_file_list.add_child(CopernicusTheme.make_empty_state("No files found", "No robot files were discovered in the project."))
+		_update_summary()
+		return
 
 	for file_path in _all_files:
 		var check_box = CheckBox.new()
@@ -367,12 +364,20 @@ func _on_publish_complete(hyperobject: RobotHyperobject) -> void:
 	_progress_bar.value = 100.0
 	_progress_label.text = "Complete!"
 
-	var hyperobject_info = hyperobject.to_tradeable_dict()
-	_status_label.text = "Published! Repo ID: %s" % hyperobject.get_repo_id()
+	var repo_id = hyperobject.get_repo_id()
+	_status_label.text = "Published! Repo ID: %s" % repo_id
 
-	await get_tree().create_timer(2.0).timeout
-	cancelled.emit()
-	queue_free()
+	_publish_btn.disabled = true
+	_cancel_btn.disabled = false
+	_cancel_btn.text = "Close"
+
+	var copy_btn = Button.new()
+	copy_btn.text = "Copy Repo ID"
+	copy_btn.pressed.connect(func() -> void:
+		DisplayServer.clipboard_set(repo_id)
+		_status_label.text = "Repo ID copied to clipboard"
+	)
+	_footer.add_child(copy_btn)
 
 
 func _on_publish_failed(error: String) -> void:

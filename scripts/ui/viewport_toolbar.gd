@@ -47,7 +47,7 @@ func _build_buttons() -> void:
 
 	_fps_label = Label.new()
 	_fps_label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
-	_fps_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55))
+	_fps_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_DISABLED)
 	_fps_label.size_flags_horizontal = Control.SIZE_SHRINK_END
 	add_child(_fps_label)
 
