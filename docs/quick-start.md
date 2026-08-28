@@ -171,7 +171,7 @@ godot scenes/turtle_demo.tscn --video-driver headless
 
 - Check [Getting Started Guide](01-getting-started.md) for detailed setup
 - See [Simulation Guide](simulation.md) for ROS2 simulation
-- Open an issue on [Codeberg](https://codeberg.org/PatrickM123/Godot_4__Robotic_Design_Interface)
+- Open an issue on [GitHub](https://github.com/PatrickMockridge/Copernicus)
 
 ---
 

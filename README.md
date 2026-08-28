@@ -8,6 +8,8 @@ in a modular, forkable architecture.
 Named after Nicolaus Copernicus who placed the Sun at the center of the solar system, Copernicus
 places the **open-source community** at the center of robot development.
 
+> **Repository:** [github.com/PatrickMockridge/Copernicus](https://github.com/PatrickMockridge/Copernicus) — the canonical and only source for Copernicus.
+
 ---
 
 ## Quick Start

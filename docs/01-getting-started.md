@@ -15,8 +15,8 @@ Godot 4.4 or later is required for full feature support.
 ### 2. Clone the Repository
 
 ```bash
-git clone https://codeberg.org/PatrickM123/Godot_4__Robotic_Design_Interface.git
-cd Godot_4__Robotic_Design_Interface
+git clone https://github.com/PatrickMockridge/Copernicus.git
+cd Copernicus
 ```
 
 ### 3. (Optional) Install Python Dependencies
@@ -224,4 +224,4 @@ pip install pybullet torch
 - [Documentation index](README.md) — All docs
 - [Architecture overview](03-architecture.md) — System design
 - [Physics backends](physics/backends.md) — Simulation options
-- [Issue tracker](https://codeberg.org/PatrickM123/Godot_4__Robotic_Design_Interface/issues) — Report bugs
+- [Issue tracker](https://github.com/PatrickMockridge/Copernicus/issues) — Report bugs
