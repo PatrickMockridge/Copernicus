@@ -10,6 +10,7 @@ var _to_input: LineEdit
 var _amount: SpinBox
 var _term: TextEdit
 var _output: TextEdit
+var _overlay: LoadingOverlay = null
 
 
 func _ready() -> void:
@@ -148,41 +149,64 @@ func _on_refresh_balance() -> void:
 	_refresh()
 
 
+func _run_with_loading(action: Callable, on_done: Callable, message: String) -> void:
+	_overlay = LoadingOverlay.show_overlay(self, message)
+	var wrapped := func(result) -> void:
+		_dismiss_overlay()
+		on_done.call(result)
+	RChainService.run_async(action, wrapped)
+
+
+func _dismiss_overlay() -> void:
+	if _overlay:
+		_overlay.dismiss()
+		_overlay = null
+
+
 func _on_faucet() -> void:
 	var addr: String = RChainService.wallet.get_rev_address()
 	if addr.is_empty():
 		_status.text = "No address; generate/import a key first"
 		return
-	var r: Result = RChainService.node.faucet(addr)
-	_status.text = "Faucet: " + ("ok" if r.is_ok() else r.get_error())
+	_run_with_loading(func() -> Variant: return RChainService.node.faucet(addr), func(r: Result) -> void:
+		_status.text = "Faucet: " + ("ok" if r.is_ok() else r.get_error())
+		_refresh()
+	, "Funding...")
 
 
 func _on_transfer() -> void:
-	var r: Result = RChainService.wallet.transfer(_to_input.text.strip_edges(), int(_amount.value))
-	_status.text = "Transfer: " + ("ok" if r.is_ok() else r.get_error())
+	var to: String = _to_input.text.strip_edges()
+	var amount: int = int(_amount.value)
+	_run_with_loading(func() -> Variant: return RChainService.wallet.transfer(to, amount), func(r: Result) -> void:
+		_status.text = "Transfer: " + ("ok" if r.is_ok() else r.get_error())
+	, "Transferring...")
 
 
 func _on_deploy() -> void:
-	var status: Result = RChainService.node.get_status()
-	if status.is_err():
-		_status.text = "Node unreachable: " + status.get_error()
-		return
-	var signed: Result = RChainService.wallet.sign_deploy(_term.text, status.get_data())
-	if signed.is_err():
-		_status.text = "Sign error: " + signed.get_error()
-		return
-	var r: Result = RChainService.node.deploy(signed.get_data())
-	if r.is_ok():
-		_output.text = JSON.stringify(r.get_data(), "  ")
-		_status.text = "Deployed"
-	else:
-		_status.text = "Deploy error: " + r.get_error()
+	var term: String = _term.text
+	_run_with_loading(func() -> Variant:
+		var status: Result = RChainService.node.get_status()
+		if status.is_err():
+			return status
+		var signed: Result = RChainService.wallet.sign_deploy(term, status.get_data())
+		if signed.is_err():
+			return signed
+		return RChainService.node.deploy(signed.get_data())
+	, func(r: Result) -> void:
+		if r.is_ok():
+			_output.text = JSON.stringify(r.get_data(), "  ")
+			_status.text = "Deployed"
+		else:
+			_status.text = "Deploy error: " + r.get_error()
+	, "Deploying...")
 
 
 func _on_explore() -> void:
-	var r: Result = RChainService.node.explore_deploy(_term.text)
-	if r.is_ok():
-		_output.text = JSON.stringify(r.get_data(), "  ")
-		_status.text = "Explored"
-	else:
-		_status.text = "Explore error: " + r.get_error()
+	var term: String = _term.text
+	_run_with_loading(func() -> Variant: return RChainService.node.explore_deploy(term), func(r: Result) -> void:
+		if r.is_ok():
+			_output.text = JSON.stringify(r.get_data(), "  ")
+			_status.text = "Explored"
+		else:
+			_status.text = "Explore error: " + r.get_error()
+	, "Exploring...")
