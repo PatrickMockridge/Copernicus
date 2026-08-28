@@ -13,7 +13,7 @@ var _kd: float = 0.0  # Derivative gain
 ## Internal state
 var _integral: float = 0.0
 var _prev_error: float = 0.0
-var _prev_time: float = 0.0
+var _prev_derivative: float = 0.0
 
 ## Output limits
 var _output_min: float = -INF
@@ -65,7 +65,7 @@ func set_derivative_filter(alpha: float) -> void:
 func reset() -> void:
 	_integral = 0.0
 	_prev_error = 0.0
-	_prev_time = 0.0
+	_prev_derivative = 0.0
 
 
 func compute_output(error: float, dt: float) -> float:
@@ -84,15 +84,15 @@ func compute_output(error: float, dt: float) -> float:
 		_integral += error * dt
 	var i_term = _ki * _integral
 
-	# Derivative term with filtering
+	# Derivative term with low-pass filtering on the derivative (not the error)
 	var derivative = (error - _prev_error) / dt if dt > 0 else 0.0
 	if _derivative_filter > 0:
-		derivative = _derivative_filter * derivative + (1.0 - _derivative_filter) * _prev_error
+		derivative = _derivative_filter * derivative + (1.0 - _derivative_filter) * _prev_derivative
+	_prev_derivative = derivative
 	var d_term = _kd * derivative
 
 	# Store for next iteration
 	_prev_error = error
-	_prev_time = dt
 
 	# Compute output and clamp
 	var output = p_term + i_term + d_term
@@ -109,7 +109,7 @@ func compute_output_with_setpoint(current: float, target: float, dt: float) -> f
 
 func compute_output_with_feed_forward(error: float, dt: float, ff_target: float = 0.0) -> float:
 	var pid_out = compute_output(error, dt)
-	return pid_out + _kff * ff_target
+	return clamp(pid_out + _kff * ff_target, _output_min, _output_max)
 
 
 class PositionPID:

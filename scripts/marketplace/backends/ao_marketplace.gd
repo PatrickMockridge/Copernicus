@@ -89,7 +89,7 @@ func create_listing(config: Dictionary) -> Listing:
 	var upload_result = _upload_listing_files(files)
 	if upload_result.is_err():
 		loading_finished.emit()
-		error_occurred.emit("Failed to upload files: " + str(upload_result.get_err()))
+		error_occurred.emit("Failed to upload files: " + str(upload_result.get_error()))
 		return null
 
 	var upload_info = upload_result.get_data()
@@ -120,7 +120,7 @@ func create_listing(config: Dictionary) -> Listing:
 	var spawn_result = _ao.spawn_process(LISTING_PROCESS_TAG, PackedByteArray(), initial_state)
 	if spawn_result.is_err():
 		loading_finished.emit()
-		error_occurred.emit("Failed to create listing: " + str(spawn_result.get_err()))
+		error_occurred.emit("Failed to create listing: " + str(spawn_result.get_error()))
 		return null
 
 	var process_info = spawn_result.get_data()
@@ -268,7 +268,7 @@ func purchase_listing(listing_id: String) -> bool:
 	var balance_result = _check_balance()
 	if balance_result.is_err():
 		loading_finished.emit()
-		purchase_failed.emit(listing, "Failed to check balance: " + str(balance_result.get_err()))
+		purchase_failed.emit(listing, "Failed to check balance: " + str(balance_result.get_error()))
 		return false
 
 	var balance = balance_result.get_data()
@@ -363,7 +363,7 @@ func get_listing(listing_id: String) -> Listing:
 		return null
 
 	# Query AO process for listing state
-	var result = _ao.get_process_state(listing_id)
+	var result = _ao.get_process_info(listing_id)
 	if result.is_err():
 		return null
 

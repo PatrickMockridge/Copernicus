@@ -26,6 +26,7 @@ func _ready() -> void:
 	_http_request = HTTPRequest.new()
 	add_child(_http_request)
 	_http_request.request_completed.connect(_on_request_completed)
+	_http_request.timeout = _timeout
 
 
 func _process(delta: float) -> void:
@@ -41,6 +42,8 @@ func set_base_url(url: String) -> void:
 
 func set_timeout(seconds: float) -> void:
 	_timeout = seconds
+	if _http_request:
+		_http_request.timeout = seconds
 
 
 func set_header(key: String, value: String) -> void:
@@ -208,13 +211,13 @@ static func get_request(url: String, headers: Dictionary = {}) -> Dictionary:
 	# For sync access, wait for completion (not recommended in _process)
 	var timeout = 10.0
 	var elapsed = 0.0
-	while result.is_ok() and result.value.get("pending", false) and elapsed < timeout:
+	while result.is_ok() and result.get_data().get("pending", false) and elapsed < timeout:
 		client._process(0.016)
 		elapsed += 0.016
 
-	var final_result = client._request_completed if client._pending_request else Result.ok(null)
+	var final_result: Result = client._request_result
 	client.queue_free()
-	return final_result.value if final_result else {}
+	return final_result.get_data() if final_result else {}
 
 
 ## Make a quick POST request
@@ -228,10 +231,10 @@ static func post_json(url: String, json_data: Dictionary) -> Dictionary:
 
 	var timeout = 10.0
 	var elapsed = 0.0
-	while result.is_ok() and result.value.get("pending", false) and elapsed < timeout:
+	while result.is_ok() and result.get_data().get("pending", false) and elapsed < timeout:
 		client._process(0.016)
 		elapsed += 0.016
 
-	var final_result = client._request_completed if client._pending_request else Result.ok(null)
+	var final_result: Result = client._request_result
 	client.queue_free()
-	return final_result.value if final_result else {}
+	return final_result.get_data() if final_result else {}
