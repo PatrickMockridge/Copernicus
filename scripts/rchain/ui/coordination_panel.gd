@@ -13,7 +13,7 @@ var _coordination: CoordinationCore
 
 
 func _ready() -> void:
-	_coordination = CoordinationSelector.create_backend("MockCoordination", {})
+	_coordination = MockCoordination.new()
 	_setup_ui()
 
 

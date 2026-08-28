@@ -2,6 +2,7 @@
 # Robot AI Assistant - Code Agent Panel for GodotROS2
 # Like Claude in VS Code, but for robot design in Godot
 
+class_name AiAssistantPanel
 extends Control
 
 const ToastClass = preload("res://scripts/ui/toast.gd")
@@ -29,6 +30,7 @@ var _add_to_scene_btn: Button
 # ===== AI Instances =====
 var _gameai: Node
 var _rosai: Node
+var _viewer: Node = null
 var _api_configured: bool = false
 
 # ===== Constants =====
@@ -88,21 +90,6 @@ func _setup_ui() -> void:
 	ros_coder_btn.text = "ROS Coder"
 	ros_coder_btn.pressed.connect(_on_open_ros_coder)
 	_header.add_child(ros_coder_btn)
-
-	var turtle_demo_btn = Button.new()
-	turtle_demo_btn.text = "Turtle Demo"
-	turtle_demo_btn.pressed.connect(_on_open_turtle_demo)
-	_header.add_child(turtle_demo_btn)
-
-	var marketplace_btn = Button.new()
-	marketplace_btn.text = "Marketplace"
-	marketplace_btn.pressed.connect(_on_open_marketplace)
-	_header.add_child(marketplace_btn)
-
-	var raas_btn = Button.new()
-	raas_btn.text = "RaaS Demos"
-	raas_btn.pressed.connect(_on_open_raas)
-	_header.add_child(raas_btn)
 
 	# ---- Context Panel ----
 	_context_panel = PanelContainer.new()
@@ -301,18 +288,6 @@ func _on_open_ros_coder() -> void:
 	var instance = ros_coder_scene.instantiate()
 	add_child(instance)
 
-func _on_open_turtle_demo() -> void:
-	get_tree().change_scene_to_file("res://scenes/turtle_demo.tscn")
-
-func _on_open_marketplace() -> void:
-	# Overlay (not change_scene) so closing the marketplace returns to main.
-	var marketplace_scene = preload("res://scenes/marketplace/marketplace_panel.tscn")
-	var instance = marketplace_scene.instantiate()
-	add_child(instance)
-
-func _on_open_raas() -> void:
-	get_tree().change_scene_to_file("res://scenes/rchain/raas_launcher.tscn")
-
 func _refresh_context() -> void:
 	var lines = []
 	lines.append("Robot: " + _get_robot_status())
@@ -322,10 +297,13 @@ func _refresh_context() -> void:
 	_context_label.text = " | ".join(lines)
 
 
+func set_viewer(viewer: Node) -> void:
+	_viewer = viewer
+
+
 func _get_robot_status() -> String:
-	var viewer = get_node_or_null("RobotViewer")
-	if viewer and viewer.has_method("get_robot_root") and viewer.get_robot_root():
-		return viewer.get_robot_root().name
+	if _viewer and _viewer.has_method("get_robot_root") and _viewer.get_robot_root():
+		return _viewer.get_robot_root().name
 	return "None loaded"
 
 

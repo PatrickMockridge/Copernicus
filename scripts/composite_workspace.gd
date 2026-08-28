@@ -8,6 +8,7 @@ signal robot_loaded(node: Node3D)
 
 const RobotViewerController = preload("res://scripts/robot_viewer_controller.gd")
 const JointPanel = preload("res://scripts/joint_panel.gd")
+const PublishPanel = preload("res://scripts/publish_panel.gd")
 
 var _viewport_container: SubViewportContainer
 var _sub_viewport: SubViewport
@@ -76,8 +77,14 @@ func _setup_workspace() -> void:
 
 	_status_label = Label.new()
 	_status_label.text = "Robot: Demo"
+	_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status_label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
 	status_bar.add_child(_status_label)
+
+	var publish_btn = Button.new()
+	publish_btn.text = "Publish"
+	publish_btn.pressed.connect(_on_publish_pressed)
+	status_bar.add_child(publish_btn)
 
 
 func _world_setup() -> void:
@@ -98,6 +105,13 @@ func _on_robot_loaded(robot_node: Node3D) -> void:
 	if _status_label:
 		_status_label.text = "Robot: " + robot_node.name
 	robot_loaded.emit(robot_node)
+
+
+func _on_publish_pressed() -> void:
+	var robot_name := ""
+	if _robot_viewer and _robot_viewer.get_robot_root():
+		robot_name = _robot_viewer.get_robot_root().name
+	PublishPanel.show_for_robot(robot_name)
 
 
 func load_urdf(path: String) -> void:

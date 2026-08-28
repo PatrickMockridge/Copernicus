@@ -16,6 +16,11 @@ func _setup_ui() -> void:
 	var v := VBoxContainer.new()
 	panel.add_child(v)
 	v.add_theme_constant_override("separation", 12)
+	var back := Button.new()
+	back.text = "Back"
+	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/main.tscn"))
+	v.add_child(back)
+
 	v.add_child(CopernicusTheme.make_heading("Robotics-as-a-Service Demos"))
 	v.add_child(CopernicusTheme.make_body(
 		"Choose a robot. Each demo shows the RaaS flow: fund a job on-chain, execute it, and settle a work-metered fee (work × rate)."

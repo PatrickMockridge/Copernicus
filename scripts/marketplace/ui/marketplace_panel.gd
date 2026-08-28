@@ -473,7 +473,7 @@ func _show_create_panel() -> void:
 
 
 func _on_close_pressed() -> void:
-	queue_free()
+	hide()
 
 
 func _on_backend_pressed() -> void:
