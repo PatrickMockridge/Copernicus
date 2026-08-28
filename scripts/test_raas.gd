@@ -62,7 +62,7 @@ func _test_raas() -> void:
 	var customer_before := _get_balance(node, sdk, customer.get_rev_address())
 
 	var job_id := "job_%d" % Time.get_ticks_usec()
-	var command := {"action": "drive", "distance": 10000, "rate": 1000}
+	var command := {"action": "pick_and_place", "travel": 460, "rate": 1000}
 
 	# Customer publishes the job (an on-chain commitment with the actuation command).
 	var fund_term := sdk.build_fund_job(job_id, command)
@@ -79,8 +79,8 @@ func _test_raas() -> void:
 		print("        query err: " + cmd.get_error())
 	_check(cmd.is_ok(), "robot reads command from chain")
 
-	# Mock actuation: work = distance; fee = work * rate (computed in GDScript).
-	var fee: int = int(command["distance"]) * int(command["rate"])
+	# Mock actuation: work = joint travel (degrees); fee = work * rate (computed in GDScript).
+	var fee: int = int(command["travel"]) * int(command["rate"])
 
 	# Customer settles the work-metered fee to the robot.
 	var pay: Result = customer.transfer(robot.get_rev_address(), fee)

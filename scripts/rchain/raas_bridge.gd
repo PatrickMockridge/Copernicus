@@ -1,16 +1,16 @@
 class_name RaasBridge
 extends Node
-## Ties a CoordinationCore backend to a RobotActuator: reads a funded job,
+## Ties a CoordinationCore backend to an actuator: reads a funded job,
 ## actuates the robot, and settles the work-metered fee.
 
 signal actuation_request(job_id: String, command: Dictionary)
 signal fee_settled(robot: String, fee: int)
 
 var _coordination: CoordinationCore = null
-var _actuator: RobotActuator = null
+var _actuator = null  # RobotActuator or KukaArmActuator (duck-typed actuate())
 
 
-func setup(coordination: CoordinationCore, actuator: RobotActuator) -> void:
+func setup(coordination: CoordinationCore, actuator) -> void:
 	_coordination = coordination
 	_actuator = actuator
 
