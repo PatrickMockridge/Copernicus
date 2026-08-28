@@ -105,6 +105,11 @@ func _setup_ui() -> void:
 	marketplace_btn.pressed.connect(_on_open_marketplace)
 	_header.add_child(marketplace_btn)
 
+	var raas_btn = Button.new()
+	raas_btn.text = "RaaS Demos"
+	raas_btn.pressed.connect(_on_open_raas)
+	_header.add_child(raas_btn)
+
 	# ---- Context Panel ----
 	_context_panel = PanelContainer.new()
 	_context_panel.custom_minimum_size.y = 60
@@ -312,6 +317,9 @@ func _on_open_marketplace() -> void:
 	var marketplace_scene = preload("res://scenes/marketplace/marketplace_panel.tscn")
 	var instance = marketplace_scene.instantiate()
 	add_child(instance)
+
+func _on_open_raas() -> void:
+	get_tree().change_scene_to_file("res://scenes/rchain/raas_launcher.tscn")
 
 func _refresh_context() -> void:
 	var lines = []

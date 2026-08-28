@@ -42,8 +42,8 @@ godot scenes/industrial_selector.tscn
 # Physics backend selector
 godot scenes/physics_selector.tscn
 
-# Robotics-as-a-service demo (RChain actuation + fees)
-godot scenes/rchain/raas_demo.tscn
+# Robotics-as-a-service demos (RChain actuation + fees; launcher)
+godot scenes/rchain/raas_launcher.tscn
 ```
 
 ---

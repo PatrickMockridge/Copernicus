@@ -103,7 +103,7 @@ actually done. Flow (see `scripts/test_raas.gd`):
 ```
 customer ──publish_work(job_id, command)──► per-job contract @"copernicus:raas:job:<id>" (query → command)
 robot    ◄──get_work(job_id)──────────────  explore_deploy reads the command
-robot    ──actuates / meters work─────────  RobotActuator drives the TurtleBot, returns work units
+robot    ──actuates / meters work─────────  RobotActuator (TurtleBot) / KukaArmActuator (Kuka KR210) drives the robot, returns work units
 customer ──settle_work(robot, fee)────────  revVault.transfer, fee = work × rate
 ```
 
@@ -114,6 +114,22 @@ deployer (so a contract cannot hold a prior deployer's spending capability). The
 settles the fee with a customer-signed `revVault.transfer` after the robot reports
 work. A full escrow would need a vault API that mints per-contract vaults.
 
+## Demos
+
+Two visual demos run the same flow with different robots. A launcher
+(`scenes/rchain/raas_launcher.tscn`) lists them; each opens its own scene.
+
+| Demo | Robot | Command | Work unit | Scene |
+|---|---|---|---|---|
+| TurtleBot | wheeled box | `drive` (`distance`) | meters | `scenes/rchain/raas_demo_turtlebot.tscn` |
+| Kuka KR210 | 6-DOF arm | `pick_and_place` | joint travel (degrees) | `scenes/rchain/raas_demo_kuka.tscn` |
+
+Each demo has an in-app **walkthrough** panel with three steps:
+
+1. **Fund** — the customer publishes a funded command on-chain.
+2. **Execute** — the robot reads the command and actuates, metering work.
+3. **Settle** — the fee (`work × rate`) is transferred to the robot.
+
 ## Build & test
 
 ```bash
@@ -121,7 +137,7 @@ bash addons/rchain/build.sh                          # build the crypto GDExtens
 tools/rchain_devnet.sh up --validators 1             # boot a local RNode (Docker)
 godot --headless --script res://scripts/test_rchain.gd  # coordination e2e
 godot --headless --script res://scripts/test_raas.gd    # RaaS: fund -> actuate -> fee
-godot scenes/rchain/raas_demo.tscn                   # visual RaaS demo
+godot scenes/rchain/raas_launcher.tscn               # visual RaaS demos (launcher)
 ```
 
 The crypto unit tests (`cd addons/rchain/gdext && cargo test`) verify signing and
