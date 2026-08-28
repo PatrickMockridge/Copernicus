@@ -1,39 +1,18 @@
 # http_client.gd
-# Unified HTTP client for all SDKs
-# Uses Godot 4's HTTPRequest for actual network requests
+# Unified HTTP client for all SDKs.
+# Synchronous (blocking) over Godot's low-level HTTPClient — run from a background
+# thread via RChainService.run_async for UI calls that must not block.
 
 class_name HyperHttpClient
-extends Node
-
-signal completed(result: Result)
-signal progress(downloaded: int, total: int)
+extends RefCounted
 
 var _base_url: String = ""
 var _timeout: float = 30.0
 var _headers: Dictionary = {}
 
-var _http_request: HTTPRequest
-var _pending_request: bool = false
-var _request_completed: bool = false
-var _request_result: Result = Result.ok(null)
-
 
 func _init(base_url: String = "") -> void:
 	_base_url = base_url
-
-
-func _ready() -> void:
-	_http_request = HTTPRequest.new()
-	add_child(_http_request)
-	_http_request.request_completed.connect(_on_request_completed)
-	_http_request.timeout = _timeout
-
-
-func _process(delta: float) -> void:
-	if _pending_request and _request_completed:
-		_pending_request = false
-		_request_completed = false
-		completed.emit(_request_result)
 
 
 func set_base_url(url: String) -> void:
@@ -42,8 +21,6 @@ func set_base_url(url: String) -> void:
 
 func set_timeout(seconds: float) -> void:
 	_timeout = seconds
-	if _http_request:
-		_http_request.timeout = seconds
 
 
 func set_header(key: String, value: String) -> void:
@@ -51,84 +28,113 @@ func set_header(key: String, value: String) -> void:
 
 
 func fetch(url: String, extra_headers: Dictionary = {}) -> Result:
-	var full_url = _build_url(url)
-	var headers = _build_headers(extra_headers)
-
-	_pending_request = true
-	_request_completed = false
-
-	var result = _http_request.request(full_url, headers, HTTPClient.METHOD_GET)
-
-	if result != OK:
-		_pending_request = false
-		return Result.err("HTTP request failed: " + str(result))
-
-	# Return pending - signal will fire when complete
-	return Result.ok({"pending": true})
+	return _request(HTTPClient.METHOD_GET, _build_url(url), "", _build_headers(extra_headers))
 
 
 func post(url: String, body: Variant = null, extra_headers: Dictionary = {}) -> Result:
-	var full_url = _build_url(url)
-	var headers = _build_headers(extra_headers)
-
-	_pending_request = true
-	_request_completed = false
-
-	var body_data = ""
-	if body != null:
-		if body is Dictionary:
-			body_data = JSON.stringify(body)
-		else:
-			body_data = str(body)
-
-	var body_bytes = body_data.to_utf8_buffer()
-
-	var result = _http_request.request(full_url, headers, HTTPClient.METHOD_POST, body_data)
-
-	if result != OK:
-		_pending_request = false
-		return Result.err("HTTP request failed: " + str(result))
-
-	return Result.ok({"pending": true})
+	return _request(HTTPClient.METHOD_POST, _build_url(url), _serialize_body(body), _build_headers(extra_headers))
 
 
 func put(url: String, body: Variant = null, extra_headers: Dictionary = {}) -> Result:
-	var full_url = _build_url(url)
-	var headers = _build_headers(extra_headers)
-
-	_pending_request = true
-	_request_completed = false
-
-	var body_data = ""
-	if body != null:
-		if body is Dictionary:
-			body_data = JSON.stringify(body)
-		else:
-			body_data = str(body)
-
-	var result = _http_request.request(full_url, headers, HTTPClient.METHOD_PUT, body_data)
-
-	if result != OK:
-		_pending_request = false
-		return Result.err("HTTP request failed: " + str(result))
-
-	return Result.ok({"pending": true})
+	return _request(HTTPClient.METHOD_PUT, _build_url(url), _serialize_body(body), _build_headers(extra_headers))
 
 
 func delete(url: String, extra_headers: Dictionary = {}) -> Result:
-	var full_url = _build_url(url)
-	var headers = _build_headers(extra_headers)
+	return _request(HTTPClient.METHOD_DELETE, _build_url(url), "", _build_headers(extra_headers))
 
-	_pending_request = true
-	_request_completed = false
 
-	var result = _http_request.request(full_url, headers, HTTPClient.METHOD_DELETE)
+func _serialize_body(body: Variant) -> String:
+	if body == null:
+		return ""
+	if body is PackedByteArray:
+		return (body as PackedByteArray).get_string_from_utf8()
+	if body is Dictionary or body is Array:
+		return JSON.stringify(body)
+	return str(body)
 
-	if result != OK:
-		_pending_request = false
-		return Result.err("HTTP request failed: " + str(result))
 
-	return Result.ok({"pending": true})
+func _request(method: HTTPClient.Method, url: String, body: String, headers: Array) -> Result:
+	var parsed := _parse_url(url)
+	if parsed.is_empty():
+		return Result.err("invalid url: " + url)
+
+	var client := HTTPClient.new()
+	var err := client.connect_to_host(parsed["host"], parsed["port"])
+	if err != OK:
+		return Result.err("connect failed: %s" % str(err))
+
+	while client.get_status() == HTTPClient.STATUS_CONNECTING or client.get_status() == HTTPClient.STATUS_RESOLVING:
+		client.poll()
+		OS.delay_msec(10)
+
+	if client.get_status() != HTTPClient.STATUS_CONNECTED:
+		return Result.err("could not connect to %s" % parsed["host"])
+
+	if not body.is_empty():
+		headers.append("Content-Length: %d" % body.to_utf8_buffer().size())
+
+	var req_err := client.request(method, parsed["path"], headers, body)
+	if req_err != OK:
+		return Result.err("request failed: %s" % str(req_err))
+
+	while client.get_status() == HTTPClient.STATUS_REQUESTING:
+		client.poll()
+		OS.delay_msec(10)
+
+	if not client.has_response():
+		return Result.err("no response from %s" % parsed["host"])
+
+	var response_body := PackedByteArray()
+	while client.get_status() == HTTPClient.STATUS_BODY:
+		client.poll()
+		var chunk := client.read_response_body_chunk()
+		if chunk.size() == 0:
+			OS.delay_msec(10)
+		else:
+			response_body.append_array(chunk)
+
+	var response_code := client.get_response_code()
+	var response_headers := client.get_response_headers()
+	client.close()
+
+	var body_str := response_body.get_string_from_utf8()
+	var response := {
+		"status_code": response_code,
+		"headers": response_headers,
+		"body": response_body,  # raw bytes
+		"body_string": body_str  # text
+	}
+
+	var content_type := _get_header(response_headers, "content-type")
+	if content_type and content_type.contains("json"):
+		var json = JSON.parse_string(body_str)
+		if json != null:
+			response["json"] = json
+
+	if response_code >= 200 and response_code < 300:
+		return Result.ok(response)
+	elif response_code >= 400:
+		return Result.err("HTTP %d: %s" % [response_code, body_str])
+	return Result.ok(response)
+
+
+func _parse_url(url: String) -> Dictionary:
+	var rest := url
+	if "://" in rest:
+		rest = rest.split("://")[1]
+	var host_port := rest
+	var path := "/"
+	if "/" in rest:
+		var parts := rest.split("/", true, 1)
+		host_port = parts[0]
+		path = "/" + parts[1]
+	var host := host_port
+	var port := 80
+	if ":" in host_port:
+		var hp := host_port.rsplit(":", true, 1)
+		host = hp[0]
+		port = int(hp[1])
+	return {"host": host, "port": port, "path": path}
 
 
 func _build_url(url: String) -> String:
@@ -142,43 +148,10 @@ func _build_url(url: String) -> String:
 func _build_headers(extra_headers: Dictionary) -> Array:
 	var headers = []
 	for key in _headers:
-		headers.append(key + ": " + _headers[key])
+		headers.append(key + ": " + str(_headers[key]))
 	for key in extra_headers:
 		headers.append(key + ": " + str(extra_headers[key]))
 	return headers
-
-
-func _on_request_completed(result: int, response_code: int, headers: Array, body: PackedByteArray) -> void:
-	_request_completed = true
-
-	if result != HTTPRequest.RESULT_SUCCESS:
-		_request_result = Result.err("HTTP request failed with code: " + str(result))
-		return
-
-	# Parse response body as string
-	var body_str = body.get_string_from_utf8()
-
-	# Create response object
-	var response = {
-		"status_code": response_code,
-		"headers": headers,
-		"body": body_str
-	}
-
-	# Try to parse as JSON if content-type suggests it
-	var content_type = _get_header(headers, "content-type")
-	if content_type and content_type.contains("json"):
-		var json = JSON.parse_string(body_str)
-		if json != null:
-			response["json"] = json
-
-	# Determine success/failure based on status code
-	if response_code >= 200 and response_code < 300:
-		_request_result = Result.ok(response)
-	elif response_code >= 400:
-		_request_result = Result.err("HTTP " + str(response_code) + ": " + body_str)
-	else:
-		_request_result = Result.ok(response)  # 3xx redirects etc - still ok
 
 
 func _get_header(headers: Array, key: String) -> String:
@@ -188,53 +161,3 @@ func _get_header(headers: Array, key: String) -> String:
 			if parts.size() > 1:
 				return parts[1].strip_edges()
 	return ""
-
-
-## ===== Static Helpers =====
-
-## Create a simple HTTP client for a base URL
-static func create(base_url: String = "") -> HyperHttpClient:
-	var client = HyperHttpClient.new()
-	client._base_url = base_url
-	return client
-
-
-## Make a quick GET request
-static func get_request(url: String, headers: Dictionary = {}) -> Dictionary:
-	var client = HyperHttpClient.new()
-	var tree = Engine.get_main_loop()
-	var root = tree.get_root()
-	root.add_child(client)
-
-	var result = client.fetch(url, headers)
-
-	# For sync access, wait for completion (not recommended in _process)
-	var timeout = 10.0
-	var elapsed = 0.0
-	while result.is_ok() and result.get_data().get("pending", false) and elapsed < timeout:
-		client._process(0.016)
-		elapsed += 0.016
-
-	var final_result: Result = client._request_result
-	client.queue_free()
-	return final_result.get_data() if final_result else {}
-
-
-## Make a quick POST request
-static func post_json(url: String, json_data: Dictionary) -> Dictionary:
-	var client = HyperHttpClient.new()
-	var tree = Engine.get_main_loop()
-	var root = tree.get_root()
-	root.add_child(client)
-
-	var result = client.post(url, json_data)
-
-	var timeout = 10.0
-	var elapsed = 0.0
-	while result.is_ok() and result.get_data().get("pending", false) and elapsed < timeout:
-		client._process(0.016)
-		elapsed += 0.016
-
-	var final_result: Result = client._request_result
-	client.queue_free()
-	return final_result.get_data() if final_result else {}

@@ -97,8 +97,8 @@ func download_data(tx_id: String) -> Result:
 		return result
 
 	var response = result.get_data()
-	var body = response.get("body", PackedByteArray())
-	var content_type = response.get("headers", {}).get("Content-Type", "application/octet-stream")
+	var body: PackedByteArray = response.get("body", PackedByteArray())
+	var content_type = "application/octet-stream"
 
 	return Result.ok({"body": body, "content_type": content_type, "tx_id": tx_id})
 
