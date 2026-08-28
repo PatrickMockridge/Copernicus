@@ -386,4 +386,26 @@ func from_dictionary(data: Dictionary) -> void:
 	_hyperobject.set_process_id(_process_id)
 
 
+## ===== RChain Coordination (capability ops) =====
+
+var _coordination: CoordinationCore = null
+
+
+## Attach a CoordinationCore backend; capability ops delegate to it.
+func set_coordination(coordination: CoordinationCore) -> void:
+	_coordination = coordination
+
+
+func issue_capability() -> Result:
+	if _coordination == null:
+		return Result.err("no coordination backend")
+	return _coordination.issue_capability(_name)
+
+
+func transfer_capability(new_owner: String) -> Result:
+	if _coordination == null:
+		return Result.err("no coordination backend")
+	return _coordination.transfer_capability(_name, new_owner)
+
+
 ## ===== Helper Methods =====

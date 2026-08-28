@@ -1,0 +1,27 @@
+// Channels — pub/sub event store. name -> [messages...] (a list of quoted names).
+// Public name: @"copernicus:channels"
+// Messages:
+//   ("open",      @name)          write — create a channel (empty list)
+//   ("send",      @name, @data)   write — append data to the channel history
+//   ("subscribe", @name, ret)     read  — ret!(history)
+new channels(@"copernicus:channels"), channelsCh in {
+  channelsCh!({}) |
+
+  contract channels(@"open", @name) = {
+    for (map <- channelsCh) {
+      channelsCh!(*map.set(name, []))
+    }
+  } |
+
+  contract channels(@"send", @name, @data) = {
+    for (map <- channelsCh) {
+      channelsCh!(*map.set(name, *map.get(name) ++ [data]))
+    }
+  } |
+
+  contract channels(@"subscribe", @name, ret) = {
+    for (map <<- channelsCh) {
+      ret!(*map.get(name))
+    }
+  }
+}

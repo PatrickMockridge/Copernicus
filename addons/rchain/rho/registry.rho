@@ -1,0 +1,27 @@
+// Registry — public directory of robot records keyed by name.
+// Public name: @"copernicus:registry"
+// Messages:
+//   ("register", @name, @record)   write — record is a JSON string (a quoted name)
+//   ("query",    @name, ret)       read  — ret!(record) (Nil if absent)
+//   ("list",     ret)              read  — ret!(map)
+new registry(@"copernicus:registry"), registryCh in {
+  registryCh!({}) |
+
+  contract registry(@"register", @name, @record) = {
+    for (map <- registryCh) {
+      registryCh!(*map.set(name, record))
+    }
+  } |
+
+  contract registry(@"query", @name, ret) = {
+    for (map <<- registryCh) {
+      ret!(*map.get(name))
+    }
+  } |
+
+  contract registry(@"list", ret) = {
+    for (map <<- registryCh) {
+      ret!(*map)
+    }
+  }
+}

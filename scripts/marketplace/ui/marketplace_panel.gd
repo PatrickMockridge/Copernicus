@@ -42,8 +42,9 @@ func _ready() -> void:
 
 
 func _setup_marketplace() -> void:
-	# Default to mock marketplace for testing
-	_marketplace = MockMarketplace.new()
+	# Default backend via the module registry (RChainMarketplace is selectable).
+	var backend = ModuleRegistry.create("marketplace", "MockMarketplace", {})
+	_marketplace = backend if backend != null else MockMarketplace.new()
 	_marketplace.listings_loaded.connect(_on_listings_loaded)
 	_marketplace.search_completed.connect(_on_search_completed)
 	_marketplace.listing_purchased.connect(_on_listing_purchased)

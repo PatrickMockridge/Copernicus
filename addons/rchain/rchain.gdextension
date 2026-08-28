@@ -1,0 +1,11 @@
+[configuration]
+entry_symbol = "rchain_gdext_init"
+compatibility_minimum = "4.4"
+
+[libraries]
+linux.debug.x86_64 = "res://addons/rchain/bin/librchain_gdext.so"
+linux.release.x86_64 = "res://addons/rchain/bin/librchain_gdext.so"
+macos.debug = "res://addons/rchain/bin/librchain_gdext.dylib"
+macos.release = "res://addons/rchain/bin/librchain_gdext.dylib"
+windows.debug.x86_64 = "res://addons/rchain/bin/rchain_gdext.dll"
+windows.release.x86_64 = "res://addons/rchain/bin/rchain_gdext.dll"

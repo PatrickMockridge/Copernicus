@@ -24,6 +24,7 @@ GodotROS2="*res://addons/godot_ros2/godot_ros2.gd"
 EnvService="*res://addons/primitives/env/env_service.gd"
 CopernicusTheme="*res://scripts/ui/copernicus_theme.gd"
 ModuleRegistry="*res://scripts/core/module_registry.gd"
+RChainService="*res://scripts/rchain/rchain_service.gd"
 
 [display]
 
