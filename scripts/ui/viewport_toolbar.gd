@@ -46,7 +46,7 @@ func _build_buttons() -> void:
 	_add_action("reset", "Reset", _on_reset_view)
 
 	_fps_label = Label.new()
-	_fps_label.add_theme_font_size_override("font_size", 11)
+	_fps_label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
 	_fps_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55))
 	_fps_label.size_flags_horizontal = Control.SIZE_SHRINK_END
 	add_child(_fps_label)
@@ -57,7 +57,7 @@ func _build_buttons() -> void:
 func _add_toggle(id: String, text: String, callback: Callable) -> void:
 	var btn = Button.new()
 	btn.text = text
-	btn.add_theme_font_size_override("font_size", 11)
+	btn.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
 	btn.pressed.connect(callback)
 	add_child(btn)
 	_buttons[id] = btn
@@ -66,7 +66,7 @@ func _add_toggle(id: String, text: String, callback: Callable) -> void:
 func _add_cycle(id: String, text: String, callback: Callable) -> void:
 	var btn = Button.new()
 	btn.text = text
-	btn.add_theme_font_size_override("font_size", 11)
+	btn.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
 	btn.pressed.connect(callback)
 	add_child(btn)
 	_buttons[id] = btn

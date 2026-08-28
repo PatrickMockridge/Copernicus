@@ -162,7 +162,7 @@ func _setup_ui() -> void:
 	# Status label
 	_status_label = Label.new()
 	_status_label.text = "Loading..."
-	_status_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	_status_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	main_vbox.add_child(_status_label)
 
 	# Load initial listings
@@ -325,15 +325,15 @@ func _create_listing_card(listing: Listing) -> Control:
 	# Creator
 	var creator_lbl = Label.new()
 	creator_lbl.text = "by " + listing.get_creator()
-	creator_lbl.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-	creator_lbl.add_theme_font_size_override("font_size", 10)
+	creator_lbl.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	creator_lbl.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
 	vbox.add_child(creator_lbl)
 
 	# Price
 	var price_lbl = Label.new()
 	price_lbl.text = MarketplaceCore.format_price(listing.get_price())
 	price_lbl.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
-	price_lbl.add_theme_font_size_override("font_size", 11)
+	price_lbl.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
 	vbox.add_child(price_lbl)
 
 	# Buttons
@@ -400,7 +400,7 @@ func _show_detail_panel(listing: Listing) -> void:
 
 	var type_lbl = Label.new()
 	type_lbl.text = listing.get_asset_type_string()
-	type_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	type_lbl.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
 	vbox.add_child(type_lbl)
 
 	var desc_lbl = Label.new()
@@ -477,7 +477,7 @@ func _on_close_pressed() -> void:
 
 
 func _on_backend_pressed() -> void:
-	var selector = MarketplaceSelector.new()
+	var selector = preload("res://scenes/marketplace/marketplace_selector.tscn").instantiate()
 	selector.backend_selected.connect(_on_backend_selected)
 	add_child(selector)
 
