@@ -144,6 +144,7 @@ func spawn_process(module: String, code: PackedByteArray, initial_state: Diction
 	var tags: Array = []
 	tags.append({"name": "Module", "value": module})
 	tags.append({"name": "Type", "value": "hyperobject"})
+	tags.append({"name": "App-Name", "value": module})
 	if _wallet:
 		tags.append({"name": "Owner", "value": _wallet.get_address()})
 
@@ -223,6 +224,64 @@ func get_transaction_status(tx_id: String) -> Result:
 		"tx_id": tx_id,
 		"status": "confirmed"
 	})
+
+
+func get_balance(address: String) -> Result:
+	"""Query an Arweave wallet balance (winston, as an int)."""
+	if address.is_empty():
+		return Result.err("No wallet address")
+
+	var url = "https://arweave.net/wallet/%s/balance" % address
+	var result = _http_client.fetch(url)
+	if result.is_err():
+		return result
+
+	var response = result.get_data()
+	var body: String = response.get("body_string", "")
+	if body.is_empty():
+		return Result.err("Empty balance response")
+
+	return Result.ok(int(body.strip_edges()))
+
+
+func get_processes_by_tag(tag_value: String, limit: int = 100) -> Result:
+	"""Find AO process spawn transactions by an App-Name tag via Arweave GraphQL."""
+	var query := 'query { transactions(tags: [{name: "App-Name", values: ["%s"]}], first: %d) { edges { node { id owner { address } tags { name value } } } } }' % [tag_value, limit]
+
+	var result = _http_client.post("https://arweave.net/graphql", {"query": query}, {"Content-Type": "application/json"})
+	if result.is_err():
+		return result
+
+	var response = result.get_data()
+	var parsed = response.get("json", null)
+	if parsed == null:
+		parsed = JSON.parse_string(response.get("body_string", ""))
+	if parsed == null or not (parsed is Dictionary):
+		return Result.err("Failed to parse GraphQL response")
+
+	var data = parsed.get("data", {})
+	if not (data is Dictionary):
+		return Result.err("GraphQL query returned no data")
+	var transactions = data.get("transactions", {})
+	if not (transactions is Dictionary):
+		return Result.err("GraphQL query returned no transactions")
+	var edges = transactions.get("edges", [])
+
+	var out: Array = []
+	for edge in edges:
+		var node = edge.get("node", {})
+		if not (node is Dictionary):
+			continue
+		var owner = node.get("owner", {})
+		var owner_addr := ""
+		if owner is Dictionary:
+			owner_addr = owner.get("address", "")
+		out.append({
+			"process_id": node.get("id", ""),
+			"owner": owner_addr,
+			"tags": node.get("tags", [])
+		})
+	return Result.ok(out)
 
 
 # ===== Game Asset Helpers =====

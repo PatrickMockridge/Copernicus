@@ -21,10 +21,6 @@ var _total_steps: int = 0
 var _episode_count: int = 0
 var _last_loss: float = 0.0
 
-## Python subprocess communication
-var _python_process: int = -1
-
-
 static func get_module_name() -> String:
 	return "PyTorch Q-Learning"
 
@@ -66,12 +62,6 @@ func initialize(config: Dictionary) -> bool:
 	if not _bridge.start(script_path, 9877):
 		push_error("PyTorchLearner: Failed to start Python bridge")
 		return false
-
-	if _python_process < 0:
-		push_error("PyTorchLearner: Failed to start Python node")
-		return false
-
-
 
 	# Send init command
 	var init_result = _send_command({
@@ -127,7 +117,7 @@ func train_step(observations: Array, actions: Array, rewards: Array) -> Dictiona
 
 
 func get_action(observations: Array) -> int:
-	if not _initialized:
+	if not _initialized or _action_dim <= 0:
 		return 0
 
 	# Epsilon-greedy action

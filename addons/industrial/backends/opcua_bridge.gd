@@ -1,6 +1,6 @@
 # opcua_bridge.gd
-# OPC-UA protocol bridge for industrial robots
-# OPC-UA is a machine-to-machine communication protocol for industrial automation
+# OPC-UA protocol bridge for industrial robots.
+# Real connection via a persistent Python subprocess (opcua_bridge.py, asyncua).
 
 class_name OpcuaBridge
 extends IndustrialBackend
@@ -12,6 +12,24 @@ var _port: int = 4840
 var _timeout: float = 5.0
 var _joint_count: int = 6
 var _node_id: String = ""
+
+## OPC-UA node IDs (robot-specific). Populate via config so reads/writes are real.
+var _joint_node_ids: Array = []
+var _mode_node_id: String = ""
+var _estop_node_id: String = ""
+var _error_node_id: String = ""
+var _temp_node_id: String = ""
+var _io_input_node_ids: Array = []
+var _io_output_node_ids: Array = []
+var _register_node_ids: Array = []
+
+## Optional IK solver for cartesian moves (IKSolver + chain).
+var _ik_solver = null
+var _ik_chain: Array = []
+
+## Python bridge process
+var _bridge: PythonBridge
+var _bridge_port: int = 9890
 
 
 ## ===== Connection State =====
@@ -54,8 +72,7 @@ static func get_module_description() -> String:
 
 
 static func is_available() -> bool:
-	# OPC-UA support requires opcua package (asyncua or similar)
-	# For now, this is a placeholder - return false until proper implementation
+	# OPC-UA support requires the asyncua package.
 	var result = OS.execute("python3", ["-c", "import asyncua; print('available')"], [], true)
 	return result == OK
 
@@ -78,12 +95,27 @@ func initialize(config: Dictionary) -> bool:
 	_timeout = config.get("timeout", 5.0)
 	_joint_count = config.get("joint_count", 6)
 	_node_id = config.get("node_id", "")
+	_bridge_port = config.get("bridge_port", 9890)
 
-	return true
+	_joint_node_ids = config.get("joint_node_ids", [])
+	_mode_node_id = config.get("mode_node_id", "")
+	_estop_node_id = config.get("estop_node_id", "")
+	_error_node_id = config.get("error_node_id", "")
+	_temp_node_id = config.get("temp_node_id", "")
+	_io_input_node_ids = config.get("io_input_node_ids", [])
+	_io_output_node_ids = config.get("io_output_node_ids", [])
+	_register_node_ids = config.get("register_node_ids", [])
+	_ik_solver = config.get("ik_solver", null)
+	_ik_chain = config.get("ik_chain", [])
+
+	return _start_bridge()
 
 
 func shutdown() -> void:
 	close_connection()
+	if _bridge:
+		_bridge.shutdown()
+		_bridge = null
 
 
 ## ===== Connection =====
@@ -92,13 +124,29 @@ func open_connection(address: String) -> bool:
 	if _connected:
 		return true
 
-	_robot_ip = address
+	# Accept "host", "host:port", or "opc.tcp://host:port".
+	var host := address
+	var port := _port
+	if address.begins_with("opc.tcp://"):
+		address = address.trim_prefix("opc.tcp://")
+	var colon := address.rfind(":")
+	if colon > 0 and address.substr(colon + 1).is_valid_int():
+		host = address.substr(0, colon)
+		port = int(address.substr(colon + 1))
+	else:
+		host = address
 
-	# OPC-UA connection would be implemented here
-	# This is a placeholder for actual OPC-UA client implementation
-	# Real implementation would use opcua package or native bindings
+	_robot_ip = host
+	_port = port
+
+	var resp := _send_command({"cmd": "connect", "host": host, "port": port})
+	if resp.get("status") != "ok":
+		_connected = false
+		error_occurred.emit("OPC-UA connect failed: " + str(resp.get("message", "unknown")))
+		return false
 
 	_connected = true
+	_session_id = ""
 	connection_changed.emit(true)
 	return true
 
@@ -108,6 +156,7 @@ func close_connection() -> void:
 		return
 
 	_abort_trajectory_internal()
+	_send_command({"cmd": "disconnect"})
 	_connected = false
 	_session_id = ""
 	connection_changed.emit(false)
@@ -123,6 +172,27 @@ func get_robot_status() -> Dictionary:
 	if not _connected:
 		return {}
 
+	if not _mode_node_id.is_empty():
+		var v := _read_node(_mode_node_id)
+		if v != null:
+			_mode = int(v)
+	if not _estop_node_id.is_empty():
+		var v := _read_node(_estop_node_id)
+		if v != null:
+			_e_stop_triggered = bool(v)
+	if not _error_node_id.is_empty():
+		var v := _read_node(_error_node_id)
+		if v != null:
+			_error_code = int(v)
+	if not _temp_node_id.is_empty():
+		var v := _read_node(_temp_node_id)
+		if v != null:
+			_controller_temperature = float(v)
+
+	var joints := get_joint_positions()
+	if not joints.is_empty():
+		_joint_positions = joints
+
 	return {
 		"mode": _mode,
 		"e_stop_triggered": _e_stop_triggered,
@@ -136,7 +206,12 @@ func get_robot_status() -> Dictionary:
 
 
 func get_joint_positions() -> Array:
-	return _joint_positions.duplicate()
+	if not _connected or _joint_node_ids.is_empty():
+		return _joint_positions.duplicate()
+	var values := _read_nodes(_joint_node_ids)
+	if values.is_empty():
+		return _joint_positions.duplicate()
+	return values
 
 
 func get_joint_velocities() -> Array:
@@ -150,18 +225,26 @@ func get_joint_torques() -> Array:
 ## ===== Joint Trajectory =====
 
 func send_joint_trajectory(trajectory: Array) -> bool:
-	if not _connected:
+	if not _connected or _joint_node_ids.is_empty():
 		return false
-
 	return true
 
 
 func execute_trajectory(points: Array) -> bool:
-	if not _connected:
+	if not _connected or _joint_node_ids.is_empty():
 		return false
 
 	_is_trajectory_running = true
-	# TODO: Implement trajectory execution
+	for point in points:
+		var positions = point.get("positions", [])
+		if not move_joints(positions):
+			_is_trajectory_running = false
+			trajectory_complete.emit(false)
+			return false
+		var time_from_start = point.get("time_from_start", 0.0)
+		if time_from_start > 0.0:
+			await (Engine.get_main_loop() as SceneTree).create_timer(time_from_start).timeout
+
 	_is_trajectory_running = false
 	trajectory_complete.emit(true)
 	return true
@@ -184,9 +267,19 @@ func move_joints(positions: Array) -> bool:
 	if positions.size() != _joint_count:
 		return false
 
-	for i in range(_joint_count):
-		_joint_positions[i] = positions[i]
+	if _joint_node_ids.is_empty():
+		# No OPC-UA node mapping configured: cache locally but report success
+		# only when a real write target exists.
+		error_occurred.emit("OPC-UA joint_node_ids not configured")
+		return false
 
+	var node_ids := _joint_node_ids.slice(0, positions.size())
+	var resp := _send_command({"cmd": "write_many", "node_ids": node_ids, "values": positions})
+	if resp.get("status") != "ok":
+		return false
+
+	for i in range(positions.size()):
+		_joint_positions[i] = positions[i]
 	return true
 
 
@@ -194,8 +287,26 @@ func move_cartesian(position: Vector3, orientation: Quaternion) -> bool:
 	if not _connected:
 		return false
 
-	# TODO: Implement cartesian move
-	return false
+	if _ik_solver == null or _ik_chain.is_empty():
+		error_occurred.emit("Cartesian move requires a configured IK solver (ik_solver + ik_chain)")
+		return false
+
+	if not _ik_solver.solve(_ik_chain, position):
+		error_occurred.emit("Cartesian move: IK solve failed")
+		return false
+
+	# Convert solved rotations (revolute assumption) to joint positions about each axis.
+	var rotations = _ik_solver.get_joint_rotations()
+	var positions: Array = []
+	for i in range(min(rotations.size(), _ik_chain.size())):
+		var q: Quaternion = rotations[i]
+		var axis: Vector3 = _ik_chain[i].get("axis", Vector3.UP)
+		var angle: float = q.get_angle()
+		if q.get_axis().dot(axis) < 0.0:
+			angle = -angle
+		positions.append(angle)
+
+	return move_joints(positions)
 
 
 ## ===== Safety =====
@@ -204,6 +315,8 @@ func trigger_estop() -> void:
 	if not _connected:
 		return
 
+	if not _estop_node_id.is_empty():
+		_write_node(_estop_node_id, true)
 	_e_stop_triggered = true
 	abort_trajectory()
 	error_occurred.emit("E-Stop triggered")
@@ -213,6 +326,8 @@ func clear_estop() -> void:
 	if not _connected:
 		return
 
+	if not _estop_node_id.is_empty():
+		_write_node(_estop_node_id, false)
 	_e_stop_triggered = false
 	_error_code = 0
 
@@ -225,20 +340,19 @@ var _registers: Dictionary = {}
 
 
 func read_digital_input(index: int) -> bool:
-	if not _connected:
+	if not _connected or index < 0 or index >= _io_input_node_ids.size():
 		return false
-	if index >= 0 and index < _digital_inputs.size():
-		# In real implementation, would read from OPC-UA node
-		# For now, return cached value
-		return _digital_inputs[index]
-	return false
+	var v := _read_node(_io_input_node_ids[index])
+	if v != null:
+		_digital_inputs[index] = bool(v)
+		return bool(v)
+	return _digital_inputs[index]
 
 
 func write_digital_output(index: int, value: bool) -> bool:
-	if not _connected:
+	if not _connected or index < 0 or index >= _io_output_node_ids.size():
 		return false
-	if index >= 0 and index < _digital_outputs.size():
-		# In real implementation, would write to OPC-UA node
+	if _write_node(_io_output_node_ids[index], value):
 		_digital_outputs[index] = value
 		return true
 	return false
@@ -247,21 +361,60 @@ func write_digital_output(index: int, value: bool) -> bool:
 ## ===== Registers =====
 
 func read_register(address: int) -> float:
-	if not _connected:
-		return 0.0
-	# In real implementation, would read from OPC-UA register node
+	if not _connected or address < 0 or address >= _register_node_ids.size():
+		return _registers.get(address, 0.0)
+	var v := _read_node(_register_node_ids[address])
+	if v != null:
+		_registers[address] = float(v)
+		return float(v)
 	return _registers.get(address, 0.0)
 
 
 func write_register(address: int, value: float) -> bool:
-	if not _connected:
+	if not _connected or address < 0 or address >= _register_node_ids.size():
 		return false
-	# In real implementation, would write to OPC-UA register node
-	_registers[address] = value
-	return true
+	if _write_node(_register_node_ids[address], value):
+		_registers[address] = value
+		return true
+	return false
 
 
 ## ===== Internal Methods =====
+
+func _start_bridge() -> bool:
+	var script_path = ProjectSettings.globalize_path("res://addons/industrial/backends/opcua_bridge.py")
+	_bridge = PythonBridge.new()
+	if not _bridge.start(script_path, _bridge_port, []):
+		_bridge = null
+		error_occurred.emit("OPC-UA bridge failed to start (asyncua not installed?)")
+		return false
+	return true
+
+
+func _send_command(cmd: Dictionary) -> Dictionary:
+	if not _bridge or not _bridge.is_bridge_connected():
+		return {"status": "error", "message": "OPC-UA bridge not connected"}
+	return _bridge.send(cmd)
+
+
+func _read_node(node_id: String) -> Variant:
+	var resp := _send_command({"cmd": "read", "node_id": node_id})
+	if resp.get("status") != "ok":
+		return null
+	return resp.get("value", null)
+
+
+func _read_nodes(node_ids: Array) -> Array:
+	var resp := _send_command({"cmd": "read_many", "node_ids": node_ids})
+	if resp.get("status") != "ok":
+		return []
+	return resp.get("values", [])
+
+
+func _write_node(node_id: String, value: Variant) -> bool:
+	var resp := _send_command({"cmd": "write", "node_id": node_id, "value": value})
+	return resp.get("status") == "ok"
+
 
 func _abort_trajectory_internal() -> void:
 	_is_trajectory_running = false

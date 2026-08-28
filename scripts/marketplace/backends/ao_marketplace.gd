@@ -303,9 +303,7 @@ func purchase_listing(listing_id: String) -> bool:
 
 
 func _check_balance() -> Result:
-	# In a real implementation, this would query the wallet or an indexer
-	# For now, return a mock success
-	return Result.ok(10000000000000)  # 10000 AR in winston
+	return _ao.get_balance(get_my_address())
 
 
 func load_listings(filter: Dictionary = {}) -> Array:
@@ -317,16 +315,30 @@ func load_listings(filter: Dictionary = {}) -> Array:
 	_cache_loaded = false
 	_listings_cache.clear()
 
-	# In a full implementation, we would:
-	# 1. Query AO for all processes with the marketplace tag
-	# 2. Filter by state = ACTIVE
-	# 3. Apply additional filters
+	var result = _ao.get_processes_by_tag(LISTING_PROCESS_TAG)
+	if result.is_err():
+		loading_finished.emit()
+		error_occurred.emit("Failed to load listings: " + str(result.get_error()))
+		return []
 
-	# For now, emit empty (would need GraphQL query to MU)
-	var empty: Array = []
+	var owner_filter: String = filter.get("owner", "")
+	var include_sold: bool = filter.get("include_sold", false)
+	var listings: Array = []
+	for proc in result.get_data():
+		var listing = get_listing(proc.get("process_id", ""))
+		if listing == null:
+			continue
+		if not include_sold and listing._state != Listing.State.ACTIVE:
+			continue
+		if not owner_filter.is_empty() and listing._owner != owner_filter:
+			continue
+		listings.append(listing)
+
+	_listings_cache = listings
+	_cache_loaded = true
 	loading_finished.emit()
-	listings_loaded.emit(empty)
-	return empty
+	listings_loaded.emit(listings)
+	return listings
 
 
 func search_listings(query: String, filters: Dictionary = {}) -> Array:
@@ -349,13 +361,19 @@ func search_listings(query: String, filters: Dictionary = {}) -> Array:
 
 
 func get_listings_by_owner(owner: String) -> Array:
-	# Query for listings by owner (would use GraphQL in full impl)
-	return []
+	return load_listings({"owner": owner})
 
 
 func get_purchases_by_buyer(buyer: String) -> Array:
-	# Query for purchases by buyer (would use GraphQL in full impl)
-	return []
+	# Purchases are listings sold to `buyer`. Load all tagged processes (including
+	# sold ones) and filter locally by purchaser; a full indexer would query a
+	# dedicated purchases index.
+	var all = load_listings({"include_sold": true})
+	var out: Array = []
+	for listing in all:
+		if listing._purchased_by == buyer:
+			out.append(listing)
+	return out
 
 
 func get_listing(listing_id: String) -> Listing:
@@ -367,8 +385,11 @@ func get_listing(listing_id: String) -> Listing:
 	if result.is_err():
 		return null
 
-	var state = result.get_data()
-	if not state.has("type") or state.get("type") != "LISTING":
+	# get_process_info returns {process_id, owner, state, tags, timestamp}; the
+	# listing fields live under "state".
+	var info = result.get_data()
+	var state = info.get("state", {})
+	if not (state is Dictionary) or state.get("type", "") != "LISTING":
 		return null
 
 	var listing = Listing.new()
@@ -384,6 +405,8 @@ func get_listing(listing_id: String) -> Listing:
 	listing._preview_tx_id = state.get("preview_tx_id", "")
 	listing._manifest_tx_id = state.get("manifest_tx_id", "")
 	listing._created = state.get("created", 0)
+	listing._purchased_by = state.get("purchased_by", "")
+	listing._purchased_at = state.get("purchased_at", 0)
 
 	var state_str = state.get("state", "ACTIVE")
 	if state_str == "SOLD":

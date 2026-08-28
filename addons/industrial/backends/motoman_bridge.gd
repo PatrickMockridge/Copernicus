@@ -12,6 +12,10 @@ var _port: int = 50230
 var _timeout: float = 5.0
 var _joint_count: int = 6
 
+## Optional IK solver + chain for cartesian moves (DH params are robot-specific).
+var _ik_solver = null
+var _ik_chain: Array = []
+
 
 ## ===== Connection =====
 
@@ -86,6 +90,8 @@ func initialize(config: Dictionary) -> bool:
 	_port = config.get("port", 50230)
 	_timeout = config.get("timeout", 5.0)
 	_joint_count = config.get("joint_count", 6)
+	_ik_solver = config.get("ik_solver", null)
+	_ik_chain = config.get("ik_chain", [])
 
 	return true
 
@@ -265,46 +271,27 @@ func move_cartesian(position: Vector3, orientation: Quaternion) -> bool:
 	if not is_connection_open():
 		return false
 
-	# MOTOMAN INRC4 doesn't have direct cartesian move command
-	# We need to compute IK locally and then move joints
-	# For a 6-DOF arm, we can use analytical IK
-
-	# Simple 6-DOF arm IK (simplified - assumes standard configuration)
-	# This is a basic implementation - full version would need
-	# proper calibration data and robot-specific IK
-	var joint_positions = _compute_simple_ik(position, orientation)
-
-	if joint_positions.size() == 0:
-		push_warning("MotomanBridge: Failed to compute IK for target pose")
+	# MOTOMAN INRC4 has no direct cartesian move; solve IK locally then move joints.
+	if _ik_solver == null or _ik_chain.is_empty():
+		error_occurred.emit("Cartesian IK requires a configured IK solver (ik_solver + ik_chain)")
 		return false
 
-	# Use joint move with computed positions
+	if not _ik_solver.solve(_ik_chain, position):
+		error_occurred.emit("Cartesian move: IK solve failed")
+		return false
+
+	# Convert solved rotations (revolute assumption) to joint positions about each axis.
+	var rotations = _ik_solver.get_joint_rotations()
+	var joint_positions: Array = []
+	for i in range(min(rotations.size(), _ik_chain.size())):
+		var q: Quaternion = rotations[i]
+		var axis: Vector3 = _ik_chain[i].get("axis", Vector3.UP)
+		var angle: float = q.get_angle()
+		if q.get_axis().dot(axis) < 0.0:
+			angle = -angle
+		joint_positions.append(angle)
+
 	return move_joints(joint_positions)
-
-
-func _compute_simple_ik(target_pos: Vector3, target_orient: Quaternion) -> Array:
-	# Simplified analytical IK for standard 6-DOF arm
-	# This is a placeholder - real implementation needs:
-	# 1. DH parameters for specific robot
-	# 2. Joint limits
-	# 3. Singularity handling
-	# 4. Wrist configuration (elbow up/down)
-
-	# For now, return a home position + small offset based on target
-	# Real implementation would use numerical IK
-	var home = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-	# Distance from origin
-	var dist = target_pos.length()
-
-	# Scale joint movement based on distance
-	if dist > 0.001:
-		var scale = min(dist / 2.0, 0.5)  # Max 0.5 rad movement
-		home[0] = atan2(target_pos.x, target_pos.z) * scale
-		home[1] = target_pos.y * scale * 0.5
-		home[2] = -target_pos.y * scale * 0.3
-
-	return home
 
 
 ## ===== Safety =====

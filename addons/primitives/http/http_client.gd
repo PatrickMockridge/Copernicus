@@ -59,7 +59,10 @@ func _request(method: HTTPClient.Method, url: String, body: String, headers: Arr
 		return Result.err("invalid url: " + url)
 
 	var client := HTTPClient.new()
-	var err := client.connect_to_host(parsed["host"], parsed["port"])
+	var tls_options: TLSOptions = null
+	if parsed.get("tls", false):
+		tls_options = TLSOptions.client()
+	var err := client.connect_to_host(parsed["host"], parsed["port"], tls_options)
 	if err != OK:
 		return Result.err("connect failed: %s" % str(err))
 
@@ -119,8 +122,14 @@ func _request(method: HTTPClient.Method, url: String, body: String, headers: Arr
 
 
 func _parse_url(url: String) -> Dictionary:
+	var tls := false
 	var rest := url
-	if "://" in rest:
+	if rest.begins_with("https://"):
+		tls = true
+		rest = rest.trim_prefix("https://")
+	elif rest.begins_with("http://"):
+		rest = rest.trim_prefix("http://")
+	elif "://" in rest:
 		rest = rest.split("://")[1]
 	var host_port := rest
 	var path := "/"
@@ -129,12 +138,12 @@ func _parse_url(url: String) -> Dictionary:
 		host_port = parts[0]
 		path = "/" + parts[1]
 	var host := host_port
-	var port := 80
+	var port := 443 if tls else 80
 	if ":" in host_port:
 		var hp := host_port.rsplit(":", true, 1)
 		host = hp[0]
 		port = int(hp[1])
-	return {"host": host, "port": port, "path": path}
+	return {"host": host, "port": port, "path": path, "tls": tls}
 
 
 func _build_url(url: String) -> String:

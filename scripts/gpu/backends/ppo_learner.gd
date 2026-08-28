@@ -24,10 +24,6 @@ var _last_loss: float = 0.0
 var _policy_entropy: float = 0.0
 var _mean_reward: float = 0.0
 
-## Python subprocess communication
-var _python_process: int = -1
-
-
 static func get_backend_name() -> String:
 	return "PPO (Proximal Policy Optimization)"
 
@@ -97,7 +93,11 @@ func train_step_ppo(observations: Array, actions: Array, rewards: Array,
 		"epsilon_clip": _epsilon_clip,
 		"gae_lambda": _gae_lambda,
 		"update_epochs": _update_epochs,
-		"mini_batch_size": _mini_batch_size
+		"mini_batch_size": _mini_batch_size,
+		"state_dim": _state_dim,
+		"action_dim": _action_dim,
+		"hidden_dim": _hidden_dim,
+		"device": _device
 	}
 
 	var response = _send_command(cmd)
@@ -121,13 +121,17 @@ func train_step_ppo(observations: Array, actions: Array, rewards: Array,
 
 
 func get_action_ppo(observations: Array, deterministic: bool = false) -> Dictionary:
-	if not _initialized:
+	if not _initialized or _action_dim <= 0:
 		return {"action": 0, "log_prob": 0.0, "value": 0.0}
 
 	var cmd = {
 		"cmd": "ppo_get_action",
 		"observations": observations,
-		"deterministic": deterministic
+		"deterministic": deterministic,
+		"state_dim": _state_dim,
+		"action_dim": _action_dim,
+		"hidden_dim": _hidden_dim,
+		"device": _device
 	}
 
 	var response = _send_command(cmd)
@@ -147,7 +151,11 @@ func evaluate_actions(observations: Array, actions: Array) -> Dictionary:
 	var cmd = {
 		"cmd": "ppo_evaluate",
 		"observations": observations,
-		"actions": actions
+		"actions": actions,
+		"state_dim": _state_dim,
+		"action_dim": _action_dim,
+		"hidden_dim": _hidden_dim,
+		"device": _device
 	}
 
 	var response = _send_command(cmd)

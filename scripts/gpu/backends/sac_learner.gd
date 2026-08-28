@@ -24,10 +24,6 @@ var _policy_entropy: float = 0.0
 var _mean_reward: float = 0.0
 var _alpha_value: float = 0.2
 
-## Python subprocess communication
-var _python_process: int = -1
-
-
 static func get_backend_name() -> String:
 	return "SAC (Soft Actor-Critic)"
 
@@ -94,7 +90,11 @@ func train_step_sac(observations: Array, actions: Array, rewards: Array,
 		"dones": dones,
 		"gamma": _gamma,
 		"tau": _tau,
-		"alpha": _alpha
+		"alpha": _alpha,
+		"state_dim": _state_dim,
+		"action_dim": _action_dim,
+		"hidden_dim": _hidden_dim,
+		"device": _device
 	}
 
 	var response = _send_command(cmd)
@@ -120,13 +120,17 @@ func train_step_sac(observations: Array, actions: Array, rewards: Array,
 
 
 func get_action_sac(observations: Array, deterministic: bool = false) -> Dictionary:
-	if not _initialized:
+	if not _initialized or _action_dim <= 0:
 		return {"action": 0, "log_prob": 0.0}
 
 	var cmd = {
 		"cmd": "sac_get_action",
 		"observations": observations,
-		"deterministic": deterministic
+		"deterministic": deterministic,
+		"state_dim": _state_dim,
+		"action_dim": _action_dim,
+		"hidden_dim": _hidden_dim,
+		"device": _device
 	}
 
 	var response = _send_command(cmd)

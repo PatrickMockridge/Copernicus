@@ -486,8 +486,7 @@ def process_cmd(cmd, node, stdout_fn):
         response = {"status": "error", "message": f"Unknown command: {action}"}
 
     if response:
-        stdout_fn(json.dumps(response) + "
-")
+        stdout_fn(json.dumps(response) + "\n")
     return node, response.get("cmd") == "shutdown" if response else False
 
 
@@ -496,8 +495,7 @@ def run_tcp_server(port):
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("127.0.0.1", port))
     server.listen(1)
-    sys.stderr.write(f"PyTorch learning node listening on 127.0.0.1:{port}
-")
+    sys.stderr.write(f"PyTorch learning node listening on 127.0.0.1:{port}\n")
     sys.stderr.flush()
     conn, addr = server.accept()
 
@@ -509,18 +507,15 @@ def run_tcp_server(port):
             if not data:
                 break
             buffer += data
-            while "
-" in buffer:
-                line, buffer = buffer.split("
-", 1)
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
                 line = line.strip()
                 if not line:
                     continue
                 try:
                     cmd = json.loads(line)
                 except json.JSONDecodeError:
-                    conn.sendall((json.dumps({"status": "error", "message": "Invalid JSON"}) + "
-").encode())
+                    conn.sendall((json.dumps({"status": "error", "message": "Invalid JSON"}) + "\n").encode())
                     continue
                 def send_fn(s):
                     conn.sendall(s.encode("utf-8"))

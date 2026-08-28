@@ -8,3 +8,7 @@ node_modules/
 # Environment / API keys
 .env
 .env.local
+
+# Python build artifacts
+__pycache__/
+*.pyc
