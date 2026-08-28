@@ -461,4 +461,26 @@ func _input(event: InputEvent) -> void:
 
 func set_show_debug(show: bool) -> void:
 	_show_debug = show
-	# Toggle collision wireframe or similar
+	# Flat unshaded "debug" look across the robot's meshes (wireframe-style debug view).
+	if _robot_root == null:
+		return
+	var debug_mat: StandardMaterial3D = null
+	if show:
+		debug_mat = StandardMaterial3D.new()
+		debug_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		debug_mat.albedo_color = Color(0.3, 0.6, 1.0)
+	for mi in _robot_root.find_children("*", "MeshInstance3D", true, false):
+		mi.material_override = debug_mat
+
+
+func set_grid_visible(visible: bool) -> void:
+	if _grid_node:
+		_grid_node.visible = visible
+
+
+func reset_view() -> void:
+	_cam_yaw = 0.0
+	_cam_pitch = -30.0
+	_cam_distance = 3.0
+	_cam_pan = Vector2.ZERO
+	_update_camera_transform()

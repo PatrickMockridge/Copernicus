@@ -41,33 +41,16 @@ func _build() -> void:
 	dialog.offset_right = 200
 	dialog.offset_bottom = 80
 
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.12, 0.15, 0.98)
-	style.set_corner_radius_all(8)
-	style.set_border_width_all(1)
-	style.border_color = Color(0.25, 0.25, 0.3, 1)
-	style.set_content_margin_all(20)
-	dialog.add_theme_stylebox_override("panel", style)
+	CopernicusTheme.style_panel(dialog)
 	add_child(dialog)
 
 	var content = VBoxContainer.new()
 	content.add_theme_constant_override("separation", 12)
 	dialog.add_child(content)
 
-	# Title
-	var title_label = Label.new()
-	title_label.text = _title
-	title_label.add_theme_font_size_override("font_size", 18)
-	title_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
-	content.add_child(title_label)
-
-	# Message
-	var msg_label = Label.new()
-	msg_label.text = _message
-	msg_label.add_theme_font_size_override("font_size", 14)
-	msg_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.65))
-	msg_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(msg_label)
+	# Title + message
+	content.add_child(CopernicusTheme.make_heading(_title))
+	content.add_child(CopernicusTheme.make_body(_message))
 
 	# Buttons
 	var btn_hbox = HBoxContainer.new()
@@ -84,6 +67,7 @@ func _build() -> void:
 	confirm_btn.text = _confirm_text
 	confirm_btn.pressed.connect(_on_confirm)
 	btn_hbox.add_child(confirm_btn)
+	confirm_btn.call_deferred("grab_focus")
 
 	# Input handling
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -101,7 +85,6 @@ func _on_cancel() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# Esc dismisses; Enter is handled by the focused confirm button (not globally).
 	if event.is_action_pressed("ui_cancel"):
 		_on_cancel()
-	elif event.is_action_pressed("ui_accept"):
-		_on_confirm()

@@ -11,9 +11,6 @@ signal lighting_preset_changed(preset: String)
 signal snap_toggled(enabled: bool)
 signal reset_view()
 
-const AccentColor := Color(0.3, 0.6, 1.0, 1.0)
-const DisabledColor := Color(0.4, 0.4, 0.4, 1.0)
-
 var _wireframe_on: bool = false
 var _grid_on: bool = true
 var _snap_on: bool = false
@@ -75,12 +72,13 @@ func _add_cycle(id: String, text: String, callback: Callable) -> void:
 	_buttons[id] = btn
 
 
-func _add_action(_id: String, text: String, callback: Callable) -> void:
+func _add_action(id: String, text: String, callback: Callable) -> void:
 	var btn = Button.new()
 	btn.text = text
-	btn.add_theme_font_size_override("font_size", 11)
+	btn.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
 	btn.pressed.connect(callback)
 	add_child(btn)
+	_buttons[id] = btn
 
 
 func _on_toggle_wireframe() -> void:
@@ -122,7 +120,7 @@ func _update_button_states() -> void:
 
 
 func _set_btn_color(btn: Button, active: bool) -> void:
-	btn.add_theme_color_override("font_color", AccentColor if active else DisabledColor)
+	btn.add_theme_color_override("font_color", CopernicusTheme.ACCENT if active else CopernicusTheme.TEXT_DISABLED)
 
 
 func set_fps(fps: int) -> void:

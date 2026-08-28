@@ -16,8 +16,7 @@ var _panel_area: VBoxContainer
 var _tab_container: TabContainer
 var _joint_panel: JointPanel
 var _status_label: Label
-var _fps_label: Label
-var _toolbar: Control
+var _toolbar: ViewportToolbar
 
 
 func _ready() -> void:
@@ -48,7 +47,10 @@ func _setup_workspace() -> void:
 	_sub_viewport.add_child(_robot_viewer)
 
 	# ---- Toolbar overlay on viewport ----
-	_toolbar = _build_toolbar()
+	_toolbar = ViewportToolbar.new()
+	_toolbar.wireframe_toggled.connect(_robot_viewer.set_show_debug)
+	_toolbar.grid_toggled.connect(_robot_viewer.set_grid_visible)
+	_toolbar.reset_view.connect(_robot_viewer.reset_view)
 	_viewport_container.add_child(_toolbar)
 
 	# ---- Panel area (right 30%) ----
@@ -74,14 +76,8 @@ func _setup_workspace() -> void:
 
 	_status_label = Label.new()
 	_status_label.text = "Robot: Demo"
-	_status_label.add_theme_font_size_override("font_size", 12)
+	_status_label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
 	status_bar.add_child(_status_label)
-
-	_fps_label = Label.new()
-	_fps_label.text = "FPS: --"
-	_fps_label.add_theme_font_size_override("font_size", 12)
-	_fps_label.size_flags_horizontal = Control.SIZE_SHRINK_END
-	status_bar.add_child(_fps_label)
 
 
 func _world_setup() -> void:
@@ -96,55 +92,6 @@ func _world_setup() -> void:
 	env.ambient_light_energy = 0.5
 	env_node.environment = env
 	_sub_viewport.add_child(env_node)
-
-
-func _build_toolbar() -> Control:
-	var bar = HBoxContainer.new()
-	bar.set_name("ViewportToolbar")
-	bar.add_theme_constant_override("separation", 4)
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.08, 0.1, 0.7)
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	style.content_margin_left = 8
-	style.content_margin_right = 8
-	style.content_margin_top = 4
-	style.content_margin_bottom = 4
-	bar.add_theme_stylebox_override("normal", style)
-
-	_add_toolbar_btn(bar, "Wire", _on_toggle_wireframe)
-	_add_toolbar_btn(bar, "Grid", _on_toggle_grid)
-	_add_toolbar_btn(bar, "Reset", _on_reset_view)
-
-	return bar
-
-
-func _add_toolbar_btn(parent: HBoxContainer, text: String, callback: Callable) -> void:
-	var btn = Button.new()
-	btn.text = text
-	btn.add_theme_font_size_override("font_size", 11)
-	btn.pressed.connect(callback)
-	parent.add_child(btn)
-
-
-func _on_toggle_wireframe() -> void:
-	if _robot_viewer:
-		_robot_viewer.set_show_debug(not _robot_viewer._show_debug)
-
-
-func _on_toggle_grid() -> void:
-	if _robot_viewer and _robot_viewer._grid_node:
-		_robot_viewer._grid_node.visible = not _robot_viewer._grid_node.visible
-
-
-func _on_reset_view() -> void:
-	if _robot_viewer:
-		_robot_viewer.set_camera_yaw(0.0)
-		_robot_viewer.set_camera_pitch(-30.0)
-		_robot_viewer.set_camera_distance(3.0)
-		_robot_viewer._cam_pan = Vector2.ZERO
-		_robot_viewer._update_camera_transform()
 
 
 func _on_robot_loaded(robot_node: Node3D) -> void:
@@ -168,4 +115,5 @@ func get_joint_panel() -> JointPanel:
 
 
 func _process(_delta: float) -> void:
-	_fps_label.text = "FPS: %d" % Engine.get_frames_per_second()
+	if _toolbar:
+		_toolbar.set_fps(Engine.get_frames_per_second())
