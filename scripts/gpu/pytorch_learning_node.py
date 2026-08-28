@@ -9,8 +9,7 @@ import random
 import math
 import socket
 import argparse
-from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 try:
     import torch
@@ -22,12 +21,8 @@ except ImportError:
     sys.exit(1)
 
 
-@dataclass
 class QNetwork(nn.Module):
     """Deep Q-Network for reinforcement learning"""
-    state_dim: int
-    action_dim: int
-    hidden_dim: int = 128
 
     def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 128):
         super().__init__()
