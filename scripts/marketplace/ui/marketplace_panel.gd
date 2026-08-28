@@ -298,9 +298,9 @@ func _create_listing_card(listing: Listing) -> Control:
 	var preview_style = StyleBoxFlat.new()
 	var type_str = listing.get_asset_type_string()
 	var type_colors = {
-		"ROBOT": Color(0.15, 0.35, 0.6, 1),
-		"PART": Color(0.2, 0.5, 0.2, 1),
-		"WORLD": Color(0.5, 0.3, 0.15, 1),
+		"Robot": Color(0.15, 0.35, 0.6, 1),
+		"Part": Color(0.2, 0.5, 0.2, 1),
+		"World": Color(0.5, 0.3, 0.15, 1),
 	}
 	preview_style.bg_color = type_colors.get(type_str, Color(0.2, 0.2, 0.25, 1))
 	preview_style.set_corner_radius_all(4)

@@ -102,14 +102,17 @@ func _add_joint_slider(joint_name: String, joint_index: int) -> void:
 	slider.min_value = limits["lower"]
 	slider.max_value = limits["upper"]
 	slider.step = 1.0
-	slider.value = 0.0
+	var initial_value := 0.0
+	if _viewer and _viewer.has_method("get_joint_rotation"):
+		initial_value = _viewer.get_joint_rotation(joint_index)
+	slider.value = initial_value
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.value_changed.connect(_on_slider_changed.bind(joint_index, joint_name))
 	container.add_child(slider)
 	_sliders[joint_name] = slider
 
 	var value_label = Label.new()
-	value_label.text = "0°"
+	value_label.text = "%d°" % int(initial_value)
 	value_label.custom_minimum_size.x = 50
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	container.add_child(value_label)

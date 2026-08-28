@@ -25,6 +25,7 @@ var _file_list: VBoxContainer
 var _progress_bar: ProgressBar
 var _progress_label: Label
 var _status_label: Label
+var _cost_label: Label
 var _publish_btn: Button
 var _cancel_btn: Button
 
@@ -175,10 +176,10 @@ func _setup_ui() -> void:
 
 	summary_hbox.add_child(Control.new())  # Spacer
 
-	var cost_label = Label.new()
-	cost_label.text = "Est. cost: ~0 AR"
-	cost_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
-	summary_hbox.add_child(cost_label)
+	_cost_label = Label.new()
+	_cost_label.text = "Est. cost: ~$0.00"
+	_cost_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	summary_hbox.add_child(_cost_label)
 
 	# Progress bar
 	_progress_bar = ProgressBar.new()
@@ -278,7 +279,7 @@ func _update_summary() -> void:
 	_status_label.text = "%d files selected (%s)" % [_selected_files.size(), size_str]
 
 	var est_cost = RobotPublisher.estimate_cost(_selected_files)
-	# Update cost label if we can find it
+	_cost_label.text = "Est. cost: ~$%.2f" % est_cost
 
 
 func _on_file_toggled(toggled: bool, file_path: String) -> void:
