@@ -26,8 +26,8 @@ func _get_category() -> String:
 
 
 func _populate_options(container: VBoxContainer) -> void:
-	_add_option("import_usd", "Import USD", "Load USD/USDZ files into Godot scene tree. Requires pxr Python module.", true)
-	_add_option("export_usd", "Export to USD", "Export Godot scene to USD format for Omniverse/Isaac Sim.", true)
-	_add_option("omni_kit", "Omniverse Kit Sync", "Live sync with Omniverse Kit via WebSocket. Requires NVIDIA GPU + Omniverse.", false)
-	_add_option("validate_usd", "Validate USD File", "Check USD file validity and contents without importing.", true)
+	_add_option("import_usd", "Import USD", "Load USD/USDZ files into Godot scene tree. Requires pxr Python module.", true, container)
+	_add_option("export_usd", "Export to USD", "Export Godot scene to USD format for Omniverse/Isaac Sim.", true, container)
+	_add_option("omni_kit", "Omniverse Kit Sync", "Live sync with Omniverse Kit via WebSocket. Requires NVIDIA GPU + Omniverse.", false, container)
+	_add_option("validate_usd", "Validate USD File", "Check USD file validity and contents without importing.", true, container)
 	super._populate_options(container)

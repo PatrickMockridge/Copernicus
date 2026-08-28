@@ -47,16 +47,16 @@ func connect_robot(ip: String, backend_id: String = "MockIndustrial") -> bool:
 
 	# Create backend if not provided
 	if _backend == null:
-		_backend = IndustrialPlugin.create_backend(backend_id, {
+		_backend = ModuleRegistry.create("industrial", backend_id, {
 			"robot_ip": ip,
 			"joint_count": 6
-		})
+		}) as IndustrialBackend
 
 		_trajectory_handler.set_backend(_backend)
 		_status_monitor.set_backend(_backend)
 
 	# Connect to robot
-	if not _backend.connect(ip):
+	if not _backend.open_connection(ip):
 		error_occurred.emit("Failed to connect to %s at %s" % [backend_id, ip])
 		return false
 
@@ -72,7 +72,7 @@ func connect_robot(ip: String, backend_id: String = "MockIndustrial") -> bool:
 ## Disconnect from robot
 func disconnect_robot() -> void:
 	if _backend:
-		_backend.disconnect()
+		_backend.close_connection()
 
 	_status_monitor.stop_monitoring()
 	_robot_name = "Unknown"
@@ -82,9 +82,9 @@ func disconnect_robot() -> void:
 
 ## ===== Connection State =====
 
-func is_connected() -> bool:
+func is_connection_open() -> bool:
 	if _backend:
-		return _backend.is_connected()
+		return _backend.is_connection_open()
 	return false
 
 

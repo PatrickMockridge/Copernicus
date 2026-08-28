@@ -81,9 +81,9 @@ func initialize(config: Dictionary) -> bool:
 
 	# Parse algorithm-specific config
 	if config.has("ppo_config"):
-		_ppo_config = _ppo_config.merge(config["ppo_config"], true)
+		_ppo_config.merge(config["ppo_config"], true)
 	if config.has("sac_config"):
-		_sac_config = _sac_config.merge(config["sac_config"], true)
+		_sac_config.merge(config["sac_config"], true)
 
 	# Initialize coordinator via Python
 	var result = _init_coordinator()
@@ -415,7 +415,7 @@ trainer.process_command(cmd)
 
 with open('%s', 'w') as f:
     json.dump(trainer._last_response, f)
-""" % (escaped_script, escaped_script, cmd_file.replace("\\", "\\\\").replace("'", "\\'"), resp_file.replace("\\", "\\\\").replace("'", "\\'"))], output, true)
+""" % [escaped_script, escaped_script, cmd_file.replace("\\", "\\\\").replace("'", "\\'"), resp_file.replace("\\", "\\\\").replace("'", "\\'")]], output, true)
 
 	# Read response
 	f = FileAccess.open(resp_file, FileAccess.READ)

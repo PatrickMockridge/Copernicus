@@ -183,7 +183,7 @@ bridge.process_command(cmd)
 # Write response
 with open('%s', 'w') as f:
     json.dump(bridge._last_response, f)
-""" % (escaped_script, escaped_script, escaped_cmd, resp_file.replace("\\", "\\\\").replace("'", "\\'"))], output, true)
+""" % [escaped_script, escaped_script, escaped_cmd, resp_file.replace("\\", "\\\\").replace("'", "\\'")]], output, true)
 
 	# Read response from temp file
 	f = FileAccess.open(resp_file, FileAccess.READ)
@@ -202,20 +202,20 @@ with open('%s', 'w') as f:
 
 ## ===== Static Helpers =====
 
-	static func check_navigation_stack() -> Dictionary:
-		var status = {
-			"nav2_available": false,
-			"planner_available": false,
-			"controller_available": false,
-			"amcl_available": false
-		}
+static func check_navigation_stack() -> Dictionary:
+	var status = {
+		"nav2_available": false,
+		"planner_available": false,
+		"controller_available": false,
+		"amcl_available": false
+	}
 
-		var output = []
-		var result = OS.execute("ros2", ["pkg", "list"], output, true)
-		if result == 0 and output.size() > 0:
-			var output_str = output[0]
-			status.nav2_available = "navigation2" in output_str
-			status.planner_available = "nav2_bringup" in output_str
-			status.amcl_available = "nav2_amcl" in output_str
+	var output = []
+	var result = OS.execute("ros2", ["pkg", "list"], output, true)
+	if result == 0 and output.size() > 0:
+		var output_str = output[0]
+		status.nav2_available = "navigation2" in output_str
+		status.planner_available = "nav2_bringup" in output_str
+		status.amcl_available = "nav2_amcl" in output_str
 
-		return status
+	return status

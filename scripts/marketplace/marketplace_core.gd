@@ -96,7 +96,7 @@ func get_my_address() -> String:
 
 
 ## Check if connected to marketplace backend
-func is_connected() -> bool:
+func is_marketplace_connected() -> bool:
 	return false
 
 
@@ -111,17 +111,10 @@ func get_config() -> Dictionary:
 
 
 
-	## ===== Module Identity =====
+## ===== Module Identity =====
 
-	static func get_module_category() -> String:
-		return "marketplace"
-
-	static func get_marketplace_name() -> String:
-		return get_module_name()
-
-	static func get_marketplace_description() -> String:
-		return get_module_description()
-
+static func get_module_category() -> String:
+	return "marketplace"
 
 
 static func get_marketplace_description() -> String:

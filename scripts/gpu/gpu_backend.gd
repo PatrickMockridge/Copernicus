@@ -125,18 +125,8 @@ func batch_raycast_from_points(origins: Array, directions: Array) -> Array:
 	return []
 
 
-	return result == 0 and output.size() > 0 and "True" in output[0]
-
-	## ===== Module Identity =====
-
-	static func get_module_category() -> String:
-		return "gpu"
-
-	static func get_backend_name() -> String:
-		return get_module_name()
-
-	static func get_backend_description() -> String:
-		return get_module_description()
+static func get_module_category() -> String:
+	return "gpu"
 
 
 

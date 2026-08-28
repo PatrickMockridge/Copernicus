@@ -211,7 +211,7 @@ try:
     print(json.dumps(prims))
 except Exception as e:
     print(json.dumps({'error': str(e)}))
-""" % (file_path.replace("\\", "\\\\").replace("'", "\\'"), prim_path.replace("\\", "\\\\").replace("'", "\\'"))
+""" % [file_path.replace("\\", "\\\\").replace("'", "\\'"), prim_path.replace("\\", "\\\\").replace("'", "\\'")]
 
 	var result = _run_python(py_code)
 	if result is Dictionary and result.has("error"):
@@ -234,7 +234,7 @@ try:
     print(json.dumps(props))
 except Exception as e:
     print(json.dumps({'error': str(e)}))
-""" % (file_path.replace("\\", "\\\\").replace("'", "\\'"), prim_path.replace("\\", "\\\\").replace("'", "\\'"))
+""" % [file_path.replace("\\", "\\\\").replace("'", "\\'"), prim_path.replace("\\", "\\\\").replace("'", "\\'")]
 
 	var result = _run_python(py_code)
 	if result is Dictionary and result.has("error"):

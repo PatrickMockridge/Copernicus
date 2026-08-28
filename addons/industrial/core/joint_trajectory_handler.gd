@@ -151,7 +151,7 @@ func _execute_current_point() -> void:
 	var point = _trajectory[_current_point_index]
 	var positions = point.get("positions", [])
 
-	if _backend.is_connected():
+	if _backend.is_connection_open():
 		_backend.move_joints(positions)
 
 	point_reached.emit(_current_point_index)

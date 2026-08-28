@@ -99,7 +99,7 @@ static func _build_body_config(info: Dictionary) -> Dictionary:
 	var collision: CollisionShape3D = info["collision"]
 	var config: Dictionary = {
 		"position": node.position,
-		"rotation": Quaternion(node.rotation),
+		"rotation": Quaternion.from_euler(node.rotation),
 		"mass": info.get("mass", 1.0)
 	}
 

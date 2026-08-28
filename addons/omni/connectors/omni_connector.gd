@@ -57,18 +57,18 @@ static func get_requirements() -> String:
 ## ===== Connection Management =====
 
 ## Connect to Omniverse
-func connect(uri: String) -> bool:
-	push_error("OmniConnector.connect() must be implemented by subclass")
+func open_connection(uri: String) -> bool:
+	push_error("OmniConnector.open_connection() must be implemented by subclass")
 	return false
 
 
 ## Disconnect from Omniverse
-func disconnect() -> void:
-	push_error("OmniConnector.disconnect() must be implemented by subclass")
+func close_connection() -> void:
+	push_error("OmniConnector.close_connection() must be implemented by subclass")
 
 
 ## Check connection status
-func is_connected() -> bool:
+func is_connection_open() -> bool:
 	return _connected
 
 

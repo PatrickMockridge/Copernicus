@@ -91,12 +91,12 @@ func initialize(config: Dictionary) -> bool:
 
 
 func shutdown() -> void:
-	disconnect()
+	close_connection()
 
 
 ## ===== Connection =====
 
-func connect(address: String) -> bool:
+func open_connection(address: String) -> bool:
 	if _connected:
 		return true
 
@@ -110,7 +110,7 @@ func connect(address: String) -> bool:
 		# Wait for connection to establish
 		var attempts = 0
 		while _socket.get_status() == StreamPeerTCP.STATUS_CONNECTING and attempts < 50:
-			await get_tree().create_timer(0.1).timeout
+			await (Engine.get_main_loop() as SceneTree).create_timer(0.1).timeout
 			attempts += 1
 
 		if _socket.get_status() == StreamPeerTCP.STATUS_CONNECTED:
@@ -123,7 +123,7 @@ func connect(address: String) -> bool:
 	return false
 
 
-func disconnect() -> void:
+func close_connection() -> void:
 	if not _connected:
 		return
 
@@ -133,7 +133,7 @@ func disconnect() -> void:
 	connection_changed.emit(false)
 
 
-func is_connected() -> bool:
+func is_connection_open() -> bool:
 	if _socket != null:
 		return _socket.get_status() == StreamPeerTCP.STATUS_CONNECTED
 	return false
@@ -142,7 +142,7 @@ func is_connected() -> bool:
 ## ===== Robot Status =====
 
 func get_robot_status() -> Dictionary:
-	if not is_connected():
+	if not is_connection_open():
 		return {}
 
 	var response = _send_inrc4_command(INRC4_STATUS_READ, PackedByteArray())
@@ -153,7 +153,7 @@ func get_robot_status() -> Dictionary:
 
 
 func get_joint_positions() -> Array:
-	if not is_connected():
+	if not is_connection_open():
 		return []
 
 	var response = _send_inrc4_command(INRC4_JOINT_READ, PackedByteArray())
@@ -177,7 +177,7 @@ func get_joint_torques() -> Array:
 ## ===== Joint Trajectory =====
 
 func send_joint_trajectory(trajectory: Array) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	# Send trajectory start command
@@ -192,7 +192,7 @@ func send_joint_trajectory(trajectory: Array) -> bool:
 
 
 func execute_trajectory(points: Array) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	# Start trajectory
@@ -222,7 +222,7 @@ func execute_trajectory(points: Array) -> bool:
 
 		# Wait for point timing
 		var time_from_start = point.get("time_from_start", 0.0)
-		await get_tree().create_timer(time_from_start).timeout
+		await (Engine.get_main_loop() as SceneTree).create_timer(time_from_start).timeout
 
 	_is_trajectory_running = false
 	trajectory_complete.emit(true)
@@ -240,7 +240,7 @@ func is_trajectory_running() -> bool:
 ## ===== Motion Control =====
 
 func move_joints(positions: Array) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	if positions.size() != _joint_count:
@@ -262,7 +262,7 @@ func move_joints(positions: Array) -> bool:
 
 
 func move_cartesian(position: Vector3, orientation: Quaternion) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	# MOTOMAN INRC4 doesn't have direct cartesian move command
@@ -310,7 +310,7 @@ func _compute_simple_ik(target_pos: Vector3, target_orient: Quaternion) -> Array
 ## ===== Safety =====
 
 func trigger_estop() -> void:
-	if not is_connected():
+	if not is_connection_open():
 		return
 
 	var response = _send_inrc4_command(INRC4_ESTON_TRIGGER, PackedByteArray())
@@ -322,7 +322,7 @@ func trigger_estop() -> void:
 
 
 func clear_estop() -> void:
-	if not is_connected():
+	if not is_connection_open():
 		return
 
 	var response = _send_inrc4_command(INRC4_ESTON_CLEAR, PackedByteArray())
@@ -334,7 +334,7 @@ func clear_estop() -> void:
 ## ===== Digital I/O =====
 
 func read_digital_input(index: int) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	var data = PackedByteArray()
@@ -349,7 +349,7 @@ func read_digital_input(index: int) -> bool:
 
 
 func write_digital_output(index: int, value: bool) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	var data = PackedByteArray()
@@ -364,7 +364,7 @@ func write_digital_output(index: int, value: bool) -> bool:
 ## ===== Registers =====
 
 func read_register(address: int) -> float:
-	if not is_connected():
+	if not is_connection_open():
 		return 0.0
 
 	var data = PackedByteArray()
@@ -379,7 +379,7 @@ func read_register(address: int) -> float:
 
 
 func write_register(address: int, value: float) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	var data = PackedByteArray()
@@ -394,7 +394,7 @@ func write_register(address: int, value: float) -> bool:
 ## ===== INRC4 Protocol Helpers =====
 
 func _send_inrc4_command(command_type: int, data: PackedByteArray) -> PackedByteArray:
-	if not is_connected():
+	if not is_connection_open():
 		return PackedByteArray()
 
 	# Build INRC4 message
@@ -522,7 +522,7 @@ func _bytes_to_floats(bytes: PackedByteArray) -> Array:
 
 
 func _abort_trajectory_internal() -> void:
-	if not is_connected():
+	if not is_connection_open():
 		return
 
 	_is_trajectory_running = false

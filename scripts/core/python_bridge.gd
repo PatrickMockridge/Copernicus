@@ -103,7 +103,7 @@ func _read_response() -> Dictionary:
 	return {}
 
 
-func is_connected() -> bool:
+func is_bridge_connected() -> bool:
 	return _connected
 
 

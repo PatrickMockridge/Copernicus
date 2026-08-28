@@ -56,9 +56,9 @@ static func get_requirements() -> String:
 
 ## ===== Connection =====
 
-func connect(uri: String) -> bool:
-	if is_connected():
-		disconnect()
+func open_connection(uri: String) -> bool:
+	if is_connection_open():
+		close_connection()
 
 	_uri = uri if uri else "ws://localhost:8210"
 	_connector_type = "OmniKit"
@@ -75,7 +75,7 @@ func connect(uri: String) -> bool:
 	return false
 
 
-func disconnect() -> void:
+func close_connection() -> void:
 	if _websocket:
 		_websocket.close()
 		_websocket = null
@@ -147,7 +147,7 @@ func _handle_packet(packet: PackedByteArray) -> void:
 			"error":
 				error_occurred.emit(message.get("message", "Unknown"))
 			_:
-				_pass
+				pass
 
 
 func _handle_sync_response(response: Dictionary) -> void:
@@ -172,7 +172,7 @@ func _handle_scene_update(update: Dictionary) -> void:
 ## ===== Scene Sync =====
 
 func sync_scene(scene: Node3D) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		push_error("OmniKitConnector: not connected")
 		return false
 
@@ -187,7 +187,7 @@ func sync_scene(scene: Node3D) -> bool:
 
 
 func sync_node(node: Node3D) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	var node_data = _serialize_node(node)
@@ -200,7 +200,7 @@ func sync_node(node: Node3D) -> bool:
 
 
 func send_transform(node_path: String, transform: Transform3D) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	var transform_data = godot_transform_to_list(transform)
@@ -214,7 +214,7 @@ func send_transform(node_path: String, transform: Transform3D) -> bool:
 
 
 func send_material(material_path: String, material_data: Dictionary) -> bool:
-	if not is_connected() or not _sync_materials:
+	if not is_connection_open() or not _sync_materials:
 		return true
 
 	var message = {
@@ -227,7 +227,7 @@ func send_material(material_path: String, material_data: Dictionary) -> bool:
 
 
 func send_mesh(mesh_path: String, mesh_data: Dictionary) -> bool:
-	if not is_connected() or not _sync_meshes:
+	if not is_connection_open() or not _sync_meshes:
 		return true
 
 	var message = {
@@ -311,7 +311,7 @@ func _get_node_type_string(node: Node) -> String:
 ## ===== Message Sending =====
 
 func _send_message(message: Dictionary) -> bool:
-	if not is_connected():
+	if not is_connection_open():
 		return false
 
 	var json_str = JSON.stringify(message)
@@ -386,10 +386,12 @@ func get_status() -> Dictionary:
 func reconnect() -> bool:
 	var attempts = 0
 	while attempts < _reconnect_attempts:
-		disconnect()
-		await get_tree().create_timer(_reconnect_delay).timeout
+		close_connection()
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree:
+			await tree.create_timer(_reconnect_delay).timeout
 
-		if connect(_uri):
+		if open_connection(_uri):
 			return true
 
 		attempts += 1

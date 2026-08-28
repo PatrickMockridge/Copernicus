@@ -17,9 +17,9 @@ extends EditorPlugin
 
 func _enter_tree() -> void:
 	# Register GPU sensor types
-	add_custom_type("RTXLidar", "Node3D", preload("res://addons/gpu_sensors/rtx_lidar.gd"), preload("res://addons/gpu_sensors/rtx_lidar.svg"))
-	add_custom_type("RTXCamera", "Node3D", preload("res://addons/gpu_sensors/rtx_camera.gd"), preload("res://addons/gpu_sensors/rtx_camera.svg"))
-	add_custom_type("SensorFusion", "Node3D", preload("res://addons/gpu_sensors/sensor_fusion.gd"), preload("res://addons/gpu_sensors/sensor_fusion.svg"))
+	add_custom_type("RTXLidar", "Node3D", preload("res://addons/gpu_sensors/rtx_lidar.gd"), null)
+	add_custom_type("RTXCamera", "Node3D", preload("res://addons/gpu_sensors/rtx_camera.gd"), null)
+	add_custom_type("SensorFusion", "Node3D", preload("res://addons/gpu_sensors/sensor_fusion.gd"), null)
 
 	print("GPU Sensors plugin loaded")
 

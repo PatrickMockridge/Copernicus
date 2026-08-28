@@ -286,7 +286,7 @@ try:
 
 except Exception as e:
     print(json.dumps({'error': str(e)}))
-""" % (escaped_path, escaped_path)
+""" % [escaped_path, escaped_path]
 
 	var result = _execute_python(py_code, script_path)
 	return result if result is Dictionary else {}
@@ -412,7 +412,7 @@ try:
 
 except Exception as e:
     print(json.dumps({'error': str(e)}))
-""" % (escaped_path, escaped_paths)
+""" % [escaped_path, escaped_paths]
 
 	var result = _execute_python(py_code, _get_python_script_path())
 	return result if result is Dictionary else {}
@@ -507,7 +507,7 @@ try:
 
 except Exception as e:
     print(json.dumps({'error': str(e)}))
-""" % (escaped_path, escaped_prim)
+""" % [escaped_path, escaped_prim]
 
 	var result = _execute_python(py_code, _get_python_script_path())
 	return result if result is Dictionary else {}

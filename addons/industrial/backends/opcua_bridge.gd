@@ -83,12 +83,12 @@ func initialize(config: Dictionary) -> bool:
 
 
 func shutdown() -> void:
-	disconnect()
+	close_connection()
 
 
 ## ===== Connection =====
 
-func connect(address: String) -> bool:
+func open_connection(address: String) -> bool:
 	if _connected:
 		return true
 
@@ -103,7 +103,7 @@ func connect(address: String) -> bool:
 	return true
 
 
-func disconnect() -> void:
+func close_connection() -> void:
 	if not _connected:
 		return
 
@@ -113,7 +113,7 @@ func disconnect() -> void:
 	connection_changed.emit(false)
 
 
-func is_connected() -> bool:
+func is_connection_open() -> bool:
 	return _connected
 
 

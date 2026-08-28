@@ -184,7 +184,7 @@ func _initialize_learner() -> void:
 		"state_dim": 24,
 		"action_dim": 4,
 		"hidden_dim": 128,
-		"device": "cuda" if GPUBackend.check_cuda_available() else "cpu"
+		"device": "cuda" if GPUBackend.check_pytorch_available() else "cpu"
 	}
 	if _learner.initialize(config):
 		_update_label(_status_value, "Ready")

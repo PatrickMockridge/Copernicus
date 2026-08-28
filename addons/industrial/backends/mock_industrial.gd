@@ -92,17 +92,17 @@ func initialize(config: Dictionary) -> bool:
 
 
 func shutdown() -> void:
-	disconnect()
+	close_connection()
 
 
 ## ===== Connection =====
 
-func connect(address: String) -> bool:
+func open_connection(address: String) -> bool:
 	_robot_ip = address
 	_connecting = true
 
 	## Simulate connection delay
-	await get_tree().create_timer(_simulated_delay).timeout
+	await (Engine.get_main_loop() as SceneTree).create_timer(_simulated_delay).timeout
 
 	_connected = true
 	_connecting = false
@@ -111,7 +111,7 @@ func connect(address: String) -> bool:
 	return true
 
 
-func disconnect() -> void:
+func close_connection() -> void:
 	if not _connected:
 		return
 
@@ -120,7 +120,7 @@ func disconnect() -> void:
 	connection_changed.emit(false)
 
 
-func is_connected() -> bool:
+func is_connection_open() -> bool:
 	return _connected
 
 
@@ -297,7 +297,7 @@ func _process_trajectory() -> void:
 		trajectory_complete.emit(true)
 	else:
 		## Schedule next check
-		await get_tree().create_timer(0.016).timeout
+		await (Engine.get_main_loop() as SceneTree).create_timer(0.016).timeout
 		_process_trajectory()
 
 

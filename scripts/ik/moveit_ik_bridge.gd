@@ -159,9 +159,6 @@ func _start_bridge() -> Result:
 	# For now, this is a placeholder
 	_python_process = -1
 
-	# Wait for startup
-	await get_tree().create_timer(0.5).timeout
-
 	return Result.ok({})
 
 
@@ -209,7 +206,7 @@ if cmd_action == 'solve_ik':
     print(json.dumps(result))
 else:
     print(json.dumps({'status': 'ok'}))
-""" % (script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\"))], output, true)
+""" % [script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\")]], output, true)
 
 	# Clean up temp files
 	OS.execute("rm", ["-rf", temp_dir], [], true)

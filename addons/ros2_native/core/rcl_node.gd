@@ -233,7 +233,7 @@ node.process_command(cmd)
 # Write response
 with open('%s', 'w') as f:
     json.dump(node._last_response, f)
-""" % (script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\"), resp_file.replace("\\", "\\\\"))], output, true)
+""" % [script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\"), resp_file.replace("\\", "\\\\")]], output, true)
 
 	# Read response
 	f = FileAccess.open(resp_file, FileAccess.READ)
@@ -282,7 +282,7 @@ node.process_command(cmd)
 
 with open('%s', 'w') as f:
     json.dump(node._last_response, f)
-""" % (script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\"), resp_file.replace("\\", "\\\\"))], output, true)
+""" % [script_path.replace("\\", "\\\\"), script_path.replace("\\", "\\\\"), cmd_file.replace("\\", "\\\\"), resp_file.replace("\\", "\\\\")]], output, true)
 
 	# Read response
 	f = FileAccess.open(resp_file, FileAccess.READ)

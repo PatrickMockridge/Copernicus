@@ -13,6 +13,8 @@ var _model: String = "Intel RealSense D455"
 var _width: int = 640
 var _height: int = 480
 var _fov: float = 60.0
+var fov_scale: float = 0.0
+var aspect_ratio: float = 0.0
 var _depth_enabled: bool = true
 var _color_enabled: bool = true
 
@@ -275,7 +277,7 @@ func _apply_model_specs() -> void:
 func _setup_projection() -> void:
 	var fov_rad = deg_to_rad(_fov)
 	var aspect = float(_width) / float(_height)
-	projection = PROJECTION_PERSPECTIVE
+	projection = Camera3D.PROJECTION_PERSPECTIVE
 	fov_scale = fov_rad
 	aspect_ratio = aspect
 

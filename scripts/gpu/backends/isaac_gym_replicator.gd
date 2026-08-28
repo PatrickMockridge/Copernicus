@@ -220,7 +220,7 @@ func batch_capture(num_frames: int, env_ids: Array = []) -> Array:
 ## ===== Writer Configuration =====
 
 func configure_writer(writer_type: String, output_dir: String, config: Dictionary = {}) -> bool:
-	result = _send_command({
+	var result = _send_command({
 		"cmd": "configure_writer",
 		"writer_type": writer_type,
 		"output_dir": output_dir,
@@ -328,7 +328,7 @@ replicator.process_command(cmd)
 
 with open('%s', 'w') as f:
     json.dump(replicator._last_response, f)
-""" % (escaped_script, escaped_script, cmd_file.replace("\\", "\\\\").replace("'", "\\'"), resp_file.replace("\\", "\\\\").replace("'", "\\'"))], output, true)
+""" % [escaped_script, escaped_script, cmd_file.replace("\\", "\\\\").replace("'", "\\'"), resp_file.replace("\\", "\\\\").replace("'", "\\'")]], output, true)
 
 	# Read response
 	f = FileAccess.open(resp_file, FileAccess.READ)

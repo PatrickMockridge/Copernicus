@@ -128,7 +128,7 @@ static func get_module_category() -> String:
 static func _static_init():
 	ModuleRegistry.register("marketplace", "MockMarketplace", preload("res://scripts/marketplace/backends/mock_marketplace.gd"))
 
-func is_connected() -> bool:
+func is_marketplace_connected() -> bool:
 	return true
 
 

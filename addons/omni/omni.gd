@@ -81,8 +81,11 @@ static func get_prim_props(file_path: String, prim_path: String) -> Dictionary:
 
 ## ===== Import Dialog Integration =====
 
-func _handles(file: String) -> bool:
-	return file.ends_with(".usd") or file.ends_with(".usda") or file.ends_with(".usdc")
+func _handles(object: Object) -> bool:
+	if object is Resource:
+		var path: String = object.resource_path
+		return path.ends_with(".usd") or path.ends_with(".usda") or path.ends_with(".usdc")
+	return false
 
 
 func _import(source_file: String, save_path: String, options: Dictionary) -> Error:

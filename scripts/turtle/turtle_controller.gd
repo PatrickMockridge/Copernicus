@@ -227,24 +227,24 @@ func stop_navigation() -> void:
 	_apply_wheel_velocities(0, 0)
 
 
-func get_position() -> Vector3:
+func get_vehicle_position() -> Vector3:
 	if _vehicle:
 		return _vehicle.position
 	return Vector3.ZERO
 
 
-func get_rotation() -> float:
+func get_vehicle_yaw() -> float:
 	if _vehicle:
 		return _vehicle.rotation.y
 	return 0.0
 
 
-func set_position(pos: Vector3) -> void:
+func set_vehicle_position(pos: Vector3) -> void:
 	if _vehicle:
 		_vehicle.position = pos
 
 
-func set_rotation(angle: float) -> void:
+func set_vehicle_yaw(angle: float) -> void:
 	if _vehicle:
 		_vehicle.rotation.y = angle
 

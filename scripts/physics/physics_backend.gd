@@ -141,16 +141,8 @@ func get_contacts(body_name: String) -> Array:
 
 
 
-	## ===== Module Identity =====
-
-	static func get_module_category() -> String:
-		return "physics"
-
-	static func get_backend_name() -> String:
-		return get_module_name()
-
-	static func get_backend_description() -> String:
-		return get_module_description()
+static func get_module_category() -> String:
+	return "physics"
 
 
 

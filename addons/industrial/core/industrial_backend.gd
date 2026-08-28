@@ -12,21 +12,15 @@ signal status_update(status: Dictionary)
 signal trajectory_complete(success: bool)
 signal error_occurred(error: String)
 signal io_changed(input_index: int, value: bool)
+signal backend_initialized(success: bool)
+signal point_reached(point_index: int)
 
 
 ## ===== Core Methods =====
 
 
-	## ===== Module Identity =====
-
-	static func get_module_category() -> String:
-		return "industrial"
-
-	static func get_backend_name() -> String:
-		return get_module_name()
-
-	static func get_backend_description() -> String:
-		return get_module_description()
+static func get_module_category() -> String:
+	return "industrial"
 
 
 
@@ -62,19 +56,19 @@ func shutdown() -> void:
 ## ===== Connection =====
 
 ## Connect to robot controller
-func connect(address: String) -> bool:
-	push_error("IndustrialBackend.connect() must be implemented by subclass")
+func open_connection(address: String) -> bool:
+	push_error("IndustrialBackend.open_connection() must be implemented by subclass")
 	return false
 
 
 ## Disconnect from robot controller
-func disconnect() -> void:
-	push_error("IndustrialBackend.disconnect() must be implemented by subclass")
+func close_connection() -> void:
+	push_error("IndustrialBackend.close_connection() must be implemented by subclass")
 
 
 ## Check if connected
-func is_connected() -> bool:
-	push_error("IndustrialBackend.is_connected() must be implemented by subclass")
+func is_connection_open() -> bool:
+	push_error("IndustrialBackend.is_connection_open() must be implemented by subclass")
 	return false
 
 

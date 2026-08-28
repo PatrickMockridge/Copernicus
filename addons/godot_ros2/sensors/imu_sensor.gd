@@ -48,7 +48,11 @@ func poll_from_body() -> void:
 	if _noise_enabled:
 		for i in range(3):
 			_bias_drift[i] += randfn(0.0, _random_walk)
-		accel = Sensor.gaussian_noise(accel, _bias_drift, 0.01)
+		accel = Vector3(
+			Sensor.gaussian_noise(accel.x, _bias_drift.x, 0.01),
+			Sensor.gaussian_noise(accel.y, _bias_drift.y, 0.01),
+			Sensor.gaussian_noise(accel.z, _bias_drift.z, 0.01)
+		)
 	_linear_acceleration = accel
 
 

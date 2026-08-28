@@ -37,7 +37,7 @@ static func parse(mjcf_path: String) -> Node3D:
 
 
 static func _parse_default(parser: XMLParser, out_defaults: Dictionary) -> void:
-	var class_name = parser.get_named_attribute_value_safe("class")
+	var cls_name = parser.get_named_attribute_value_safe("class")
 	var geoms: Dictionary = {}
 	var joints: Dictionary = {}
 
@@ -57,9 +57,9 @@ static func _parse_default(parser: XMLParser, out_defaults: Dictionary) -> void:
 		entry["geom"] = geoms
 	if not joints.is_empty():
 		entry["joint"] = joints
-	if class_name.is_empty():
-		class_name = "__default__"
-	out_defaults[class_name] = entry
+	if cls_name.is_empty():
+		cls_name = "__default__"
+	out_defaults[cls_name] = entry
 
 
 static func _parse_geom_attrs(parser: XMLParser) -> Dictionary:
@@ -145,10 +145,10 @@ static func _parse_body(parser: XMLParser, defaults: Dictionary) -> Dictionary:
 	return body
 
 
-static func _resolve_defaults(elem_type: String, attrs: Dictionary, class_name: String, defaults: Dictionary) -> Dictionary:
+static func _resolve_defaults(elem_type: String, attrs: Dictionary, cls_name: String, defaults: Dictionary) -> Dictionary:
 	var resolved = attrs.duplicate()
-	if not class_name.is_empty() and defaults.has(class_name):
-		var cls = defaults[class_name]
+	if not cls_name.is_empty() and defaults.has(cls_name):
+		var cls = defaults[cls_name]
 		if cls.has(elem_type):
 			for key in cls[elem_type]:
 				if not resolved.has(key):

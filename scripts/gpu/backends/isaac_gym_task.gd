@@ -291,7 +291,7 @@ task.process_command(cmd)
 
 with open('%s', 'w') as f:
     json.dump(task._last_response, f)
-""" % (escaped_script, escaped_script, cmd_file.replace("\\", "\\\\").replace("'", "\\'"), resp_file.replace("\\", "\\\\").replace("'", "\\'"))], output, true)
+""" % [escaped_script, escaped_script, cmd_file.replace("\\", "\\\\").replace("'", "\\'"), resp_file.replace("\\", "\\\\").replace("'", "\\'")]], output, true)
 
 	# Read response
 	f = FileAccess.open(resp_file, FileAccess.READ)

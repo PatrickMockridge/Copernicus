@@ -59,7 +59,7 @@ static func get_module_category() -> String:
 static func _static_init():
 	ModuleRegistry.register("marketplace", "AOMarketplace", preload("res://scripts/marketplace/backends/ao_marketplace.gd"))
 
-func is_connected() -> bool:
+func is_marketplace_connected() -> bool:
 	return _ao != null and _wallet != null
 
 
@@ -72,7 +72,7 @@ func get_my_address() -> String:
 ## ===== Core Methods =====
 
 func create_listing(config: Dictionary) -> Listing:
-	if not is_connected():
+	if not is_marketplace_connected():
 		error_occurred.emit("Not connected to AO network")
 		return null
 
@@ -193,7 +193,7 @@ func _upload_listing_files(files: Array) -> Result:
 		"manifest_tx_id": manifest_tx_id
 	})
 func update_listing(listing_id: String, config: Dictionary) -> bool:
-	if not is_connected():
+	if not is_marketplace_connected():
 		return false
 
 	var listing = get_listing(listing_id)
@@ -220,7 +220,7 @@ func update_listing(listing_id: String, config: Dictionary) -> bool:
 
 
 func cancel_listing(listing_id: String) -> bool:
-	if not is_connected():
+	if not is_marketplace_connected():
 		return false
 
 	var listing = get_listing(listing_id)
@@ -242,7 +242,7 @@ func cancel_listing(listing_id: String) -> bool:
 
 
 func purchase_listing(listing_id: String) -> bool:
-	if not is_connected():
+	if not is_marketplace_connected():
 		purchase_failed.emit(null, "Not connected")
 		return false
 
@@ -309,7 +309,7 @@ func _check_balance() -> Result:
 
 
 func load_listings(filter: Dictionary = {}) -> Array:
-	if not is_connected():
+	if not is_marketplace_connected():
 		error_occurred.emit("Not connected to AO network")
 		return []
 
@@ -330,7 +330,7 @@ func load_listings(filter: Dictionary = {}) -> Array:
 
 
 func search_listings(query: String, filters: Dictionary = {}) -> Array:
-	if not is_connected():
+	if not is_marketplace_connected():
 		return []
 
 	loading_started.emit()
@@ -359,7 +359,7 @@ func get_purchases_by_buyer(buyer: String) -> Array:
 
 
 func get_listing(listing_id: String) -> Listing:
-	if not is_connected():
+	if not is_marketplace_connected():
 		return null
 
 	# Query AO process for listing state

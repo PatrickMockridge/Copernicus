@@ -171,7 +171,7 @@ func _openai_chat(messages: Array, params: Dictionary) -> GameAIResult:
 	var response = _http.post(endpoint, headers, JSON.stringify(body))
 	if response.is_err():
 		return response
-	return _parse_openai_response(response.ok_value)
+	return _parse_openai_response(response.ok_value())
 
 
 func _parse_openai_response(response_text: String) -> GameAIResult:
@@ -213,7 +213,7 @@ func _minimax_chat(messages: Array, params: Dictionary) -> GameAIResult:
 	var response = _http.post(endpoint, headers, JSON.stringify(body))
 	if response.is_err():
 		return response
-	return _parse_minimax_response(response.ok_value)
+	return _parse_minimax_response(response.ok_value())
 
 
 func _parse_minimax_response(response_text: String) -> GameAIResult:

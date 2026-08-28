@@ -263,7 +263,7 @@ func get_point_cloud() -> Array:
 	return _point_cloud.duplicate()
 
 
-func get_points_as_vertices() -> Array:
+func get_points_as_vertices() -> PackedVector3Array:
 	# Convert to PackedVector3Array for visualization
 	var vertices = PackedVector3Array()
 	for point in _points:

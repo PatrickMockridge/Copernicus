@@ -28,7 +28,7 @@ var _config: Dictionary = {}
 
 
 func _init() -> void:
-	_pass()
+	pass
 
 
 func configure(config: Dictionary) -> void:

@@ -92,16 +92,8 @@ func set_smooth_path(smooth: bool) -> void:
 
 
 
-	## ===== Module Identity =====
-
-	static func get_module_category() -> String:
-		return "nav"
-
-	static func get_planner_name() -> String:
-		return get_module_name()
-
-	static func get_planner_description() -> String:
-		return get_module_description()
+static func get_module_category() -> String:
+	return "nav"
 
 
 

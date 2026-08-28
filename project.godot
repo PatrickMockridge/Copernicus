@@ -18,10 +18,8 @@ config/icon=""
 
 [autoload]
 
-# GameAI disabled - needs Godot 4.4 migration
-#GameAI="*res://addons/GameAI/core/ai.gd"
-# ROSAI disabled - needs GodAI migration
-#ROSAI="*res://addons/GameAI/integrations/ros/ros_ai.gd"
+GameAI="*res://addons/GameAI/core/ai.gd"
+ROSAI="*res://addons/GameAI/integrations/ros/ros_ai.gd"
 GodotROS2="*res://addons/godot_ros2/godot_ros2.gd"
 EnvService="*res://addons/primitives/env/env_service.gd"
 CopernicusTheme="*res://scripts/ui/copernicus_theme.gd"

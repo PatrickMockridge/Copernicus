@@ -10,7 +10,7 @@ extends Node3D
 
 var _lidar: RTXLidar = null
 var _camera: RTXCamera = null
-var _imu: Node3D = null
+var _imu = null
 var _gps: Node3D = null
 
 

@@ -87,7 +87,7 @@ func _setup_ui() -> void:
 
 	# Tab bar
 	_tab_bar = HBoxContainer.new()
-	_tab_bar.alignment = Box.ALIGNMENT_CENTER
+	_tab_bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	main_vbox.add_child(_tab_bar)
 
 	var tabs = ["Browse", "My Listings", "Create", "Purchases"]
@@ -441,9 +441,9 @@ func _show_create_panel() -> void:
 	publish_btn.text = "Publish Listing"
 	publish_btn.pressed.connect(func():
 		if name_input.text.strip_edges().is_empty():
-			ToastClass.show_toast(self, "Please enter an asset name", Toast.Level.WARNING)
+			Toast.show_toast(self, "Please enter an asset name", Toast.Level.WARNING)
 			return
-		ToastClass.show_toast(self, "Publishing will be available in a future update", Toast.Level.INFO)
+		Toast.show_toast(self, "Publishing will be available in a future update", Toast.Level.INFO)
 	)
 	form.add_child(publish_btn)
 

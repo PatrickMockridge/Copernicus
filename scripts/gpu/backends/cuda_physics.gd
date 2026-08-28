@@ -91,7 +91,7 @@ func step_simulation(delta: float) -> void:
 
 func apply_force(body_name: String, link_index: int, force: Vector3, position: Vector3) -> void:
 	if _physics:
-		_physics.apply_force(body_name, link_index, force, position)
+		_physics.apply_force(body_name, force, position)
 
 
 func get_body_state(body_name: String) -> Dictionary:

@@ -45,6 +45,11 @@ static func get_requirements() -> String:
 	return "PyTorch: pip install torch"
 
 
+static func check_cuda_available() -> bool:
+	var result = OS.execute("nvidia-smi", [], [], true)
+	return result == OK
+
+
 func initialize(config: Dictionary) -> bool:
 	_state_dim = config.get("state_dim", 24)
 	_action_dim = config.get("action_dim", 4)
@@ -74,7 +79,7 @@ func shutdown() -> void:
 	_initialized = false
 
 
-func train_step(observations: Array, actions: Array, rewards: Array,
+func train_step_ppo(observations: Array, actions: Array, rewards: Array,
                 old_log_probs: Array, values: Array, dones: Array) -> Dictionary:
 	if observations.is_empty() or not _initialized:
 		return {"loss": 0.0, "entropy": 0.0, "mean_reward": 0.0}
@@ -115,7 +120,7 @@ func train_step(observations: Array, actions: Array, rewards: Array,
 	}
 
 
-func get_action(observations: Array, deterministic: bool = false) -> Dictionary:
+func get_action_ppo(observations: Array, deterministic: bool = false) -> Dictionary:
 	if not _initialized:
 		return {"action": 0, "log_prob": 0.0, "value": 0.0}
 
@@ -156,7 +161,7 @@ func evaluate_actions(observations: Array, actions: Array) -> Dictionary:
 
 
 func _send_command(cmd: Dictionary) -> Dictionary:
-	if not _bridge or not _bridge.is_connected():
+	if not _bridge or not _bridge.is_bridge_connected():
 		return {"status": "error", "message": "Bridge not connected"}
 	return _bridge.send(cmd)
 func save_model(path: String) -> bool:

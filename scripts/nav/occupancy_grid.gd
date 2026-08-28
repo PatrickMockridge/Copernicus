@@ -79,9 +79,9 @@ func _scan_obstacles(space_state: PhysicsDirectSpaceState3D, bounds_min: Vector3
 
 			if result:
 				# Hit something - mark as occupied
-				_set_cell(x, y, 1)
+				set_cell(x, y, 1)
 			else:
-				_set_cell(x, y, 0)
+				set_cell(x, y, 0)
 
 
 ## ===== Grid Access =====

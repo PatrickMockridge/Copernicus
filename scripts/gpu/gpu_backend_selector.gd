@@ -25,8 +25,8 @@ func _get_category() -> String:
 
 func _populate_options(container: VBoxContainer) -> void:
 	super._populate_options(container)
-	_add_option("IsaacGymTask", "Isaac Gym RL", "NVIDIA Isaac Gym multi-robot RL training. GPU-accelerated with 4096 parallel environments.", false)
-	_add_option("MultiRobotTrainer", "Multi-Robot Trainer", "Distributed multi-robot training coordinator. Supports PPO, SAC, and TD3 algorithms.", true)
+	_add_option("IsaacGymTask", "Isaac Gym RL", "NVIDIA Isaac Gym multi-robot RL training. GPU-accelerated with 4096 parallel environments.", false, container)
+	_add_option("MultiRobotTrainer", "Multi-Robot Trainer", "Distributed multi-robot training coordinator. Supports PPO, SAC, and TD3 algorithms.", true, container)
 
 
 func _on_apply_pressed() -> void:

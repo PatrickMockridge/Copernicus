@@ -102,16 +102,8 @@ func set_rotation_constraints(allow_x: bool, allow_y: bool, allow_z: bool) -> vo
 
 
 
-	## ===== Module Identity =====
-
-	static func get_module_category() -> String:
-		return "ik"
-
-	static func get_solver_name() -> String:
-		return get_module_name()
-
-	static func get_solver_description() -> String:
-		return get_module_description()
+static func get_module_category() -> String:
+	return "ik"
 
 
 

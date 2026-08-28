@@ -80,7 +80,7 @@ func post(url: String, body: Variant = null, extra_headers: Dictionary = {}) -> 
 
 	var body_bytes = body_data.to_utf8_buffer()
 
-	result = _http_request.request(full_url, headers, HTTPClient.METHOD_POST, body_data)
+	var result = _http_request.request(full_url, headers, HTTPClient.METHOD_POST, body_data)
 
 	if result != OK:
 		_pending_request = false
@@ -103,7 +103,7 @@ func put(url: String, body: Variant = null, extra_headers: Dictionary = {}) -> R
 		else:
 			body_data = str(body)
 
-	result = _http_request.request(full_url, headers, HTTPClient.METHOD_PUT, body_data)
+	var result = _http_request.request(full_url, headers, HTTPClient.METHOD_PUT, body_data)
 
 	if result != OK:
 		_pending_request = false
@@ -119,7 +119,7 @@ func delete(url: String, extra_headers: Dictionary = {}) -> Result:
 	_pending_request = true
 	_request_completed = false
 
-	result = _http_request.request(full_url, headers, HTTPClient.METHOD_DELETE)
+	var result = _http_request.request(full_url, headers, HTTPClient.METHOD_DELETE)
 
 	if result != OK:
 		_pending_request = false
@@ -197,7 +197,7 @@ static func create(base_url: String = "") -> HyperHttpClient:
 
 
 ## Make a quick GET request
-static func get(url: String, headers: Dictionary = {}) -> Dictionary:
+static func get_request(url: String, headers: Dictionary = {}) -> Dictionary:
 	var client = HyperHttpClient.new()
 	var tree = Engine.get_main_loop()
 	var root = tree.get_root()

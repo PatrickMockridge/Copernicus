@@ -81,7 +81,7 @@ func initialize(config: Dictionary) -> bool:
 
 
 func is_running() -> bool:
-	return _is_simulating and _bridge and _bridge.is_connected()
+	return _is_simulating and _bridge and _bridge.is_bridge_connected()
 
 
 func shutdown() -> void:
@@ -262,7 +262,7 @@ func get_contacts(body_name: String) -> Array:
 ## ===== Internal Helpers =====
 
 func _send_command(cmd: Dictionary) -> Dictionary:
-	if not _bridge or not _bridge.is_connected():
+	if not _bridge or not _bridge.is_bridge_connected():
 		return {"status": "error", "message": "Bridge not connected"}
 	return _bridge.send(cmd)
 func _vec3_to_list(v: Vector3) -> Array:

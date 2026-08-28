@@ -383,7 +383,7 @@ try:
 except Exception as e:
     print('Export failed: ' + str(e), file=sys.stderr)
     sys.exit(1)
-""" % (escaped_json, escaped_output)
+""" % [escaped_json, escaped_output]
 
 	return py_code
 
@@ -423,13 +423,13 @@ func _generate_usd_recursive(node: Node, lines: Array, indent: int) -> void:
 	if not node:
 		return
 
-	var indent_str = "    " * indent
+	var indent_str = "    ".repeat(indent)
 
 	# Node header
 	var node_type = _get_usda_node_type(node)
 	var node_name = node.name.replace(" ", "_")
 
-	lines.append("%sdef %s '%s' (" % (indent_str, node_type, node_name))
+	lines.append("%sdef %s '%s' (" % [indent_str, node_type, node_name])
 
 	# Transform
 	if node is Node3D:

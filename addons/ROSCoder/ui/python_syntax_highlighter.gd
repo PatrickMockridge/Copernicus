@@ -147,4 +147,4 @@ func get_line_syntax_highlighting(line: int) -> Dictionary:
 
 
 func get_text_for_line(line: int) -> String:
-	return get_text().split("\n")[line]
+	return get_text_edit().get_text().split("\n")[line]

@@ -23,7 +23,6 @@ var _last_loss: float = 0.0
 
 ## Python subprocess communication
 var _python_process: int = -1
-var _initialized: bool = false
 
 
 static func get_module_name() -> String:
@@ -41,6 +40,11 @@ static func is_available() -> bool:
 
 static func get_requirements() -> String:
 	return "PyTorch: pip install torch"
+
+
+static func check_cuda_available() -> bool:
+	var result = OS.execute("nvidia-smi", [], [], true)
+	return result == OK
 
 
 
@@ -146,7 +150,7 @@ func _decay_epsilon() -> void:
 
 
 func _send_command(cmd: Dictionary) -> Dictionary:
-	if not _bridge or not _bridge.is_connected():
+	if not _bridge or not _bridge.is_bridge_connected():
 		return {"status": "error", "message": "Bridge not connected"}
 	return _bridge.send(cmd)
 

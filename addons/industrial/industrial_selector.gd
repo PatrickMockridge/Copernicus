@@ -25,9 +25,9 @@ func _get_category() -> String:
 
 func _populate_options(container: VBoxContainer) -> void:
 	super._populate_options(container)
-	_add_option("ABB", "ABB (EtherNet/IP)", "ABB industrial robots via EtherNet/IP. Requires: ABB robot controller.", false)
-	_add_option("UR", "Universal Robots", "Universal Robots (UR3/UR5/UR10) via RTDB. Requires: ur_robot_driver.", false)
-	_add_option("FANUC", "FANUC (KAREL)", "FANUC industrial robots via KAREL. Requires: FANUC robot controller.", false)
+	_add_option("ABB", "ABB (EtherNet/IP)", "ABB industrial robots via EtherNet/IP. Requires: ABB robot controller.", false, container)
+	_add_option("UR", "Universal Robots", "Universal Robots (UR3/UR5/UR10) via RTDB. Requires: ur_robot_driver.", false, container)
+	_add_option("FANUC", "FANUC (KAREL)", "FANUC industrial robots via KAREL. Requires: FANUC robot controller.", false, container)
 
 
 func _on_apply_pressed() -> void:
