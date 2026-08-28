@@ -24,6 +24,8 @@ func execute_job(job_id: String, robot_address: String) -> Result:
 	actuation_request.emit(job_id, command)
 	var work: float = _actuator.actuate(command)
 	var rate: int = int(command.get("rate", 0))
+	if rate <= 0:
+		return Result.err("job has no valid rate")
 	var fee: int = int(work * rate)
 	var r := _coordination.settle_work(robot_address, fee)
 	if r.is_ok():

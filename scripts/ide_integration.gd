@@ -30,11 +30,9 @@ static func add_publish_button(toolbar: HBoxContainer) -> Button:
 ## Show the publish panel
 static func show_publish_panel(robot_name: String = "") -> void:
 	var panel = PublishPanel.new()
+	Engine.get_main_loop().root.add_child(panel)  # triggers _ready before touching UI
 	panel._name_edit.text = robot_name if not robot_name.is_empty() else _detect_robot_name()
 	panel._populate_file_list()
-
-	var viewport = Engine.get_main_loop().root
-	viewport.add_child(panel)
 
 
 ## Get the currently selected robot name from scene

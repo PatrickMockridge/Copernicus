@@ -55,7 +55,7 @@ func _test_sdk_terms() -> void:
 	_check(sdk.build_register_robot("TestBot", {"name": "TestBot"}).contains("copernicus:registry"), "build_register_robot")
 	_check(sdk.build_query("TestBot").contains("return"), "build_query")
 	_check(sdk.build_check_balance(ADDR).contains("getBalance"), "build_check_balance")
-	_check(sdk.build_transfer_capability("TestBot", ADDR).contains("transfer"), "build_transfer_capability")
+	_check(sdk.build_transfer_capability("TestBot", ADDR, ADDR).contains("transfer"), "build_transfer_capability")
 
 
 func _test_node_e2e() -> void:

@@ -49,10 +49,15 @@ func _map_exprs(items: Array) -> Array:
 	return out
 
 
-## Embed a plain identifier as a rholang string literal (a quoted name).
-## Rholang strings have NO escape sequences, so values that may contain quotes or
-## backslashes (e.g. JSON) must be hex-encoded instead (see _rho_json).
+## Embed an arbitrary user string as a rholang string literal (a quoted name).
+## Rholang strings have NO escape sequences, so the text is hex-encoded to avoid
+## quote/backslash injection.
 func _rho_str(s: String) -> String:
+	return '"%s"' % s.to_utf8_buffer().hex_encode()
+
+
+## Embed a REV address (base58, no special characters) unencoded for revVault.
+func _rho_addr(s: String) -> String:
 	return '"%s"' % s
 
 
@@ -86,8 +91,8 @@ func build_issue_capability(robot: String, holder: String) -> String:
 	return '@"copernicus:ownership"!("issue", %s, %s)' % [_rho_str(robot), _rho_str(holder)]
 
 
-func build_transfer_capability(robot: String, to: String) -> String:
-	return '@"copernicus:ownership"!("transfer", %s, %s)' % [_rho_str(robot), _rho_str(to)]
+func build_transfer_capability(robot: String, from: String, to: String) -> String:
+	return '@"copernicus:ownership"!("transfer", %s, %s, %s)' % [_rho_str(robot), _rho_str(from), _rho_str(to)]
 
 
 func build_get_holder(robot: String) -> String:
@@ -145,8 +150,8 @@ func build_query_job(job_id: String) -> String:
 ## ===== Native revVault templates (from ~/RWallet/r-wallet/src/utils/rho.ts) =====
 
 func build_check_balance(address: String) -> String:
-	return 'new return, revVault(`rho:rchain:revVault`), balanceCh in {\n  revVault!("getBalance", %s, *balanceCh) |\n  for (@balance <- balanceCh) { return!(balance) }\n}' % _rho_str(address)
+	return 'new return, revVault(`rho:rchain:revVault`), balanceCh in {\n  revVault!("getBalance", %s, *balanceCh) |\n  for (@balance <- balanceCh) { return!(balance) }\n}' % _rho_addr(address)
 
 
 func build_transfer_rev(to: String, amount: int) -> String:
-	return 'new revVault(`rho:rchain:revVault`), deployerId(`rho:rchain:deployerId`), deployId(`rho:rchain:deployId`), resultCh in {\n  revVault!("transfer", *deployerId, %s, %d, *resultCh) |\n  for (_ <- resultCh) { deployId!((true, "Transfer successful (not yet finalized).")) }\n}' % [_rho_str(to), amount]
+	return 'new revVault(`rho:rchain:revVault`), deployerId(`rho:rchain:deployerId`), deployId(`rho:rchain:deployId`), resultCh in {\n  revVault!("transfer", *deployerId, %s, %d, *resultCh) |\n  for (_ <- resultCh) { deployId!((true, "Transfer successful (not yet finalized).")) }\n}' % [_rho_addr(to), amount]

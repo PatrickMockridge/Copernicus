@@ -114,7 +114,7 @@ func revoke_capability(robot: String) -> Result:
 
 func transfer_capability(robot: String, to: String) -> Result:
 	var from := get_my_address()
-	var r := _wallet.deploy_term(_sdk.build_transfer_capability(robot, to))
+	var r := _wallet.deploy_term(_sdk.build_transfer_capability(robot, from, to))
 	if r.is_ok():
 		ownership_transferred.emit(robot, from, to)
 	return r
@@ -127,7 +127,15 @@ func get_holder(robot: String) -> Result:
 	var exprs: Array = r.get_data().get("expr", [])
 	if exprs.is_empty():
 		return Result.ok(null)
-	return Result.ok(_sdk.rho_expr_to_json(exprs[0]))
+	return Result.ok(_decode_name(_sdk.rho_expr_to_json(exprs[0])))
+
+
+func _decode_name(v: Variant) -> Variant:
+	if typeof(v) == TYPE_STRING:
+		var bytes: PackedByteArray = str(v).hex_decode()
+		if not bytes.is_empty():
+			return bytes.get_string_from_utf8()
+	return v
 
 
 # --- jobs ---

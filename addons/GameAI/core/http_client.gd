@@ -16,31 +16,27 @@ func set_timeout(seconds: float) -> void:
 func post(url: String, headers: Array, body: String) -> GameAIResult:
 	# Write body to temp file
 	var body_file = "/tmp/http_body_" + str(Time.get_ticks_msec()) + ".json"
-	var script_file = "/tmp/http_script_" + str(Time.get_ticks_msec()) + ".sh"
 
 	var f = FileAccess.open(body_file, FileAccess.WRITE)
 	if f:
 		f.store_string(body)
 		f.close()
 
-	# Build shell script
-	var script = "LD_LIBRARY_PATH='' /usr/bin/curl -s --max-time %d -X POST '%s'" % [int(_timeout), url]
+	# Use curl with an argument array (no shell), so headers/url can't inject commands.
+	var args := PackedStringArray(["-s", "--max-time", str(int(_timeout)), "-X", "POST"])
 	for h in headers:
-		script += " -H '%s'" % h
-	script += " --data-binary @%s" % body_file
+		args.append("-H")
+		args.append(str(h))
+	args.append("--data-binary")
+	args.append("@" + body_file)
+	args.append(url)
 
-	f = FileAccess.open(script_file, FileAccess.WRITE)
-	if f:
-		f.store_string(script)
-		f.close()
-
-	var output = []
-	var exit_code = OS.execute("bash", [script_file], output, true)
+	var output: Array = []
+	var exit_code := OS.execute("/usr/bin/curl", args, output, true)
 
 	DirAccess.remove_absolute(body_file)
-	DirAccess.remove_absolute(script_file)
 
-	var result = output[0] if output.size() > 0 else ""
+	var result = output[0].get_string_from_utf8() if output.size() > 0 else ""
 
 	if exit_code != 0:
 		return GameAIResult.new(false, null, {"code": exit_code, "message": result})

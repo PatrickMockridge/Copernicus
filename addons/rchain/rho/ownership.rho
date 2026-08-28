@@ -3,7 +3,7 @@
 // Public name: @"copernicus:ownership"
 // Messages:
 //   ("issue",    @robot, @holder)   write — bind holder
-//   ("transfer", @robot, @to)       write — update holder (rejected if revoked)
+//   ("transfer", @robot, @from, @to)  write — update holder (only if @from is the current holder)
 //   ("holder",   @robot, ret)       read  — ret!(holder)
 //   ("revoke",   @robot)            write — set holder = "revoked"
 new ledgerCh in {
@@ -15,9 +15,9 @@ new ledgerCh in {
     }
   } |
 
-  contract @"copernicus:ownership"(@"transfer", @robot, @to) = {
+  contract @"copernicus:ownership"(@"transfer", @robot, @from, @to) = {
     for (ledger <- ledgerCh) {
-      if (*ledger.get(robot) == "revoked") {
+      if (*ledger.get(robot) != from) {
         ledgerCh!(*ledger)
       } else {
         ledgerCh!(*ledger.set(robot, to))

@@ -240,11 +240,6 @@ func _create_bundle(files: Array) -> String:
 		var info = manifest_result.get_data()
 		return info.get("tx_id", "")
 
-	# Fallback: return first uploaded file as manifest
-	for file_path in files:
-		if FileAccess.file_exists(file_path):
-			return file_path  # This isn't right, but it's a fallback
-
 	return ""
 
 

@@ -382,10 +382,8 @@ func _on_publish_failed(error: String) -> void:
 
 static func show_for_robot(robot_name: String = "") -> PublishPanel:
 	var panel = PublishPanel.new()
+	Engine.get_main_loop().root.add_child(panel)  # triggers _ready before touching UI
 	panel._name_edit.text = robot_name
 	panel._populate_file_list()
-
-	var viewport = Engine.get_main_loop().root
-	viewport.add_child(panel)
 
 	return panel
