@@ -13,6 +13,8 @@ var _scene_root: Node3D = null
 var _camera: Camera3D = null
 var _lights: Array = []
 var _material_targets: Array = []
+var _base_camera_transform: Transform3D = Transform3D.IDENTITY
+var _base_camera_fov: float = 75.0
 
 
 ## ===== Background Distractors =====
@@ -43,6 +45,9 @@ func setup(scene_root: Node3D, camera: Camera3D, lights: Array = []) -> void:
 	_scene_root = scene_root
 	_camera = camera
 	_lights = lights
+	if _camera:
+		_base_camera_transform = _camera.transform
+		_base_camera_fov = _camera.fov
 	_auto_discover_lights()
 	_auto_discover_materials()
 
@@ -118,6 +123,10 @@ func randomize_camera() -> void:
 	if not _camera:
 		return
 
+	# Reset to the base pose/FOV so repeated calls don't drift unboundedly.
+	_camera.transform = _base_camera_transform
+	_camera.fov = _base_camera_fov
+
 	# Position jitter in camera-local space
 	var right = _camera.global_transform.basis.x
 	var up = _camera.global_transform.basis.y
@@ -127,8 +136,8 @@ func randomize_camera() -> void:
 	_camera.position += up * randfn(0.0, _camera_pos_jitter)
 	_camera.position += forward * randfn(0.0, _camera_pos_jitter * 0.5)
 
-	# FOV jitter
-	_camera.fov += randf_range(-_camera_fov_jitter, _camera_fov_jitter)
+	# FOV jitter (clamped to a valid range)
+	_camera.fov = clampf(_camera.fov + randf_range(-_camera_fov_jitter, _camera_fov_jitter), 10.0, 120.0)
 
 	# Roll jitter (rotate around forward axis)
 	var roll = randfn(0.0, _camera_roll_jitter)
@@ -215,13 +224,19 @@ func randomize_materials() -> void:
 			continue
 		var mi = mesh_instance as MeshInstance3D
 		var mat: Material = mi.material_override
+		var from_surface := false
 		if mat == null and mi.mesh != null:
 			mat = mi.mesh.surface_get_material(0)
+			from_surface = true
 		if mat is StandardMaterial3D:
-			var smat = mat as StandardMaterial3D
-			# Only randomize if it's not already been duplicated
-			var color = smat.albedo_color
-			smat.albedo_color = _shift_hue_lightness(color, _material_hue_shift, _material_lightness_range)
+			var dup = (mat as StandardMaterial3D).duplicate() as StandardMaterial3D
+			dup.albedo_color = _shift_hue_lightness(dup.albedo_color, _material_hue_shift, _material_lightness_range)
+			if from_surface:
+				var mesh_dup = mi.mesh.duplicate() as Mesh
+				mi.mesh = mesh_dup
+				mesh_dup.surface_set_material(0, dup)
+			else:
+				mi.material_override = dup
 
 
 ## ===== Color Helpers =====

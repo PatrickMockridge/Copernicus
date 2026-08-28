@@ -64,6 +64,7 @@ static func create_robot(name: String, creator: String, price: int, files: Array
 	listing._price = price
 	listing._files = files
 	listing._file_count = files.size()
+	listing._total_size = listing._compute_total_size()
 	listing._created = Time.get_unix_time_from_system()
 	return listing
 
@@ -78,6 +79,7 @@ static func create_part(name: String, creator: String, price: int, files: Array)
 	listing._price = price
 	listing._files = files
 	listing._file_count = files.size()
+	listing._total_size = listing._compute_total_size()
 	listing._created = Time.get_unix_time_from_system()
 	return listing
 
@@ -92,6 +94,7 @@ static func create_world(name: String, creator: String, price: int, files: Array
 	listing._price = price
 	listing._files = files
 	listing._file_count = files.size()
+	listing._total_size = listing._compute_total_size()
 	listing._created = Time.get_unix_time_from_system()
 	return listing
 
@@ -167,6 +170,14 @@ func get_files() -> Array:
 
 func get_file_count() -> int:
 	return _file_count
+
+
+func _compute_total_size() -> int:
+	var total := 0
+	for file in _files:
+		if file is Dictionary:
+			total += int(file.get("size", 0))
+	return total
 
 
 func get_total_size() -> int:
@@ -295,6 +306,8 @@ static func from_dictionary(data: Dictionary) -> Listing:
 	listing._files = data.get("files", [])
 	listing._file_count = data.get("file_count", 0)
 	listing._total_size = data.get("total_size", 0)
+	if listing._total_size == 0 and not listing._files.is_empty():
+		listing._total_size = listing._compute_total_size()
 	listing._preview_tx_id = data.get("preview_tx_id", "")
 	listing._manifest_tx_id = data.get("manifest_tx_id", "")
 	listing._created = data.get("created", 0)

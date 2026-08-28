@@ -39,11 +39,11 @@ func _setup_style() -> void:
 
 
 func _build_buttons() -> void:
-	_add_toggle("wireframe", "Wire", _on_toggle_wireframe)
-	_add_cycle("lighting", "Studio", _on_cycle_lighting)
-	_add_toggle("grid", "Grid", _on_toggle_grid)
-	_add_toggle("snap", "Snap", _on_toggle_snap)
-	_add_action("reset", "Reset", _on_reset_view)
+	_add_button("wireframe", "Wire", _on_toggle_wireframe)
+	_add_button("lighting", "Studio", _on_cycle_lighting)
+	_add_button("grid", "Grid", _on_toggle_grid)
+	_add_button("snap", "Snap", _on_toggle_snap)
+	_add_button("reset", "Reset", _on_reset_view)
 
 	_fps_label = Label.new()
 	_fps_label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
@@ -54,25 +54,7 @@ func _build_buttons() -> void:
 	_update_button_states()
 
 
-func _add_toggle(id: String, text: String, callback: Callable) -> void:
-	var btn = Button.new()
-	btn.text = text
-	btn.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
-	btn.pressed.connect(callback)
-	add_child(btn)
-	_buttons[id] = btn
-
-
-func _add_cycle(id: String, text: String, callback: Callable) -> void:
-	var btn = Button.new()
-	btn.text = text
-	btn.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
-	btn.pressed.connect(callback)
-	add_child(btn)
-	_buttons[id] = btn
-
-
-func _add_action(id: String, text: String, callback: Callable) -> void:
+func _add_button(id: String, text: String, callback: Callable) -> void:
 	var btn = Button.new()
 	btn.text = text
 	btn.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)

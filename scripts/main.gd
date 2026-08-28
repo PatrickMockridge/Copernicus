@@ -5,11 +5,7 @@
 extends Control
 
 const ToastClass = preload("res://scripts/ui/toast.gd")
-const LoadingOverlayClass = preload("res://scripts/ui/loading_overlay.gd")
 
-# Preload AI classes instead of using autoloads
-const GameAI = preload("res://addons/GameAI/core/ai.gd")
-const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
 const GameAIResult = preload("res://addons/GameAI/core/result.gd")
 
 # ===== UI References =====
@@ -50,10 +46,8 @@ func _ready() -> void:
 	timer.start()
 
 func _init_ai_instances() -> void:
-	_gameai = GameAI.new()
-	_rosai = ROSAI.new()
-	add_child(_gameai)
-	add_child(_rosai)
+	_gameai = get_node("/root/GameAI")
+	_rosai = get_node("/root/ROSAI")
 	_rosai.set_ai(_gameai)
 
 func _setup_ui() -> void:
@@ -282,14 +276,12 @@ func _display_result(result, operation: String) -> void:
 			content = content.get("content", str(content))
 		_code_output.text = str(content)
 		_status_label.text = operation.capitalize() + " generated successfully"
-		_dismiss_loading_overlay()
 		ToastClass.show_toast(self, operation.capitalize() + " generated", ToastClass.Level.SUCCESS)
 	else:
 		var err = result.err_value()
 		var msg = err.get("message", str(err)) if err is Dictionary else str(err)
 		_code_output.text = "Error: " + msg
 		_add_to_scene_btn.disabled = true
-		_dismiss_loading_overlay()
 		_status_label.text = "Error generating " + operation
 		ToastClass.show_toast(self, "Failed to generate " + operation, ToastClass.Level.ERROR)
 
@@ -351,12 +343,3 @@ func _get_ros2_status() -> String:
 	return "Disconnected"
 
 
-func _process(delta: float) -> void:
-	pass
-func _dismiss_loading_overlay() -> void:
-	var scene = get_tree().current_scene
-	if scene == null:
-		return
-	for child in scene.get_children():
-		if child.get_script() == LoadingOverlayClass:
-			child.dismiss()

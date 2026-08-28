@@ -141,24 +141,6 @@ func discover_robot_files() -> Array:
 	return files
 
 
-## Scan a directory for files with given extensions
-## ===== Git/ARIADNE Operations =====
-
-## Create or update git repo for ARIADNE
-func _prepare_git_repo(files: Array) -> bool:
-	# TODO: Implement git repo creation
-	# For now, we upload files directly to Arweave via AO SDK
-	# ARIADNE integration would require git init + ariadne-cli
-	return true
-
-
-## Push to ARIADNE (requires git repo)
-func _push_to_ariadne() -> String:
-	# TODO: Integrate with ariadne-cli
-	# For now, we use direct Arweave upload via AO SDK
-	return ""
-
-
 ## ===== Private Helpers =====
 
 func _validate_config(config: Dictionary) -> Result:
