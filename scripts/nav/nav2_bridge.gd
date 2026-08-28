@@ -213,7 +213,10 @@ static func check_navigation_stack() -> Dictionary:
 	var output = []
 	var result = OS.execute("ros2", ["pkg", "list"], output, true)
 	if result == 0 and output.size() > 0:
-		var output_str = output[0]
+		# Join all lines — package names are spread across the whole listing.
+		var output_str := ""
+		for line in output:
+			output_str += str(line) + "\n"
 		status.nav2_available = "navigation2" in output_str
 		status.planner_available = "nav2_bringup" in output_str
 		status.amcl_available = "nav2_amcl" in output_str

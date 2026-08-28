@@ -37,6 +37,9 @@ func start(script_path: String, port: int = 9876, extra_args: Array = []) -> boo
 			return true
 
 	bridge_error.emit("TCP connection timeout")
+	if _pid > 0:
+		OS.kill(_pid)
+		_pid = -1
 	return false
 
 

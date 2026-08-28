@@ -214,7 +214,9 @@ func randomize_materials() -> void:
 		if not mesh_instance is MeshInstance3D:
 			continue
 		var mi = mesh_instance as MeshInstance3D
-		var mat: Material = mi.material_override if mi.material_override else mi.mesh.surface_get_material(0)
+		var mat: Material = mi.material_override
+		if mat == null and mi.mesh != null:
+			mat = mi.mesh.surface_get_material(0)
 		if mat is StandardMaterial3D:
 			var smat = mat as StandardMaterial3D
 			# Only randomize if it's not already been duplicated

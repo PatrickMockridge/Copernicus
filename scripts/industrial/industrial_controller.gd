@@ -52,6 +52,10 @@ func connect_robot(ip: String, backend_id: String = "MockIndustrial") -> bool:
 			"joint_count": 6
 		}) as IndustrialBackend
 
+		if _backend == null:
+			error_occurred.emit("Unknown industrial backend: " + backend_id)
+			return false
+
 		_trajectory_handler.set_backend(_backend)
 		_status_monitor.set_backend(_backend)
 

@@ -40,6 +40,12 @@ func _ready() -> void:
 	_setup_ui()
 
 
+## Post-_ready setup: apply a robot name and populate the file list once the UI exists.
+func setup(robot_name: String) -> void:
+	_name_edit.text = robot_name
+	_populate_file_list()
+
+
 func _setup_ui() -> void:
 	# Main panel
 	_panel = PanelContainer.new()
@@ -382,8 +388,7 @@ func _on_publish_failed(error: String) -> void:
 
 static func show_for_robot(robot_name: String = "") -> PublishPanel:
 	var panel = PublishPanel.new()
-	Engine.get_main_loop().root.add_child(panel)  # triggers _ready before touching UI
-	panel._name_edit.text = robot_name
-	panel._populate_file_list()
+	Engine.get_main_loop().root.add_child(panel)
+	panel.call_deferred("setup", robot_name)
 
 	return panel

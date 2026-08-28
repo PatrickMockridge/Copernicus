@@ -43,6 +43,9 @@ func setup(width: int, height: int, resolution: float, origin: Vector3 = Vector3
 
 func from_scene(space_state: PhysicsDirectSpaceState3D, bounds_min: Vector3, bounds_max: Vector3, resolution: float = 0.1) -> void:
 	_resolution = resolution
+	if _resolution <= 0.0:
+		push_warning("occupancy_grid: resolution must be > 0; using 0.1")
+		_resolution = 0.1
 	_origin = bounds_min
 
 	_width = int((bounds_max.x - bounds_min.x) / _resolution)

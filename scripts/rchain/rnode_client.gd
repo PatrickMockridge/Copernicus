@@ -6,6 +6,9 @@ extends RefCounted
 var base_url: String
 var admin_url: String
 
+## Maximum seconds to wait for connect/request/body before giving up.
+var timeout_seconds: float = 10.0
+
 
 func _init() -> void:
 	var host: String = _env("RCHAIN_HOST", "localhost")
@@ -33,12 +36,14 @@ func _request(method: HTTPClient.Method, url: String, body: String = "") -> Resu
 	if err != OK:
 		return Result.err("connect failed: %s" % str(err))
 
-	while client.get_status() == HTTPClient.STATUS_CONNECTING or client.get_status() == HTTPClient.STATUS_RESOLVING:
+	var deadline := Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	while (client.get_status() == HTTPClient.STATUS_CONNECTING or client.get_status() == HTTPClient.STATUS_RESOLVING) and Time.get_ticks_msec() < deadline:
 		client.poll()
 		OS.delay_msec(10)
 
 	if client.get_status() != HTTPClient.STATUS_CONNECTED:
-		return Result.err("could not connect to %s" % parsed["host"])
+		client.close()
+		return Result.err("could not connect to %s (timeout)" % parsed["host"])
 
 	var headers: Array[String] = ["Content-Type: application/json"]
 	if not body.is_empty():
@@ -47,17 +52,21 @@ func _request(method: HTTPClient.Method, url: String, body: String = "") -> Resu
 	var path: String = parsed["path"]
 	var req_err := client.request(method, path, headers, body)
 	if req_err != OK:
+		client.close()
 		return Result.err("request failed: %s" % str(req_err))
 
-	while client.get_status() == HTTPClient.STATUS_REQUESTING:
+	deadline = Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	while client.get_status() == HTTPClient.STATUS_REQUESTING and Time.get_ticks_msec() < deadline:
 		client.poll()
 		OS.delay_msec(10)
 
 	if not client.has_response():
-		return Result.err("no response from node")
+		client.close()
+		return Result.err("no response from node (timeout)")
 
 	var response_body := PackedByteArray()
-	while client.get_status() == HTTPClient.STATUS_BODY:
+	deadline = Time.get_ticks_msec() + int(timeout_seconds * 1000.0)
+	while client.get_status() == HTTPClient.STATUS_BODY and Time.get_ticks_msec() < deadline:
 		client.poll()
 		var chunk := client.read_response_body_chunk()
 		if chunk.size() == 0:

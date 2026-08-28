@@ -354,6 +354,9 @@ func _get_ros2_status() -> String:
 func _process(delta: float) -> void:
 	pass
 func _dismiss_loading_overlay() -> void:
-	for child in get_tree().current_scene.get_children():
+	var scene = get_tree().current_scene
+	if scene == null:
+		return
+	for child in scene.get_children():
 		if child.get_script() == LoadingOverlayClass:
 			child.dismiss()

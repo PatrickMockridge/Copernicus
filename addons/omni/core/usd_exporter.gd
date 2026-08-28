@@ -226,7 +226,10 @@ func _collect_material_data(mat: StandardMaterial3D, binding_path: String) -> Di
 
 
 func _collect_camera_data(camera: Camera3D, node_data: Dictionary) -> void:
-	node_data["focalLength"] = 0.036 / tan(deg_to_rad(camera.fov / 2.0))
+	var fov: float = camera.fov
+	if fov <= 0.0 or fov >= 180.0:
+		fov = 75.0  # guard against tan(0) / tan(>=90deg) -> 0 or inf
+	node_data["focalLength"] = 0.036 / tan(deg_to_rad(fov / 2.0))
 	node_data["horizontalAperture"] = 0.036
 
 
