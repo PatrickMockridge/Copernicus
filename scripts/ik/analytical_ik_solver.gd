@@ -14,6 +14,7 @@ var _joint_rotations: Array = []
 var _end_effector_position: Vector3 = Vector3.ZERO
 var _final_distance: float = INF
 var _iterations_used: int = 0
+var _initial_positions: Array = []
 
 
 static func get_module_name() -> String:
@@ -55,9 +56,10 @@ func solve(chain: Array, target: Vector3) -> bool:
 	reset()
 	solving_started.emit()
 
-	# Initialize joint rotations
+	# Initialize joint rotations + capture reference positions (for rotation recovery)
 	for joint_data in chain:
 		_joint_rotations.append(joint_data.get("rotation", Quaternion.IDENTITY))
+		_initial_positions.append(joint_data.get("position", Vector3.ZERO))
 
 	# Run the appropriate algorithm
 	var success = false
@@ -92,6 +94,7 @@ func get_iterations_used() -> int:
 
 func reset() -> void:
 	_joint_rotations.clear()
+	_initial_positions.clear()
 	_end_effector_position = Vector3.ZERO
 	_final_distance = INF
 	_iterations_used = 0
@@ -137,7 +140,7 @@ func _solve_ccd(chain: Array, target: Vector3) -> bool:
 					_joint_rotations[j] = rot_j
 
 					# Update downstream joint positions
-					_update_downstream_positions(chain, j)
+					_update_downstream_positions(chain, j, rot)
 
 		_final_distance = _calculate_end_distance(chain, target)
 		solving_progress.emit(_iterations_used, _final_distance)
@@ -205,7 +208,7 @@ func _solve_fabrik(chain: Array, target: Vector3) -> bool:
 
 		for i in range(1, chain.size()):
 			var direction = (chain[i - 1]["position"] - chain[i]["position"]).normalized()
-			chain[i]["position"] = chain[i - 1]["position"] + direction * segment_lengths[i]
+			chain[i]["position"] = chain[i - 1]["position"] + direction * segment_lengths[i - 1]
 
 	# Final check
 	var end_pos = chain[chain.size() - 1]["position"]
@@ -262,14 +265,27 @@ func _remove_rotation_around_axis(rot: Quaternion, axis: Vector3) -> Quaternion:
 	return Quaternion(projected_axis, angle)
 
 
-func _update_downstream_positions(chain: Array, from_index: int) -> void:
-	# When a joint rotates, update positions of all downstream joints
-	# This is a simplified version - full implementation would use proper FK
-	pass
+func _update_downstream_positions(chain: Array, from_index: int, rot: Quaternion) -> void:
+	# Rotate every downstream joint around this joint's pivot by the incremental rotation.
+	var pivot: Vector3 = chain[from_index].get("position", Vector3.ZERO)
+	for k in range(from_index + 1, chain.size()):
+		var pos: Vector3 = chain[k].get("position", Vector3.ZERO)
+		chain[k]["position"] = pivot + rot * (pos - pivot)
 
 
 func _update_rotations_from_positions(chain: Array) -> void:
-	# Calculate rotations from position changes
-	# This is a simplified implementation
+	# Recover each joint's rotation as the shortest arc from its initial segment
+	# direction to the solved segment direction.
 	for i in range(chain.size()):
-		_joint_rotations[i] = Quaternion.IDENTITY
+		if i >= chain.size() - 1 or i + 1 >= _initial_positions.size():
+			_joint_rotations[i] = Quaternion.IDENTITY
+			continue
+		var cur_dir: Vector3 = (chain[i + 1].get("position", Vector3.ZERO) - chain[i].get("position", Vector3.ZERO)).normalized()
+		var init_dir: Vector3 = (_initial_positions[i + 1] - _initial_positions[i]).normalized()
+		if cur_dir.length() < 0.001 or init_dir.length() < 0.001:
+			_joint_rotations[i] = Quaternion.IDENTITY
+			continue
+		if abs(init_dir.dot(cur_dir)) > 0.9999:
+			_joint_rotations[i] = Quaternion.IDENTITY
+			continue
+		_joint_rotations[i] = Quaternion(init_dir, cur_dir)
