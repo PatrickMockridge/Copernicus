@@ -33,6 +33,10 @@ window/size/viewport_height=720
 window/size/resizable=true
 window/vsync/vsync_mode=1
 
+[gui]
+
+theme/custom="res://resources/themes/copernicus_theme.tres"
+
 [input_devices]
 
 ui_cancel={

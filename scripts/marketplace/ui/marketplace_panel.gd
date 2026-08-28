@@ -33,7 +33,6 @@ var _selected_listing: Listing = null
 
 ## Constants
 const COLUMNS: int = 3
-const CARD_SCENE: String = "res://scenes/marketplace/asset_card.tscn"
 
 
 func _ready() -> void:
@@ -212,13 +211,27 @@ func _on_filter_changed(index: int) -> void:
 
 
 func _on_listings_loaded(listings: Array) -> void:
-	_display_listings(listings)
+	_display_listings(_apply_sort(listings))
 	_status_label.text = "%d listings found" % listings.size()
 
 
 func _on_search_completed(results: Array) -> void:
-	_display_listings(results)
+	_display_listings(_apply_sort(results))
 	_status_label.text = "%d results found" % results.size()
+
+
+func _apply_sort(listings: Array) -> Array:
+	var sorted := listings.duplicate()
+	match _sort_order.get_selected_id():
+		0:  # Newest
+			sorted.sort_custom(func(a, b): return a._created > b._created)
+		1:  # Cheapest
+			sorted.sort_custom(func(a, b): return a._price < b._price)
+		2:  # Most Expensive
+			sorted.sort_custom(func(a, b): return a._price > b._price)
+		3:  # Name A-Z
+			sorted.sort_custom(func(a, b): return a._name.to_lower() < b._name.to_lower())
+	return sorted
 
 
 func _on_listing_purchased(listing: Listing, buyer: String) -> void:

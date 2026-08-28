@@ -16,6 +16,7 @@ var _option_list: VBoxContainer
 var _option_widgets: Array = []
 var _cancel_btn: Button
 var _apply_btn: Button
+var _button_group: ButtonGroup
 
 
 func _get_title() -> String:
@@ -52,6 +53,8 @@ func _populate_options(container: VBoxContainer) -> void:
 
 
 func _ready() -> void:
+	_button_group = ButtonGroup.new()
+	_button_group.allow_unpress = false
 	_setup_ui()
 	for opt in _option_widgets:
 		if opt["available"]:
@@ -111,7 +114,7 @@ func _create_option_widget(id: String, name: String, description: String, availa
 	option_container.add_child(hbox)
 
 	var radio = CheckBox.new()
-	radio.button_group = _get_button_group_name()
+	radio.button_group = _button_group
 	radio.text = ""
 	radio.toggled.connect(func(toggled): if toggled: _on_option_toggled(id))
 	if not available:

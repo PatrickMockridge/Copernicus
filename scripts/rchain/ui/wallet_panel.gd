@@ -131,7 +131,7 @@ func _on_import() -> void:
 	if r.is_err():
 		_status.text = "Import error: " + r.get_error()
 	else:
-		_status.text = "Imported " + r.get_data()
+		_status.text = "Imported " + RChainService.wallet.get_rev_address()
 	_refresh()
 
 
@@ -140,7 +140,11 @@ func _on_refresh_balance() -> void:
 	if r.is_err():
 		_balance_label.text = "Balance: (error) " + r.get_error()
 	else:
-		_balance_label.text = "Balance: " + str(r.get_data())
+		var exprs: Array = r.get_data()
+		var balance := 0
+		if not exprs.is_empty():
+			balance = int(RChainService.sdk.rho_expr_to_json(exprs[0]))
+		_balance_label.text = "Balance: %d REV" % balance
 	_refresh()
 
 

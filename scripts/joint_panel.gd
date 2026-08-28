@@ -63,7 +63,7 @@ func _on_robot_loaded(robot_node: Node) -> void:
 
 
 func _populate_from_viewer() -> void:
-	if not _viewer:
+	if not _viewer or not _layout:
 		return
 
 	if _viewer.has_method("get_joint_count"):

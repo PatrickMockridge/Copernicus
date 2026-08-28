@@ -37,8 +37,7 @@ func _setup_workspace() -> void:
 	hbox.add_child(_viewport_container)
 
 	_sub_viewport = SubViewport.new()
-	_sub_viewport.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_sub_viewport.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_viewport_container.stretch = true
 	_viewport_container.add_child(_sub_viewport)
 
 	_world_setup()
@@ -65,8 +64,8 @@ func _setup_workspace() -> void:
 
 	_joint_panel = JointPanel.new()
 	_joint_panel.set_name("JointPanel")
-	_joint_panel.set_viewer(_robot_viewer)
 	_tab_container.add_child(_joint_panel)
+	_joint_panel.set_viewer(_robot_viewer)
 	_tab_container.set_tab_title(0, "Joints")
 
 	# Status bar
@@ -149,7 +148,8 @@ func _on_reset_view() -> void:
 
 
 func _on_robot_loaded(robot_node: Node3D) -> void:
-	_status_label.text = "Robot: " + robot_node.name
+	if _status_label:
+		_status_label.text = "Robot: " + robot_node.name
 	robot_loaded.emit(robot_node)
 
 

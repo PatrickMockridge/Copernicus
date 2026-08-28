@@ -308,7 +308,10 @@ func _on_open_turtle_demo() -> void:
 	get_tree().change_scene_to_file("res://scenes/turtle_demo.tscn")
 
 func _on_open_marketplace() -> void:
-	get_tree().change_scene_to_file("res://scenes/marketplace/marketplace_panel.tscn")
+	# Overlay (not change_scene) so closing the marketplace returns to main.
+	var marketplace_scene = preload("res://scenes/marketplace/marketplace_panel.tscn")
+	var instance = marketplace_scene.instantiate()
+	add_child(instance)
 
 func _refresh_context() -> void:
 	var lines = []
