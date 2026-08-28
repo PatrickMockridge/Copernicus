@@ -183,6 +183,7 @@ func _setup_ui() -> void:
 	_add_to_scene_btn.text = "Add to Scene"
 	_add_to_scene_btn.pressed.connect(_on_add_to_scene)
 	_add_to_scene_btn.disabled = true
+	_add_to_scene_btn.tooltip_text = "Not yet implemented"
 	action_hbox.add_child(_add_to_scene_btn)
 
 func _connect_signals() -> void:
@@ -280,7 +281,6 @@ func _display_result(result, operation: String) -> void:
 		if content is Dictionary:
 			content = content.get("content", str(content))
 		_code_output.text = str(content)
-		_add_to_scene_btn.disabled = false
 		_status_label.text = operation.capitalize() + " generated successfully"
 		_dismiss_loading_overlay()
 		ToastClass.show_toast(self, operation.capitalize() + " generated", ToastClass.Level.SUCCESS)

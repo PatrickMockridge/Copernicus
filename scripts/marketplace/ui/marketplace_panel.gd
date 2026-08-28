@@ -41,9 +41,12 @@ func _ready() -> void:
 
 
 func _setup_marketplace() -> void:
-	# Default backend via the module registry (RChainMarketplace is selectable).
-	var backend = ModuleRegistry.create("marketplace", "MockMarketplace", {})
-	_marketplace = backend if backend != null else MockMarketplace.new()
+	# Default to mock; the header "Backend" button opens the selector to switch.
+	set_backend(MockMarketplace.new())
+
+
+func set_backend(backend: MarketplaceCore) -> void:
+	_marketplace = backend
 	_marketplace.listings_loaded.connect(_on_listings_loaded)
 	_marketplace.search_completed.connect(_on_search_completed)
 	_marketplace.listing_purchased.connect(_on_listing_purchased)
@@ -76,12 +79,19 @@ func _setup_ui() -> void:
 
 	var title = Label.new()
 	title.text = "Copernicus Marketplace"
-	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_HEADING)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 
+	var backend_btn = Button.new()
+	backend_btn.text = "Backend"
+	backend_btn.tooltip_text = "Select marketplace backend"
+	backend_btn.pressed.connect(_on_backend_pressed)
+	header.add_child(backend_btn)
+
 	var close_btn = Button.new()
 	close_btn.text = "X"
+	close_btn.tooltip_text = "Close"
 	close_btn.pressed.connect(_on_close_pressed)
 	header.add_child(close_btn)
 
@@ -464,3 +474,16 @@ func _show_create_panel() -> void:
 
 func _on_close_pressed() -> void:
 	queue_free()
+
+
+func _on_backend_pressed() -> void:
+	var selector = MarketplaceSelector.new()
+	selector.backend_selected.connect(_on_backend_selected)
+	add_child(selector)
+
+
+func _on_backend_selected(backend_id: String) -> void:
+	var backend = MarketplaceSelector.create_backend(backend_id, {})
+	if backend:
+		set_backend(backend)
+		_refresh_listings()

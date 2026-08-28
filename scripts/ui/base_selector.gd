@@ -78,9 +78,15 @@ func _setup_ui() -> void:
 
 	content.add_child(CopernicusTheme.make_separator())
 
+	var option_scroll = ScrollContainer.new()
+	option_scroll.custom_minimum_size.y = 220
+	option_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	option_scroll.set_horizontal_scroll_mode(ScrollContainer.SCROLL_MODE_DISABLED)
+	content.add_child(option_scroll)
+
 	_option_list = VBoxContainer.new()
-	_option_list.custom_minimum_size.y = 220
-	content.add_child(_option_list)
+	_option_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	option_scroll.add_child(_option_list)
 
 	_populate_options(_option_list)
 
