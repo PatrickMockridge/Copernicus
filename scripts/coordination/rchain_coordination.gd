@@ -170,3 +170,29 @@ func emit_event(channel: String, data: Dictionary) -> Result:
 	if _bridge:
 		return _bridge.emit(channel, data)
 	return _wallet.deploy_term(_sdk.build_emit(channel, data))
+
+
+# --- robotics-as-a-service (actuation + work-metered fee) ---
+
+func publish_work(job_id: String, command: Dictionary) -> Result:
+	var r := _wallet.deploy_term(_sdk.build_fund_job(job_id, command))
+	if r.is_ok():
+		work_published.emit(job_id, command)
+	return r
+
+
+func get_work(job_id: String) -> Result:
+	var r := _node.explore_deploy(_sdk.build_query_job(job_id))
+	if r.is_err():
+		return r
+	var exprs: Array = r.get_data().get("expr", [])
+	if exprs.is_empty():
+		return Result.ok(null)
+	return Result.ok(_decode_record(_sdk.rho_expr_to_json(exprs[0])))
+
+
+func settle_work(robot: String, fee: int) -> Result:
+	var r := _wallet.transfer(robot, fee)
+	if r.is_ok():
+		work_settled.emit(robot, fee)
+	return r

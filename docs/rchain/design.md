@@ -94,12 +94,34 @@ GDScript
 5. **Deterministic names.** Public coordination names are quoted names under a
    `copernicus:` namespace; private/robot channels are unforgeable (`new`).
 
+## Robotics-as-a-Service (actuation + work-metered fees)
+
+The coordination layer extends to the **industrial metaverse**: a customer publishes
+an actuation job on-chain, a robot executes it, and the fee scales with the work
+actually done. Flow (see `scripts/test_raas.gd`):
+
+```
+customer ──publish_work(job_id, command)──► per-job contract @"copernicus:raas:job:<id>" (query → command)
+robot    ◄──get_work(job_id)──────────────  explore_deploy reads the command
+robot    ──actuates / meters work─────────  RobotActuator drives the TurtleBot, returns work units
+customer ──settle_work(robot, fee)────────  revVault.transfer, fee = work × rate
+```
+
+**Escrow limitation.** True on-chain escrow (customer locks funds, robot claims on
+completion) is *not* possible with this node's `revVault`: `transfer` only spends the
+*current* deployer's vault, and `rho:rchain:deployerId` resolves lazily to the current
+deployer (so a contract cannot hold a prior deployer's spending capability). The demo
+settles the fee with a customer-signed `revVault.transfer` after the robot reports
+work. A full escrow would need a vault API that mints per-contract vaults.
+
 ## Build & test
 
 ```bash
 bash addons/rchain/build.sh                          # build the crypto GDExtension (.so)
 tools/rchain_devnet.sh up --validators 1             # boot a local RNode (Docker)
-godot --headless --script res://scripts/test_rchain.gd  # e2e: deploy -> register -> query
+godot --headless --script res://scripts/test_rchain.gd  # coordination e2e
+godot --headless --script res://scripts/test_raas.gd    # RaaS: fund -> actuate -> fee
+godot scenes/rchain/raas_demo.tscn                   # visual RaaS demo
 ```
 
 The crypto unit tests (`cd addons/rchain/gdext && cargo test`) verify signing and

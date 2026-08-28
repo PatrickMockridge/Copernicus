@@ -31,6 +31,11 @@ func complete_job(job_id: String, result: Dictionary) -> Result
 func open_channel(name: String) -> Result
 func subscribe_channel(name: String) -> Result
 func emit_event(channel: String, data: Dictionary) -> Result
+
+# robotics-as-a-service (actuation + work-metered fee)
+func publish_work(job_id: String, command: Dictionary) -> Result
+func get_work(job_id: String) -> Result
+func settle_work(robot: String, fee: int) -> Result
 ```
 
 Signals:
@@ -44,6 +49,8 @@ job_published(job_id: String, job: Dictionary)
 job_claimed(job_id: String, robot: String)
 job_completed(job_id: String, result: Dictionary)
 channel_message(channel: String, data: Dictionary)
+work_published(job_id: String, command: Dictionary)
+work_settled(robot: String, fee: int)
 error_occurred(message: String)
 ```
 

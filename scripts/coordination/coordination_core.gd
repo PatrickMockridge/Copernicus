@@ -11,6 +11,8 @@ signal job_published(job_id: String, job: Dictionary)
 signal job_claimed(job_id: String, robot: String)
 signal job_completed(job_id: String, result: Dictionary)
 signal channel_message(channel: String, data: Dictionary)
+signal work_published(job_id: String, command: Dictionary)
+signal work_settled(robot: String, fee: int)
 signal error_occurred(message: String)
 
 
@@ -84,6 +86,20 @@ func subscribe_channel(_name: String) -> Result:
 
 func emit_event(_channel: String, _data: Dictionary) -> Result:
 	return Result.err("CoordinationCore.emit_event not implemented")
+
+
+# --- robotics-as-a-service (actuation + work-metered fee) ---
+
+func publish_work(_job_id: String, _command: Dictionary) -> Result:
+	return Result.err("CoordinationCore.publish_work not implemented")
+
+
+func get_work(_job_id: String) -> Result:
+	return Result.err("CoordinationCore.get_work not implemented")
+
+
+func settle_work(_robot: String, _fee: int) -> Result:
+	return Result.err("CoordinationCore.settle_work not implemented")
 
 
 static func get_module_category() -> String:

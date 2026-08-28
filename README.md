@@ -41,6 +41,9 @@ godot scenes/industrial_selector.tscn
 
 # Physics backend selector
 godot scenes/physics_selector.tscn
+
+# Robotics-as-a-service demo (RChain actuation + fees)
+godot scenes/rchain/raas_demo.tscn
 ```
 
 ---
@@ -106,6 +109,7 @@ godot scenes/physics_selector.tscn
 - **ARIADNE** — Git-on-Arweave for permanent robot design storage
 - **AO Hyperobjects** — Trade robot designs as digital assets
 - **RChain Coordination** — On-chain coordination via RChain/RNode: capabilities, jobs, and event channels (the marketplace becomes one coordination primitive)
+- **Robotics-as-a-Service** — RChain-driven robot actuation with work-metered fees
 
 ---
 

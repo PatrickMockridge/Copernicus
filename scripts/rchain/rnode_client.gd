@@ -218,6 +218,20 @@ func faucet(address: String) -> Result:
 	var parsed = JSON.parse_string(d.get("body", ""))
 	if parsed == null:
 		return Result.err("invalid faucet JSON")
+	# If the faucet returns a deploy id, wait for it to land so the balance is spendable.
+	if typeof(parsed) == TYPE_DICTIONARY and not str(parsed.get("deployId", "")).is_empty():
+		var deploy_id := str(parsed["deployId"])
+		for i in range(60):
+			var st := deploy_status(deploy_id)
+			if st.is_err():
+				return st
+			var info: Dictionary = st.get_data()
+			var s: String = info.get("status", "")
+			if s == "ProcessedWithSuccess":
+				break
+			if s == "ProcessedWithError":
+				return Result.err("faucet deploy error: %s" % str(info.get("error", "")))
+			OS.delay_msec(1000)
 	return Result.ok(parsed)
 
 

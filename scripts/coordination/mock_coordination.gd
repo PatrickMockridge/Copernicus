@@ -6,6 +6,7 @@ var _robots: Dictionary = {}
 var _holders: Dictionary = {}
 var _jobs: Dictionary = {}
 var _channels: Dictionary = {}
+var _works: Dictionary = {}
 var _my_address: String = "mock_wallet_abc123"
 
 
@@ -117,4 +118,21 @@ func emit_event(channel: String, data: Dictionary) -> Result:
 		_channels[channel] = []
 	_channels[channel].append(data)
 	channel_message.emit(channel, data)
+	return Result.ok(true)
+
+
+func publish_work(job_id: String, command: Dictionary) -> Result:
+	_works[job_id] = command
+	work_published.emit(job_id, command)
+	return Result.ok(job_id)
+
+
+func get_work(job_id: String) -> Result:
+	if _works.has(job_id):
+		return Result.ok(_works[job_id])
+	return Result.err("work not found")
+
+
+func settle_work(robot: String, fee: int) -> Result:
+	work_settled.emit(robot, fee)
 	return Result.ok(true)

@@ -87,6 +87,18 @@ JSON strings** because rholang string literals have no escape sequences.
   `ownership.transfer` to deliver capability tokens. Persistent receive that
   buffers incoming capability names until the recipient consumes them.
 
+## `raas` (robotics-as-a-service, per-job)
+
+A **dynamic** per-job contract (built by `RholangSDK.build_fund_job`, no static
+`.rho` file). Each job installs a contract on `@"copernicus:raas:job:<job_id>"`:
+
+- **Messages:**
+  - `(@"query", ret)` → `ret!(command)` — returns the hex-encoded JSON actuation
+    command (polled via `explore_deploy`).
+- **Invariant:** the command is immutable once published; the fee
+  (`work × rate`) is computed off-chain and settled with a customer-signed
+  `revVault.transfer` after the robot reports work.
+
 ## Notes for implementation
 
 - Mirror the capability/join idiom in

@@ -122,6 +122,26 @@ func build_emit(channel: String, data: Dictionary) -> String:
 	return '@"copernicus:channels"!("send", %s, %s)' % [_rho_str(channel), _rho_json(data)]
 
 
+## ===== robotics-as-a-service (actuation + work-metered fee) =====
+## The customer's fund deploy publishes a per-job contract that answers `query`
+## (returns the actuation command, polled via explore_deploy). The robot actuates,
+## meters the work, and the fee = work * rate is settled with a customer-signed
+## revVault transfer. `data_at_name` is NOT used — this node's endpoint only accepts
+## unforgeable names. (True on-chain escrow is not possible with this node's
+## revVault, which only spends the *current* deployer's vault.)
+
+func raas_job_name(job_id: String) -> String:
+	return "copernicus:raas:job:" + job_id
+
+
+func build_fund_job(job_id: String, command: Dictionary) -> String:
+	return 'contract @"%s"(@"query", ret) = {\n  ret!(%s)\n}' % [raas_job_name(job_id), _rho_json(command)]
+
+
+func build_query_job(job_id: String) -> String:
+	return 'new return in { @"%s"!("query", *return) }' % raas_job_name(job_id)
+
+
 ## ===== Native revVault templates (from ~/RWallet/r-wallet/src/utils/rho.ts) =====
 
 func build_check_balance(address: String) -> String:
