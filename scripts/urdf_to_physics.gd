@@ -10,15 +10,35 @@ static func create_physics_bodies(robot_root: Node3D, backend: PhysicsBackend, c
 	var link_map: Dictionary = {}  # link_name -> {"node": Node3D, "collision": CollisionShape3D, "mass": float}
 	var joint_list: Array = []
 
-	# Phase 1: Collect links
-	for child in robot_root.get_children():
-		if not child is Node3D:
-			continue
-		var link_name = child.name
-		var collision = _find_collision_shape(child)
-		var mass = float(child.get_meta("mass", 1.0))
-		link_map[link_name] = {"node": child, "collision": collision, "mass": mass}
-		_register_joints(child, link_name, robot_root, joint_list)
+	# Phase 1: Recursively collect every link (a link has a collision shape child).
+	for node in robot_root.find_children("*", "Node3D", true, false):
+		var collision = _find_collision_shape(node)
+		if collision:
+			link_map[node.name] = {"node": node, "collision": collision, "mass": float(node.get_meta("mass", 1.0))}
+
+	# Collect every physics joint recursively.
+	for node in robot_root.find_children("*", "Joint3D", true, false):
+		var joint = node as Joint3D
+		var parent_name = joint.get_parent().name if joint.get_parent() else ""
+		var child_body = ""
+		for c in joint.get_children():
+			child_body = c.name
+			break
+		var jtype = "revolute"
+		if joint is SliderJoint3D:
+			jtype = "prismatic"
+		elif not (joint is PinJoint3D):
+			jtype = "fixed"
+		joint_list.append({
+			"name": joint.name,
+			"type": jtype,
+			"parent": parent_name,
+			"child": child_body,
+			"axis": Vector3(0, 1, 0),
+			"anchor_parent": joint.position,
+			"anchor_child": Vector3.ZERO,
+			"limits": _get_joint_limits(joint)
+		})
 
 	# Phase 2: Create physics bodies for each link
 	for link_name in link_map:

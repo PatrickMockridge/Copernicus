@@ -57,9 +57,10 @@ func _update_camera_transform() -> void:
 	var x = _cam_distance * cos(rad_pitch) * sin(rad_yaw)
 	var y = _cam_distance * sin(rad_pitch)
 	var z = _cam_distance * cos(rad_pitch) * cos(rad_yaw)
-	_camera.position = Vector3(x, y, z)
 	_cam_pivot.position = Vector3(_cam_pan.x, _cam_pan.y, 0.0)
-	_cam_pivot.look_at(Vector3(_cam_pan.x, _cam_pan.y, 0.0), Vector3.UP)
+	_camera.position = Vector3(x, y, z)
+	if _camera.is_inside_tree():
+		_camera.look_at(_cam_pivot.global_position, Vector3.UP)
 
 
 func _setup_lighting() -> void:
@@ -359,8 +360,8 @@ func _collect_joints() -> void:
 	if not _robot_root:
 		return
 
-	# Find all nodes that look like joints
-	for node in _robot_root.get_children():
+	# Find all joint nodes recursively (URDF joints are reparented under their links).
+	for node in _robot_root.find_children("*", "Node3D", true, false):
 		if node.name.ends_with("_joint") or node.name.contains("wheel"):
 			_joint_nodes.append(node)
 

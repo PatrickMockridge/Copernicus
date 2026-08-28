@@ -51,7 +51,7 @@ func initialize(config: Dictionary) -> bool:
 	_world.set_name("GodotPhysicsWorld")
 	Engine.get_main_loop().root.add_child(_world)
 
-	_is_simulating = false
+	_is_simulating = true
 	backend_initialized.emit(true)
 	return true
 
@@ -281,20 +281,21 @@ func create_joint(name: String, config: Dictionary) -> bool:
 	var joint: Joint3D
 
 	match joint_type:
-		"pin":
+		"pin", "revolute", "continuous":
 			joint = PinJoint3D.new()
 		"hinge":
 			joint = HingeJoint3D.new()
-		"slider":
+		"slider", "prismatic":
 			joint = SliderJoint3D.new()
 		"fixed":
-			joint = Generic6DOFJoint3D.new()  # Can simulate fixed with no motion
+			joint = Generic6DOFJoint3D.new()  # Locked below to act fixed
 		_:
 			return false
 
 	joint.set_name(name)
 	joint.node_a = parent.get_path()
 	joint.node_b = child.get_path()
+	joint.position = config.get("anchor_parent", config.get("position", Vector3.ZERO))
 
 	parent.add_child(joint)
 	_joints[name] = joint

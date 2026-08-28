@@ -405,12 +405,10 @@ def run_tcp_server(port):
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(("127.0.0.1", port))
     server.listen(1)
-    sys.stderr.write(f"PyBullet bridge listening on 127.0.0.1:{port}
-")
+    sys.stderr.write(f"PyBullet bridge listening on 127.0.0.1:{port}\n")
     sys.stderr.flush()
     conn, addr = server.accept()
-    sys.stderr.write(f"Connected: {addr}
-")
+    sys.stderr.write(f"Connected: {addr}\n")
     sys.stderr.flush()
 
     bridge = PyBulletBridge()
@@ -421,34 +419,28 @@ def run_tcp_server(port):
             if not data:
                 break
             buffer += data
-            while "
-" in buffer:
-                line, buffer = buffer.split("
-", 1)
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
                 line = line.strip()
                 if not line:
                     continue
                 try:
                     cmd = json.loads(line)
                     bridge.send_response_impl = lambda resp: conn.sendall(
-                        (json.dumps(resp) + "
-").encode("utf-8")
+                        (json.dumps(resp) + "\n").encode("utf-8")
                     )
                     # Override send_response to write to socket
                     old_send = bridge.send_response
                     def socket_send(resp):
-                        conn.sendall((json.dumps(resp) + "
-").encode("utf-8"))
+                        conn.sendall((json.dumps(resp) + "\n").encode("utf-8"))
                     bridge.send_response = socket_send
                     bridge.process_command(cmd)
                 except json.JSONDecodeError as e:
-                    conn.sendall((json.dumps({"status": "error", "message": str(e)}) + "
-").encode("utf-8"))
+                    conn.sendall((json.dumps({"status": "error", "message": str(e)}) + "\n").encode("utf-8"))
         except (ConnectionResetError, BrokenPipeError):
             break
         except Exception as e:
-            sys.stderr.write(f"Error: {e}
-")
+            sys.stderr.write(f"Error: {e}\n")
             sys.stderr.flush()
             break
 

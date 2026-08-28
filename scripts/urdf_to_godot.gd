@@ -195,6 +195,7 @@ static func _build_scene_tree(link_data: Dictionary, joint_data: Array) -> Node3
 static func _create_link_node(link_name: String, data: Dictionary) -> Node3D:
 	var node = Node3D.new()
 	node.set_name(link_name)
+	node.set_meta("mass", data.get("mass", 1.0))
 
 	# Set origin transform
 	var t = Transform3D()
