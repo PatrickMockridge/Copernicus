@@ -347,17 +347,18 @@ func _build_center() -> Control:
 	_workbench = VSplitContainer.new()
 	_workbench.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_workbench.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var h := get_viewport_rect().size.y
-	_workbench.split_offset = int(h * 0.68) if h > 0 else 480
 	center.add_child(_workbench)
 
 	_editor_host = Control.new()
 	_editor_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_editor_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_editor_host.size_flags_stretch_ratio = 2.0
 	_workbench.add_child(_editor_host)
 
 	_terminal = UiConsole.new().configure("Terminal")
 	_terminal.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_terminal.size_flags_stretch_ratio = 1.0
+	_terminal.custom_minimum_size.y = 120
 	_terminal.command_submitted.connect(_on_terminal_submit)
 	_workbench.add_child(_terminal)
 
