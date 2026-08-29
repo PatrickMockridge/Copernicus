@@ -59,14 +59,12 @@ func _make_empty_state() -> Control:
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", UiTheme.space("s"))
 	var t = UiLabel.new().setup("No robot loaded", UiLabel.Kind.HEADING, UiLabel.Tone.MUTED)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(t)
 	var b = UiLabel.new().setup("Load a robot to control its joints.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
 	b.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(b)
 	return vbox
 
