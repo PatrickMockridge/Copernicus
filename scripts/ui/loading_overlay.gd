@@ -14,7 +14,7 @@ static func show_overlay(parent: Node, message: String = "Loading..."):
 
 func _build(message: String) -> void:
 	var bg = ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.5)
+	bg.color = UiTheme.color("backdrop")
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(bg)

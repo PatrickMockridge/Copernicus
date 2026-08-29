@@ -99,6 +99,7 @@ func _setup_ui() -> void:
 	_context_label = Label.new()
 	_context_label.text = "Context: No robot selected. Add a robot to the scene to enable AI context."
 	_context_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_context_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	context_scroll.add_child(_context_label)
 
 	# ---- Task Input ----

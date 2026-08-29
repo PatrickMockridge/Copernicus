@@ -1,65 +1,56 @@
 # viewport_toolbar.gd
-# Reusable overlay toolbar for any SubViewportContainer.
-# Attach as child of a SubViewportContainer and wire signals.
+# Overlay toolbar for the 3D viewport. A PanelContainer (real translucent
+# backdrop) with an inner HBox of compact buttons.
 
 class_name ViewportToolbar
-extends HBoxContainer
+extends PanelContainer
 
 signal wireframe_toggled(enabled: bool)
 signal grid_toggled(enabled: bool)
-signal lighting_preset_changed(preset: String)
-signal snap_toggled(enabled: bool)
 signal reset_view()
 
 var _wireframe_on: bool = false
 var _grid_on: bool = true
-var _snap_on: bool = false
-var _lighting_index: int = 0
-var _lighting_presets: Array[String] = ["Studio", "Outdoor", "Dark"]
 var _buttons: Dictionary = {}
-var _fps_label: Label
+var _fps_label: UiLabel
 
 
 func _ready() -> void:
-	add_theme_constant_override("separation", 4)
+	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_setup_style()
-	_build_buttons()
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", UiTheme.space("xs"))
+	add_child(h)
+	_build_buttons(h)
 
 
 func _setup_style() -> void:
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.08, 0.1, 0.7)
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	style.content_margin_left = 8
-	style.content_margin_right = 8
-	style.content_margin_top = 4
-	style.content_margin_bottom = 4
-	add_theme_stylebox_override("normal", style)
+	var style := StyleBoxFlat.new()
+	style.bg_color = UiTheme.color("viewport_overlay")
+	style.content_margin_left = UiTheme.space("s")
+	style.content_margin_right = UiTheme.space("s")
+	style.content_margin_top = UiTheme.space("xs")
+	style.content_margin_bottom = UiTheme.space("xs")
+	add_theme_stylebox_override("panel", style)
 
 
-func _build_buttons() -> void:
-	_add_button("wireframe", "Wire", _on_toggle_wireframe)
-	_add_button("lighting", "Studio", _on_cycle_lighting)
-	_add_button("grid", "Grid", _on_toggle_grid)
-	_add_button("snap", "Snap", _on_toggle_snap)
-	_add_button("reset", "Reset", _on_reset_view)
+func _build_buttons(h: HBoxContainer) -> void:
+	_add_button(h, "wireframe", "Wire", _on_toggle_wireframe)
+	_add_button(h, "grid", "Grid", _on_toggle_grid)
+	_add_button(h, "reset", "Reset", _on_reset_view)
 
-	_fps_label = Label.new()
-	_fps_label.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
-	_fps_label.add_theme_color_override("font_color", UiTheme.color("text_faint"))
+	_fps_label = UiLabel.new().setup("", UiLabel.Kind.SMALL, UiLabel.Tone.FAINT)
 	_fps_label.size_flags_horizontal = Control.SIZE_SHRINK_END
-	add_child(_fps_label)
+	h.add_child(_fps_label)
 
 	_update_button_states()
 
 
-func _add_button(id: String, text: String, callback: Callable) -> void:
-	var btn = Button.new()
-	btn.text = text
-	btn.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
+func _add_button(h: HBoxContainer, id: String, text: String, callback: Callable) -> void:
+	var btn := UiButton.new().setup(text, UiButton.Variant.GHOST)
 	btn.pressed.connect(callback)
-	add_child(btn)
+	h.add_child(btn)
 	_buttons[id] = btn
 
 
@@ -75,19 +66,6 @@ func _on_toggle_grid() -> void:
 	_update_button_states()
 
 
-func _on_toggle_snap() -> void:
-	_snap_on = not _snap_on
-	snap_toggled.emit(_snap_on)
-	_update_button_states()
-
-
-func _on_cycle_lighting() -> void:
-	_lighting_index = (_lighting_index + 1) % _lighting_presets.size()
-	var preset = _lighting_presets[_lighting_index]
-	_buttons["lighting"].text = preset
-	lighting_preset_changed.emit(preset)
-
-
 func _on_reset_view() -> void:
 	reset_view.emit()
 
@@ -97,8 +75,6 @@ func _update_button_states() -> void:
 		_set_btn_color(_buttons["wireframe"], _wireframe_on)
 	if _buttons.has("grid"):
 		_set_btn_color(_buttons["grid"], _grid_on)
-	if _buttons.has("snap"):
-		_set_btn_color(_buttons["snap"], _snap_on)
 
 
 func _set_btn_color(btn: Button, active: bool) -> void:
@@ -106,4 +82,5 @@ func _set_btn_color(btn: Button, active: bool) -> void:
 
 
 func set_fps(fps: int) -> void:
-	_fps_label.text = "FPS: %d" % fps
+	if _fps_label:
+		_fps_label.text = "FPS: %d" % fps

@@ -18,6 +18,7 @@ const COLOR := {
 	"warning": Color(0.9412, 0.7765, 0.4549),    # #f0c674
 	"error": Color(1.0, 0.4824, 0.4471),         # #ff7b72
 	"backdrop": Color(0.0, 0.0, 0.0, 0.62),
+	"viewport_overlay": Color(0.08, 0.08, 0.1, 0.7),
 }
 
 const FONT_SIZE := {
@@ -25,9 +26,11 @@ const FONT_SIZE := {
 	"heading": 15,
 	"body": 14,
 	"small": 12,
+	"icon": 18,
 }
 
 const SPACE := {
+	"xxs": 2,
 	"xs": 4,
 	"s": 8,
 	"m": 12,
@@ -42,6 +45,7 @@ const RADIUS := {
 
 var _fonts: Dictionary = {}
 var _theme: Theme
+var _style_cache: Dictionary = {}
 
 
 func _ready() -> void:
@@ -51,6 +55,8 @@ func _ready() -> void:
 	_theme = load("res://resources/themes/copernicus_theme.tres")
 	if _theme == null:
 		_theme = Theme.new()
+	if _fonts["ui"]:
+		_theme.default_font = _fonts["ui"]
 	_build_control_styles()
 
 
@@ -95,7 +101,10 @@ func _build_control_styles() -> void:
 
 
 func color(name: String) -> Color:
-	return COLOR.get(name, Color.MAGENTA)
+	if not COLOR.has(name):
+		push_error("UiTheme: unknown color token '%s'" % name)
+		return Color.MAGENTA
+	return COLOR[name]
 
 
 func space(name: String) -> int:
@@ -116,6 +125,14 @@ func radius(name: String) -> int:
 
 ## Memoized styleboxes.
 func style(name: String) -> StyleBoxFlat:
+	if _style_cache.has(name):
+		return _style_cache[name]
+	var sb := _make_style(name)
+	_style_cache[name] = sb
+	return sb
+
+
+func _make_style(name: String) -> StyleBoxFlat:
 	match name:
 		"panel":
 			return _box("panel", "border", 1, 0)
@@ -170,8 +187,8 @@ func _bar(bg_name: String, border_name: String, side: String) -> StyleBoxFlat:
 		"border_right": sb.border_width_right = 1
 	sb.content_margin_left = space("m")
 	sb.content_margin_right = space("m")
-	sb.content_margin_top = 2
-	sb.content_margin_bottom = 2
+	sb.content_margin_top = space("xxs")
+	sb.content_margin_bottom = space("xxs")
 	return sb
 
 
@@ -183,8 +200,8 @@ func _button(bg_name: String, border_name: String) -> StyleBoxFlat:
 	sb.set_corner_radius_all(radius("sm"))
 	sb.content_margin_left = space("s")
 	sb.content_margin_right = space("s")
-	sb.content_margin_top = 4
-	sb.content_margin_bottom = 4
+	sb.content_margin_top = space("xs")
+	sb.content_margin_bottom = space("xs")
 	return sb
 
 

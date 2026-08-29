@@ -40,4 +40,9 @@ func _apply() -> void:
 		Tone.WARNING: cname = "warning"
 		Tone.ERROR: cname = "error"
 	add_theme_color_override("font_color", UiTheme.color(cname))
-	autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if kind == Kind.BODY else TextServer.AUTOWRAP_OFF
+	if kind == Kind.BODY:
+		size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	else:
+		autowrap_mode = TextServer.AUTOWRAP_OFF
+		text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS

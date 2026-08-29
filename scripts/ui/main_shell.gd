@@ -1,6 +1,7 @@
 # main_shell.gd
-# IDE-style shell (VS Code for robots): activity bar + side bar + editor tabs +
-# bottom terminal panel + status bar, with a command palette (Ctrl+Shift+P).
+# IDE shell: robot editor (top) + docked terminal (bottom), activity rail +
+# contextual side bar + status bar. Route-driven via NavigationModel — one source
+# of truth for "which view is active".
 
 class_name MainShell
 extends Control
@@ -24,37 +25,29 @@ enum MenuId {
 	HELP_ABOUT,
 }
 
-const ACTIVITY_SPECS := [
-	["viewer", "▦", "Viewer", "design"],
-	["robots", "◧", "Robots", "design"],
-	["vcs", "⇅", "Version Control", "design"],
-	["marketplace", "◫", "Marketplace", "publish"],
-	["wallet", "◈", "Wallet", "publish"],
-	["coordination", "◍", "Coordination", "publish"],
-	["raas", "▸", "RaaS", "operate"],
-	["extensions", "◇", "Extensions", "utility"],
-]
-
 var _workspace: CompositeWorkspace
-var _panels: Dictionary = {}          # id -> Control (editor panel instances)
-var _tabs: Array = []                 # [{id, title, panel}]
-var _activity_buttons: Dictionary = {}  # id -> Button
+var _navigation: NavigationModel
+var _panels: Dictionary = {}          # id -> Control (cached editor panels)
+var _factories: Dictionary = {}       # id -> Callable -> Control
+var _sidebar_cache: Dictionary = {}   # id -> Control (cached side-bar content)
+var _open_tabs: Array = []            # route ids, in tab order
 
+var _activity_bar: UiActivityBar
 var _side_bar: PanelContainer
 var _side_title: Label
-var _side_content: Control
+var _side_content: VBoxContainer
+var _side_current: Control = null
 var _tab_bar: TabBar
-var _editor_content: Control
-var _panel_host: PanelContainer
-var _terminal_output: TextEdit
-var _terminal_input: LineEdit
-var _status_left: HBoxContainer
-var _status_right: HBoxContainer
-var _status_wallet: Label
-var _status_node: Label
-var _status_ros2: Label
-var _status_mode: Label
-var _fps_label: Label
+var _editor_host: Control
+var _workbench: VSplitContainer
+var _terminal: UiConsole
+var _status_mode: UiStatusItem
+var _status_wallet: UiStatusItem
+var _status_node: UiStatusItem
+var _status_ros2: UiStatusItem
+var _fps_label: UiLabel
+var _breadcrumb_label: UiLabel
+var _back_btn: UiButton
 
 var _file_dialog: FileDialog
 var _recent_menu: PopupMenu
@@ -65,60 +58,127 @@ var _command_palette: CommandPalette
 
 var _last_dir: String = ""
 var _recent_robots: Array = []
-var _current_activity: String = "viewer"
 var _overlay: Control = null
 var _ros2_connected: bool = false
 
 
 func _ready() -> void:
+	get_window().min_size = Vector2i(960, 600)
 	_load_persisted()
+	_navigation = NavigationModel.new()
+	_navigation.route_changed.connect(_on_route_changed)
+	_register_routes()
 	_setup_ui()
-	_setup_panels()
 	_register_commands()
 	_setup_ros2()
-	_select_activity("viewer")
+	_navigate("editor")
 	_check_node_async()
 
 
-func _setup_ros2() -> void:
-	var ros2 = get_node_or_null("/root/GodotROS2")
-	if ros2 and ros2.has_signal("initialization_completed"):
-		ros2.initialization_completed.connect(func(success: bool) -> void: _ros2_connected = success)
+# ---------------------------------------------------------------- routes
+
+func _register_routes() -> void:
+	_reg_route("editor", "Editor", "▦", "design", 0, "view.open", true, _make_workspace, _make_objective_sidebar)
+	_reg_route("wallet", "Wallet", "◈", "publish", 0, "wallet.open", true, _make_wallet)
+	_reg_route("robots", "Robots", "◧", "design", 1, "robots.open", false, _make_gallery)
+	_reg_route("marketplace", "Marketplace", "◫", "publish", 1, "marketplace.open", false, _make_marketplace)
+	_reg_route("coordination", "Coordination", "◍", "publish", 2, "coordination.open", false, _make_coordination)
+	_reg_route("vcs", "Version Control", "⇅", "utility", 0, "vcs.open", false, _make_vcs)
+	_reg_route("raas", "RaaS", "▸", "operate", 0, "raas.open", false, _make_raas)
+	_reg_route("ai", "AI Assistant", "◈", "utility", 1, "ai.open", false, _make_ai)
+	_reg_route("extensions", "Extensions", "◇", "utility", 2, "extensions.open", false, _make_extensions)
 
 
-func _check_node_async() -> void:
-	var rchain = get_node_or_null("/root/RChainService")
-	if rchain and rchain.node and rchain.has_method("run_async"):
-		rchain.run_async(func() -> Variant: return rchain.node.get_status(), _on_node_checked)
+func _reg_route(id: String, title: String, glyph: String, section: String, order: int, command_id: String, in_activity_bar: bool, factory: Callable, sidebar_factory: Callable = Callable()) -> void:
+	_factories[id] = factory
+	var r := Route.make(id, title, glyph, section, order, command_id, func() -> Control: return _ensure_panel(id), in_activity_bar)
+	r.sidebar_factory = sidebar_factory
+	_navigation.register(r)
 
 
-func _on_node_checked(r) -> void:
-	if not _status_node:
-		return
-	if r != null and r.is_ok():
-		_status_node.text = "node: ✓"
-	else:
-		_status_node.text = "node: offline"
+func _make_workspace() -> Control:
+	_workspace = CompositeWorkspace.new()
+	# Connect before the node enters the tree so the demo robot's robot_loaded
+	# (emitted during _ready) is not missed.
+	_workspace.publish_requested.connect(_on_publish_requested)
+	_workspace.robot_loaded.connect(_on_robot_loaded_for_scenario)
+	return _workspace
 
 
-func _load_persisted() -> void:
-	var f := FileAccess.open("user://last_robot_dir.txt", FileAccess.READ)
-	if f:
-		_last_dir = f.get_as_text().strip_edges()
-	var rf := FileAccess.open("user://recent_robots.json", FileAccess.READ)
-	if rf:
-		var parsed = JSON.parse_string(rf.get_as_text())
-		if parsed is Array:
-			_recent_robots = parsed
+func _make_wallet() -> Control:
+	return WalletPanel.new()
 
 
-func _save_persisted() -> void:
-	var f := FileAccess.open("user://last_robot_dir.txt", FileAccess.WRITE)
-	if f:
-		f.store_string(_last_dir)
-	var rf := FileAccess.open("user://recent_robots.json", FileAccess.WRITE)
-	if rf:
-		rf.store_string(JSON.stringify(_recent_robots))
+func _make_gallery() -> Control:
+	var gallery = RobotGallery.new()
+	if _workspace:
+		gallery.set_workspace(_workspace)
+	gallery.import_requested.connect(_open_file_dialog)
+	gallery.robot_loaded.connect(func() -> void: _navigate("editor"))
+	return gallery
+
+
+func _make_marketplace() -> Control:
+	var marketplace = MarketplacePanel.new()
+	marketplace.closed.connect(func() -> void: _navigate("editor"))
+	return marketplace
+
+
+func _make_coordination() -> Control:
+	return CoordinationPanel.new()
+
+
+func _make_vcs() -> Control:
+	return VcsPanel.new()
+
+
+func _make_raas() -> Control:
+	var raas = RaasLauncher.new()
+	raas.demo_requested.connect(_on_raas_demo_requested)
+	return raas
+
+
+func _make_ai() -> Control:
+	var ai = AiAssistantPanel.new()
+	if _workspace:
+		ai.set_viewer(_workspace.get_robot_viewer())
+	return ai
+
+
+func _make_extensions() -> Control:
+	return _build_extensions_panel()
+
+
+func _make_objective_sidebar() -> Control:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", UiTheme.space("s"))
+	v.add_child(UiBrief.new().configure())
+	return v
+
+
+func _ensure_panel(id: String) -> Control:
+	if _panels.has(id) and is_instance_valid(_panels[id]):
+		return _panels[id]
+	var factory: Callable = _factories.get(id)
+	if not factory.is_valid():
+		push_error("MainShell: no factory for route '%s'" % id)
+		return null
+	var panel: Control = factory.call()
+	if panel == null:
+		return null
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_editor_host.add_child(panel)
+	panel.visible = false
+	_panels[id] = panel
+	if id == "editor":
+		_wire_viewer()
+	return panel
+
+
+func _wire_viewer() -> void:
+	var viewer = _workspace.get_robot_viewer()
+	if viewer and not viewer.context_menu_requested.is_connected(_on_context_menu_requested):
+		viewer.context_menu_requested.connect(_on_context_menu_requested)
 
 
 # ---------------------------------------------------------------- UI build
@@ -136,29 +196,14 @@ func _setup_ui() -> void:
 
 	_setup_menu_bar(root)
 
-	root.add_child(_build_spine())
-
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 0)
 	root.add_child(body)
 
 	body.add_child(_build_activity_bar())
-
-	var center := VBoxContainer.new()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center.add_theme_constant_override("separation", 0)
-	body.add_child(center)
-
-	var mid := HBoxContainer.new()
-	mid.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	mid.add_theme_constant_override("separation", 0)
-	center.add_child(mid)
-
-	mid.add_child(_build_side_bar())
-	mid.add_child(_build_editor_group())
-
-	center.add_child(_build_panel_host())
+	body.add_child(_build_side_bar())
+	body.add_child(_build_center())
 
 	root.add_child(_build_status_bar())
 
@@ -166,54 +211,16 @@ func _setup_ui() -> void:
 	_setup_context_menu()
 
 
-func _build_spine() -> Control:
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 0)
-	var brief := UiBrief.new().configure()
-	brief.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(brief)
-	v.add_child(UiStageRail.new().setup())
-	return v
-
-
 func _build_activity_bar() -> Control:
-	var bar := PanelContainer.new()
-	bar.custom_minimum_size.x = 48
-	bar.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = UiTheme.color("panel")
-	sb.border_width_right = 1
-	sb.border_color = UiTheme.color("border")
-	bar.add_theme_stylebox_override("panel", sb)
-
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", UiTheme.space("xs"))
-	v.alignment = BoxContainer.ALIGNMENT_BEGIN
-	bar.add_child(v)
-
-	var last_mode := ""
-	for spec in ACTIVITY_SPECS:
-		if last_mode != "" and spec[3] != last_mode:
-			var sep := ColorRect.new()
-			sep.custom_minimum_size = Vector2(32, 1)
-			sep.color = UiTheme.color("border")
-			v.add_child(sep)
-		last_mode = spec[3]
-		var btn := Button.new()
-		btn.text = spec[1]
-		btn.tooltip_text = "%s — %s" % [spec[2], spec[3]]
-		btn.flat = true
-		btn.custom_minimum_size = Vector2(40, 40)
-		btn.add_theme_font_size_override("font_size", 18)
-		btn.pressed.connect(_select_activity.bind(spec[0]))
-		v.add_child(btn)
-		_activity_buttons[spec[0]] = btn
-
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	v.add_child(spacer)
-
-	return bar
+	_activity_bar = UiActivityBar.new()
+	_activity_bar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var entries: Array = []
+	for r in _navigation.ordered_routes():
+		if r.in_activity_bar:
+			entries.append({"id": r.id, "glyph": r.glyph, "title": r.title})
+	_activity_bar.setup(entries)
+	_activity_bar.activity_selected.connect(_navigate)
+	return _activity_bar
 
 
 func _build_side_bar() -> Control:
@@ -233,7 +240,6 @@ func _build_side_bar() -> Control:
 
 	var tb := UiTitleBar.new().setup("")
 	_side_title = tb.label()
-	_side_title.add_theme_color_override("font_color", UiTheme.color("text"))
 	v.add_child(tb)
 
 	var margin := MarginContainer.new()
@@ -241,111 +247,77 @@ func _build_side_bar() -> Control:
 	margin.add_theme_constant_override("margin_right", UiTheme.space("m"))
 	margin.add_theme_constant_override("margin_top", UiTheme.space("m"))
 	margin.add_theme_constant_override("margin_bottom", UiTheme.space("m"))
+	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(margin)
-	_side_content = Control.new()
+
+	_side_content = VBoxContainer.new()
+	_side_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_side_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(_side_content)
 
 	return _side_bar
 
 
-func _build_editor_group() -> Control:
-	var v := VBoxContainer.new()
-	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_theme_constant_override("separation", 0)
+func _build_center() -> Control:
+	var center := VBoxContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	center.add_theme_constant_override("separation", 0)
 
 	_tab_bar = TabBar.new()
 	_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_NEVER
 	_tab_bar.tab_changed.connect(_on_tab_changed)
-	_tab_bar.tab_close_pressed.connect(_on_tab_close)
-	v.add_child(_tab_bar)
+	center.add_child(_tab_bar)
 
-	_editor_content = Control.new()
-	_editor_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_editor_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	v.add_child(_editor_content)
+	_workbench = VSplitContainer.new()
+	_workbench.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_workbench.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var h := get_viewport_rect().size.y
+	_workbench.split_offset = int(h * 0.68) if h > 0 else 480
+	center.add_child(_workbench)
 
-	return v
+	_editor_host = Control.new()
+	_editor_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_editor_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_workbench.add_child(_editor_host)
 
+	_terminal = UiConsole.new().configure("Terminal")
+	_terminal.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_terminal.command_submitted.connect(_on_terminal_submit)
+	_workbench.add_child(_terminal)
 
-func _build_panel_host() -> Control:
-	var win := UiPanel.new().setup("Terminal")
-	_panel_host = win
-	_panel_host.custom_minimum_size.y = 140
-	_panel_host.visible = false
-
-	var v: VBoxContainer = win.body()
-
-	var close := Button.new()
-	close.text = "×"
-	close.flat = true
-	close.pressed.connect(func() -> void: _panel_host.visible = false)
-	win.title_actions().add_child(close)
-
-	_terminal_output = TextEdit.new()
-	_terminal_output.editable = false
-	_terminal_output.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	if UiTheme.font("mono"):
-		_terminal_output.add_theme_font_override("font", UiTheme.font("mono"))
-	v.add_child(_terminal_output)
-
-	_terminal_input = LineEdit.new()
-	_terminal_input.placeholder_text = "> command"
-	if UiTheme.font("mono"):
-		_terminal_input.add_theme_font_override("font", UiTheme.font("mono"))
-	_terminal_input.text_submitted.connect(_on_terminal_submit)
-	v.add_child(_terminal_input)
-
-	return _panel_host
+	return center
 
 
 func _build_status_bar() -> Control:
-	var bar := PanelContainer.new()
-	bar.custom_minimum_size.y = 28
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = UiTheme.color("panel")
-	sb.border_width_top = 1
-	sb.border_color = UiTheme.color("border")
-	sb.content_margin_left = UiTheme.space("m")
-	sb.content_margin_right = UiTheme.space("m")
-	bar.add_theme_stylebox_override("panel", sb)
+	var bar := UiStatusBar.new().setup()
+	var left := bar.left()
+	var right := bar.right()
 
-	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", UiTheme.space("m"))
-	bar.add_child(h)
+	_back_btn = UiButton.new().setup("◀", UiButton.Variant.GHOST)
+	_back_btn.tooltip_text = "Back"
+	_back_btn.pressed.connect(_on_back)
+	left.add_child(_back_btn)
 
-	_status_left = HBoxContainer.new()
-	_status_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_status_left.add_theme_constant_override("separation", UiTheme.space("m"))
-	h.add_child(_status_left)
+	_breadcrumb_label = UiLabel.new().setup("", UiLabel.Kind.SMALL, UiLabel.Tone.MUTED)
+	left.add_child(_breadcrumb_label)
 
-	_status_wallet = _status_item("wallet")
-	_status_left.add_child(_status_wallet)
-	_status_node = _status_item("node")
-	_status_left.add_child(_status_node)
-	_status_ros2 = _status_item("ros2")
-	_status_left.add_child(_status_ros2)
-	_status_mode = _status_item("mode")
-	_status_left.add_child(_status_mode)
+	_status_mode = UiStatusItem.new().setup("mode")
+	left.add_child(_status_mode)
+	_status_wallet = UiStatusItem.new().setup("wallet")
+	left.add_child(_status_wallet)
+	_status_node = UiStatusItem.new().setup("node")
+	left.add_child(_status_node)
+	_status_ros2 = UiStatusItem.new().setup("ros2")
+	left.add_child(_status_ros2)
 
-	_status_right = HBoxContainer.new()
-	h.add_child(_status_right)
-	var term_btn := Button.new()
-	term_btn.text = "Terminal"
-	term_btn.flat = true
+	var term_btn := UiButton.new().setup("Terminal", UiButton.Variant.GHOST)
 	term_btn.pressed.connect(_toggle_terminal)
-	_status_right.add_child(term_btn)
-	_fps_label = UiLabel.new().setup("0 fps", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
-	_status_right.add_child(_fps_label)
+	right.add_child(term_btn)
+	_fps_label = UiLabel.new().setup("0 fps", UiLabel.Kind.SMALL, UiLabel.Tone.MUTED)
+	right.add_child(_fps_label)
 
 	return bar
-
-
-func _status_item(name: String) -> Label:
-	var label := UiLabel.new().setup("%s: —" % name, UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
-	label.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
-	label.add_theme_color_override("font_color", UiTheme.color("text"))
-	return label
 
 
 func _setup_menu_bar(root: VBoxContainer) -> void:
@@ -423,15 +395,6 @@ func _setup_file_dialog() -> void:
 	add_child(_file_dialog)
 
 
-func _default_open_dir() -> String:
-	if not _last_dir.is_empty() and DirAccess.dir_exists_absolute(_last_dir):
-		return _last_dir
-	var home := OS.get_environment("HOME")
-	if not home.is_empty() and DirAccess.dir_exists_absolute(home):
-		return home
-	return OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS)
-
-
 func _setup_context_menu() -> void:
 	_context_menu = PopupMenu.new()
 	_context_menu.add_item("Load Robot…", MenuId.FILE_OPEN)
@@ -448,69 +411,78 @@ func _setup_context_menu() -> void:
 	add_child(_context_menu)
 
 
+# ---------------------------------------------------------------- navigation
+
+func _navigate(id: String) -> void:
+	_navigation.navigate(id)
+
+
+func _on_back() -> void:
+	_navigation.back()
+
+
+func _on_route_changed(_from: String, to: String) -> void:
+	_close_overlay()
+	var route := _navigation.get_route(to)
+	if route == null:
+		return
+	_ensure_panel(to)
+	if not _open_tabs.has(to):
+		_open_tabs.append(to)
+	_sync_tabs()
+	_show_panel(to)
+	_activity_bar.set_active(to)
+	_update_side_bar(route)
+	_update_breadcrumb()
+	_update_status()
+
+
+func _show_panel(id: String) -> void:
+	for key in _panels:
+		_panels[key].visible = (key == id)
+
+
+func _sync_tabs() -> void:
+	_tab_bar.set_block_signals(true)
+	_tab_bar.clear_tabs()
+	for id in _open_tabs:
+		var route := _navigation.get_route(id)
+		_tab_bar.add_tab(route.title if route else id)
+	var idx := _open_tabs.find(_navigation.current_id)
+	if idx >= 0:
+		_tab_bar.current_tab = idx
+	_tab_bar.set_block_signals(false)
+
+
+func _on_tab_changed(index: int) -> void:
+	if index < 0 or index >= _open_tabs.size():
+		return
+	_navigate(_open_tabs[index])
+
+
+func _update_side_bar(route: Route) -> void:
+	if _side_current and _side_current.get_parent() == _side_content:
+		_side_content.remove_child(_side_current)
+	_side_current = null
+	if not route.sidebar_factory.is_valid():
+		_side_bar.visible = false
+		return
+	if not _sidebar_cache.has(route.id):
+		_sidebar_cache[route.id] = route.sidebar_factory.call()
+	_side_current = _sidebar_cache[route.id]
+	_side_content.add_child(_side_current)
+	_side_bar.visible = true
+	_side_title.text = route.title
+
+
+func _update_breadcrumb() -> void:
+	var parts: Array = []
+	for r in _navigation.breadcrumb():
+		parts.append(r.title)
+	_breadcrumb_label.text = " ▸ ".join(parts)
+
+
 # ---------------------------------------------------------------- panels
-
-func _setup_panels() -> void:
-	_workspace = CompositeWorkspace.new()
-	_add_panel("viewer", "Viewer", _workspace)
-	_workspace.publish_requested.connect(_on_publish_requested)
-	var robot_viewer = _workspace.get_robot_viewer()
-	if robot_viewer:
-		robot_viewer.context_menu_requested.connect(_on_context_menu_requested)
-		robot_viewer.robot_loaded.connect(_on_robot_loaded_for_scenario)
-
-	var ai = AiAssistantPanel.new()
-	_add_panel("ai", "AI Assistant", ai)
-	if robot_viewer:
-		ai.set_viewer(robot_viewer)
-
-	var marketplace = MarketplacePanel.new()
-	_add_panel("marketplace", "Marketplace", marketplace)
-	marketplace.closed.connect(func() -> void: _select_activity("viewer"))
-
-	_add_panel("wallet", "Wallet", WalletPanel.new())
-	_add_panel("coordination", "Coordination", CoordinationPanel.new())
-
-	var gallery = RobotGallery.new()
-	gallery.set_workspace(_workspace)
-	gallery.import_requested.connect(_open_file_dialog)
-	gallery.robot_loaded.connect(func() -> void: _select_activity("viewer"))
-	_add_panel("robots", "Robots", gallery)
-
-	_add_panel("vcs", "Version Control", VcsPanel.new())
-
-	var raas = RaasLauncher.new()
-	raas.demo_requested.connect(_on_raas_demo_requested)
-	_add_panel("raas", "RaaS", raas)
-
-	_add_panel("extensions", "Extensions", _build_extensions_panel())
-
-
-func _on_robot_loaded_for_scenario(_node: Node3D) -> void:
-	var svc = get_node_or_null("/root/ScenarioService")
-	if svc:
-		svc.context["robot_loaded"] = true
-		svc.reevaluate()
-
-
-func _on_publish_requested(robot_name: String) -> void:
-	if _overlay and is_instance_valid(_overlay):
-		_overlay.queue_free()
-	var panel = PublishPanel.show_for_robot(robot_name)
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_editor_content.add_child(panel)
-	_overlay = panel
-	panel.tree_exited.connect(func() -> void: _overlay = null)
-
-
-func _add_panel(id: String, title: String, panel: Control) -> void:
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_editor_content.add_child(panel)
-	panel.visible = false
-	_panels[id] = panel
-	_tabs.append({"id": id, "title": title, "panel": panel})
-	_tab_bar.add_tab(title)
-
 
 func _build_extensions_panel() -> Control:
 	var win := UiPanel.new().setup("Extensions")
@@ -534,111 +506,29 @@ func _build_extensions_panel() -> Control:
 func _extensions_row(mod: Dictionary) -> Control:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", UiTheme.space("s"))
-	var name := Label.new()
-	name.text = str(mod.get("name", mod.get("id", "?")))
+	var name := UiLabel.new().setup(str(mod.get("name", mod.get("id", "?"))), UiLabel.Kind.BODY, UiLabel.Tone.PRIMARY)
 	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name.add_theme_color_override("font_color", UiTheme.color("text"))
 	row.add_child(name)
-	var avail := Label.new()
-	avail.text = "●" if mod.get("available", false) else "○"
-	avail.add_theme_color_override("font_color", UiTheme.color("success") if mod.get("available", false) else UiTheme.color("text_faint"))
+	var avail := UiLabel.new().setup("●" if mod.get("available", false) else "○", UiLabel.Kind.SMALL, UiLabel.Tone.SUCCESS if mod.get("available", false) else UiLabel.Tone.FAINT)
 	row.add_child(avail)
 	return row
-
-
-# ---------------------------------------------------------------- navigation
-
-func _select_activity(id: String) -> void:
-	if _overlay and is_instance_valid(_overlay):
-		_overlay.queue_free()
-		_overlay = null
-	_current_activity = id
-	for key in _activity_buttons:
-		_activity_buttons[key].add_theme_color_override("font_color", UiTheme.color("accent") if key == id else UiTheme.color("text"))
-	_show_side_for(id)
-	_focus_tab(id)
-
-
-func _on_raas_demo_requested(scene_path: String) -> void:
-	if _overlay and is_instance_valid(_overlay):
-		_overlay.queue_free()
-	var demo = load(scene_path).instantiate()
-	demo.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_editor_content.add_child(demo)
-	_overlay = demo
-	if demo.has_signal("closed"):
-		demo.closed.connect(func() -> void: _overlay = null)
-
-
-func _show_side_for(id: String) -> void:
-	match id:
-		"viewer":
-			_side_bar.visible = true
-			_side_title.text = "Workspace"
-			_clear_side()
-			var info := UiLabel.new().setup("No robot loaded", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
-			var viewer = _workspace.get_robot_viewer()
-			if viewer and viewer.get_robot_root():
-				info.text = "%s — %d joints" % [viewer.get_robot_root().name, viewer.get_joint_count()]
-			_side_content.add_child(info)
-		"extensions":
-			_side_bar.visible = true
-			_side_title.text = "Extensions"
-			_clear_side()
-			_side_content.add_child(_build_extensions_panel())
-		_:
-			_side_bar.visible = false
-
-
-func _clear_side() -> void:
-	for child in _side_content.get_children():
-		child.queue_free()
-
-
-func _focus_tab(id: String) -> void:
-	for i in range(_tabs.size()):
-		if _tabs[i]["id"] == id:
-			_tab_bar.current_tab = i
-			_apply_tab(i)
-			return
-
-
-func _on_tab_changed(index: int) -> void:
-	_apply_tab(index)
-
-
-func _apply_tab(index: int) -> void:
-	if index < 0 or index >= _tabs.size():
-		return
-	for i in range(_tabs.size()):
-		_tabs[i]["panel"].visible = (i == index)
-
-
-func _on_tab_close(index: int) -> void:
-	if index < 0 or index >= _tabs.size():
-		return
-	var id: String = _tabs[index]["id"]
-	if id in ["viewer", "ai", "robots", "vcs", "marketplace", "wallet", "coordination", "raas", "extensions"]:
-		return  # primary destinations stay open
-	_tab_bar.remove_tab(index)
-	_tabs.remove_at(index)
 
 
 # ---------------------------------------------------------------- commands
 
 func _register_commands() -> void:
-	_reg("view.open", "Viewer: Open Workspace", "View", func() -> void: _select_activity("viewer"))
-	_reg("robots.open", "Robots: Open Library", "View", func() -> void: _select_activity("robots"))
-	_reg("vcs.open", "Version Control: Open", "View", func() -> void: _select_activity("vcs"))
-	_reg("marketplace.open", "Marketplace: Open", "View", func() -> void: _select_activity("marketplace"))
-	_reg("wallet.open", "Wallet: Open", "View", func() -> void: _select_activity("wallet"))
-	_reg("coordination.open", "Coordination: Open", "View", func() -> void: _select_activity("coordination"))
-	_reg("raas.open", "RaaS: Open Demos", "View", func() -> void: _select_activity("raas"))
-	_reg("extensions.open", "Extensions: List Modules", "View", func() -> void: _select_activity("extensions"))
-	_reg("ai.open", "AI Assistant: Open", "View", func() -> void: _focus_tab("ai"))
+	_reg("view.open", "Editor: Open", "View", func() -> void: _navigate("editor"))
+	_reg("wallet.open", "Wallet: Open", "View", func() -> void: _navigate("wallet"))
+	_reg("robots.open", "Robots: Open Library", "View", func() -> void: _navigate("robots"))
+	_reg("marketplace.open", "Marketplace: Open", "View", func() -> void: _navigate("marketplace"))
+	_reg("coordination.open", "Coordination: Open", "View", func() -> void: _navigate("coordination"))
+	_reg("vcs.open", "Version Control: Open", "View", func() -> void: _navigate("vcs"))
+	_reg("raas.open", "RaaS: Open Demos", "View", func() -> void: _navigate("raas"))
+	_reg("ai.open", "AI Assistant: Open", "View", func() -> void: _navigate("ai"))
+	_reg("extensions.open", "Extensions: List Modules", "View", func() -> void: _navigate("extensions"))
 
 	_reg("robot.open", "Open Robot…", "File", func() -> void: _open_file_dialog())
-	_reg("view.reset", "View: Reset", "View", func() -> void: _workspace.get_robot_viewer().reset_view())
+	_reg("view.reset", "View: Reset", "View", func() -> void: var v := _viewer(); if v: v.reset_view())
 	_reg("view.wireframe", "View: Toggle Wireframe", "View", _toggle_wireframe)
 	_reg("view.grid", "View: Toggle Grid", "View", _toggle_grid)
 	_reg("view.domain", "View: Toggle Domain Randomization", "View", _toggle_domain)
@@ -671,16 +561,10 @@ func _reg(id: String, label: String, category: String, handler: Callable) -> voi
 	CommandRegistry.register({"id": id, "label": label, "category": category, "description": label, "keywords": label, "handler": handler})
 
 
-func _open_file_dialog() -> void:
-	_file_dialog.current_dir = _default_open_dir()
-	_file_dialog.popup_centered()
-
-
-func _open_palette() -> void:
-	if _command_palette and is_instance_valid(_command_palette):
-		return
-	_command_palette = CommandPalette.new()
-	add_child(_command_palette)
+func _viewer() -> RobotViewerController:
+	if _workspace:
+		return _workspace.get_robot_viewer()
+	return null
 
 
 # ---------------------------------------------------------------- menu dispatch
@@ -692,21 +576,27 @@ func _on_menu_pressed(id: int) -> void:
 		MenuId.FILE_EXIT:
 			get_tree().quit()
 		MenuId.VIEW_RESET:
-			_workspace.get_robot_viewer().reset_view()
+			var v := _viewer()
+			if v: v.reset_view()
 		MenuId.VIEW_WIREFRAME:
-			_workspace.get_robot_viewer().set_show_debug(_toggle(_view_menu, MenuId.VIEW_WIREFRAME))
+			var on := _toggle(_view_menu, MenuId.VIEW_WIREFRAME)
+			var vw := _viewer()
+			if vw: vw.set_show_debug(on)
 		MenuId.VIEW_GRID:
-			_workspace.get_robot_viewer().set_grid_visible(_toggle(_view_menu, MenuId.VIEW_GRID))
+			var on := _toggle(_view_menu, MenuId.VIEW_GRID)
+			var vg := _viewer()
+			if vg: vg.set_grid_visible(on)
 		MenuId.VIEW_DOMAIN:
-			_workspace.set_domain_randomization(_toggle(_view_menu, MenuId.VIEW_DOMAIN))
+			if _workspace:
+				_workspace.set_domain_randomization(_toggle(_view_menu, MenuId.VIEW_DOMAIN))
 		MenuId.VIEW_TERMINAL:
 			_toggle_terminal()
 		MenuId.SENSOR_LIDAR:
-			_workspace.set_lidar_visible(_toggle(_sensors_menu, MenuId.SENSOR_LIDAR))
+			_set_lidar(_toggle(_sensors_menu, MenuId.SENSOR_LIDAR))
 		MenuId.SENSOR_CAMERA:
-			_workspace.set_camera_visible(_toggle(_sensors_menu, MenuId.SENSOR_CAMERA))
+			_set_camera(_toggle(_sensors_menu, MenuId.SENSOR_CAMERA))
 		MenuId.SENSOR_IMU:
-			_workspace.set_imu_visible(_toggle(_sensors_menu, MenuId.SENSOR_IMU))
+			_set_imu(_toggle(_sensors_menu, MenuId.SENSOR_IMU))
 		MenuId.TOOL_IK:
 			_open_selector("res://scenes/ik_selector.tscn")
 		MenuId.TOOL_PHYSICS:
@@ -736,31 +626,54 @@ func _toggle(menu: PopupMenu, id: int) -> bool:
 
 
 func _toggle_wireframe() -> void:
-	var v := _workspace.get_robot_viewer()
+	var v := _viewer()
 	if v:
 		v.set_show_debug(not v.is_show_debug())
 
 func _toggle_grid() -> void:
-	var v := _workspace.get_robot_viewer()
+	var v := _viewer()
 	if v:
 		v.set_grid_visible(not v.is_grid_visible())
 
 func _toggle_domain() -> void:
-	_workspace.set_domain_randomization(not _workspace.is_domain_randomization_enabled())
+	if _workspace:
+		_workspace.set_domain_randomization(not _workspace.is_domain_randomization_enabled())
 
 func _toggle_lidar() -> void:
-	_workspace.set_lidar_visible(not _workspace.is_lidar_visible())
+	if _workspace:
+		_set_lidar(not _workspace.is_lidar_visible())
 
 func _toggle_camera() -> void:
-	_workspace.set_camera_visible(not _workspace.is_camera_visible())
+	if _workspace:
+		_set_camera(not _workspace.is_camera_visible())
 
 func _toggle_imu() -> void:
-	_workspace.set_imu_visible(not _workspace.is_imu_visible())
+	if _workspace:
+		_set_imu(not _workspace.is_imu_visible())
+
+func _set_lidar(visible: bool) -> void:
+	if not _workspace:
+		return
+	_workspace.set_lidar_visible(visible)
+	_mark_scenario("lidar_active", visible)
+
+func _set_camera(visible: bool) -> void:
+	if not _workspace:
+		return
+	_workspace.set_camera_visible(visible)
+	_mark_scenario("camera_active", visible)
+
+func _set_imu(visible: bool) -> void:
+	if not _workspace:
+		return
+	_workspace.set_imu_visible(visible)
+	_mark_scenario("imu_active", visible)
 
 func _toggle_terminal() -> void:
-	_panel_host.visible = not _panel_host.visible
-	if _panel_host.visible:
-		_terminal_input.grab_focus()
+	_terminal.visible = not _terminal.visible
+	_workbench.dragger_visibility = SplitContainer.DRAGGER_VISIBLE if _terminal.visible else SplitContainer.DRAGGER_HIDDEN
+	if _terminal.visible:
+		_terminal.focus_input()
 
 
 # ---------------------------------------------------------------- file / demos
@@ -778,7 +691,7 @@ func _on_file_selected(path: String) -> void:
 			_workspace.load_mjcf(path)
 		else:
 			_workspace.load_urdf(path)
-		_select_activity("viewer")
+		_navigate("editor")
 	else:
 		Toast.show_toast(self, "Unsupported file type", Toast.Level.WARNING)
 
@@ -799,22 +712,29 @@ func _on_recent_index(index: int) -> void:
 		_on_file_selected(_recent_robots[index])
 
 
+func _open_file_dialog() -> void:
+	_file_dialog.current_dir = _default_open_dir()
+	_file_dialog.popup_centered()
+
+
 func _open_demo(scene_path: String, title: String = "") -> void:
 	if title.is_empty():
 		title = scene_path.get_file().get_basename().capitalize().replace("_", " ")
-	if _overlay and is_instance_valid(_overlay):
-		_overlay.queue_free()
+	_close_overlay()
 	var host = DemoHost.new()
 	host.setup(scene_path, title)
 	host.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_editor_content.add_child(host)
+	_editor_host.add_child(host)
 	_overlay = host
 	host.closed.connect(func() -> void: _overlay = null)
 
 
 func _open_selector(scene_path: String) -> void:
-	var selector = load(scene_path).instantiate()
-	add_child(selector)
+	var res := load(scene_path)
+	if res == null:
+		Toast.show_toast(self, "Missing scene: " + scene_path, Toast.Level.ERROR)
+		return
+	add_child(res.instantiate())
 
 
 func _connect_ros2() -> void:
@@ -826,56 +746,72 @@ func _connect_ros2() -> void:
 		Toast.show_toast(self, "ROS2 bridge not available", Toast.Level.WARNING)
 
 
+# ---------------------------------------------------------------- overlays
+
+func _close_overlay() -> void:
+	if _overlay and is_instance_valid(_overlay):
+		_overlay.queue_free()
+		_overlay = null
+
+
+func _on_publish_requested(robot_name: String) -> void:
+	_close_overlay()
+	var panel = PublishPanel.show_for_robot(robot_name)
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_editor_host.add_child(panel)
+	_overlay = panel
+	panel.tree_exited.connect(func() -> void: _overlay = null)
+
+
+func _on_raas_demo_requested(scene_path: String) -> void:
+	_close_overlay()
+	var res := load(scene_path)
+	if res == null:
+		Toast.show_toast(self, "Missing scene: " + scene_path, Toast.Level.ERROR)
+		return
+	var demo = res.instantiate()
+	demo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_editor_host.add_child(demo)
+	_overlay = demo
+	if demo.has_signal("closed"):
+		demo.closed.connect(func() -> void: _overlay = null)
+
+
 # ---------------------------------------------------------------- terminal
 
 func _on_terminal_submit(text: String) -> void:
-	_terminal_input.text = ""
 	var line := text.strip_edges()
 	if line.is_empty():
 		return
-	_echo("> " + line)
+	_terminal.echo("> " + line)
 	var cmd := CommandRegistry.find(line)
 	if cmd.is_empty():
-		_echo("  unknown command: " + line)
+		_terminal.echo("  unknown command: " + line)
 		return
 	CommandRegistry.run(cmd.get("id", ""))
-	_echo("  ok: " + str(cmd.get("label", "")))
-
-
-func _echo(msg: String) -> void:
-	if not _terminal_output:
-		return
-	_terminal_output.text += msg + "\n"
-	var sb := _terminal_output.get_v_scroll_bar()
-	if sb:
-		sb.value = sb.max_value
+	_terminal.echo("  ok: " + str(cmd.get("label", "")))
 
 
 func _terminal_clear() -> void:
-	if _terminal_output:
-		_terminal_output.text = ""
+	if _terminal:
+		_terminal.clear()
 
 
 func _terminal_help() -> void:
-	if not _terminal_output:
+	if not _terminal:
 		return
 	var lines: Array = ["commands:"]
 	for cmd in CommandRegistry.get_all():
 		lines.append("  %s — %s" % [cmd.get("id", ""), cmd.get("label", "")])
-	_terminal_output.text += "\n".join(lines) + "\n"
-	var sb := _terminal_output.get_v_scroll_bar()
-	if sb:
-		sb.value = sb.max_value
+	_terminal.echo("\n".join(lines))
 
 
-# ---------------------------------------------------------------- context menu
+# ---------------------------------------------------------------- context menu / input / status
 
 func _on_context_menu_requested() -> void:
 	var pos := DisplayServer.mouse_get_position()
 	_context_menu.popup(Rect2i(Vector2i(pos), Vector2i.ZERO))
 
-
-# ---------------------------------------------------------------- input / status
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -890,6 +826,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+func _open_palette() -> void:
+	if _command_palette and is_instance_valid(_command_palette):
+		return
+	_command_palette = CommandPalette.new()
+	add_child(_command_palette)
+
+
 func _process(_delta: float) -> void:
 	if _fps_label:
 		_fps_label.text = "%d fps" % Engine.get_frames_per_second()
@@ -902,14 +845,82 @@ func _update_status() -> void:
 	var rchain = get_node_or_null("/root/RChainService")
 	if rchain and rchain.wallet and rchain.wallet.is_ready():
 		var addr: String = rchain.wallet.get_rev_address()
-		_status_wallet.text = "wallet: " + (addr.left(12) + "…" if addr.length() > 12 else addr)
+		_status_wallet.set_state(UiStatusItem.State.OK, addr.left(12) + "…" if addr.length() > 12 else addr)
 	else:
-		_status_wallet.text = "wallet: —"
+		_status_wallet.set_state(UiStatusItem.State.OFF, "—")
 	if _status_ros2:
-		_status_ros2.text = "ros2: ✓" if _ros2_connected else "ros2: —"
+		_status_ros2.set_state(UiStatusItem.State.OK if _ros2_connected else UiStatusItem.State.OFF, "✓" if _ros2_connected else "—")
 	if _status_mode:
 		var svc = get_node_or_null("/root/ScenarioService")
 		var mode := "—"
 		if svc and svc.active:
 			mode = str(svc.active.mode)
-		_status_mode.text = "mode: " + mode
+		_status_mode.set_state(UiStatusItem.State.OK, mode)
+
+
+# ---------------------------------------------------------------- ros2 / node / scenario
+
+func _setup_ros2() -> void:
+	var ros2 = get_node_or_null("/root/GodotROS2")
+	if ros2 and ros2.has_signal("initialization_completed"):
+		ros2.initialization_completed.connect(func(success: bool) -> void:
+			_ros2_connected = success
+			_mark_scenario("ros2_connected", success)
+		)
+
+
+func _check_node_async() -> void:
+	var rchain = get_node_or_null("/root/RChainService")
+	if rchain and rchain.node and rchain.has_method("run_async"):
+		rchain.run_async(func() -> Variant: return rchain.node.get_status(), _on_node_checked)
+
+
+func _on_node_checked(r) -> void:
+	if not _status_node:
+		return
+	if r != null and r.is_ok():
+		_status_node.set_state(UiStatusItem.State.OK, "✓")
+	else:
+		_status_node.set_state(UiStatusItem.State.OFF, "offline")
+
+
+func _mark_scenario(key: String, value: Variant) -> void:
+	var svc = get_node_or_null("/root/ScenarioService")
+	if svc:
+		svc.context[key] = value
+		svc.reevaluate()
+
+
+func _on_robot_loaded_for_scenario(_node: Node3D) -> void:
+	_mark_scenario("robot_loaded", true)
+
+
+# ---------------------------------------------------------------- persistence
+
+func _load_persisted() -> void:
+	var f := FileAccess.open("user://last_robot_dir.txt", FileAccess.READ)
+	if f:
+		_last_dir = f.get_as_text().strip_edges()
+	var rf := FileAccess.open("user://recent_robots.json", FileAccess.READ)
+	if rf:
+		var parsed = JSON.parse_string(rf.get_as_text())
+		if parsed is Array:
+			_recent_robots = parsed
+
+
+func _save_persisted() -> void:
+	var f := FileAccess.open("user://last_robot_dir.txt", FileAccess.WRITE)
+	if f:
+		f.store_string(_last_dir)
+	var rf := FileAccess.open("user://recent_robots.json", FileAccess.WRITE)
+	if rf:
+		rf.store_string(JSON.stringify(_recent_robots))
+
+
+func _default_open_dir() -> String:
+	if not _last_dir.is_empty() and DirAccess.dir_exists_absolute(_last_dir):
+		return _last_dir
+	var home := OS.get_environment("HOME")
+	if not home.is_empty() and DirAccess.dir_exists_absolute(home):
+		return home
+	return OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS)

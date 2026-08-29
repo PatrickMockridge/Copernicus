@@ -17,6 +17,11 @@ func setup(title: String, subtitle: String = "", swatch: Color = Color.TRANSPARE
 	disabled = not enabled
 	custom_minimum_size = Vector2(180, 110)
 	var v := VBoxContainer.new()
+	v.set_anchors_preset(Control.PRESET_FULL_RECT)
+	v.offset_left = UiTheme.space("s")
+	v.offset_right = -UiTheme.space("s")
+	v.offset_top = UiTheme.space("s")
+	v.offset_bottom = -UiTheme.space("s")
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_theme_constant_override("separation", UiTheme.space("xs"))
 	add_child(v)

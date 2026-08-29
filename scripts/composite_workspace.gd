@@ -79,7 +79,7 @@ func _setup_workspace() -> void:
 
 	# ---- Panel area (right 30%) ----
 	_panel_area = VBoxContainer.new()
-	_panel_area.size_flags_horizontal = Control.SIZE_FILL
+	_panel_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_area.size_flags_stretch_ratio = 0.3
 	_panel_area.custom_minimum_size.x = 280
 	hbox.add_child(_panel_area)

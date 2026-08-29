@@ -3,7 +3,27 @@
 # Same interface as URDFToGodot.parse(path) -> Node3D.
 
 class_name MJCFToGodot
-extends RefCounted
+extends CopernicusModule
+
+
+static func get_module_name() -> String:
+	return "MJCF Parser"
+
+
+static func get_module_description() -> String:
+	return "MuJoCo MJCF parser → Godot native scene tree"
+
+
+static func is_available() -> bool:
+	return true
+
+
+static func get_requirements() -> String:
+	return ""
+
+
+static func get_module_category() -> String:
+	return "import"
 
 
 static func parse(mjcf_path: String) -> Node3D:

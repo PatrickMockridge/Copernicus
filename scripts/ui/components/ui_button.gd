@@ -32,4 +32,4 @@ func _apply() -> void:
 	if variant == Variant.GHOST or variant == Variant.ICON:
 		flat = true
 	if variant == Variant.ICON:
-		add_theme_font_size_override("font_size", 18)
+		add_theme_font_size_override("font_size", UiTheme.font_size("icon"))

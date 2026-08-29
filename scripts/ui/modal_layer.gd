@@ -11,7 +11,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
 	var backdrop := ColorRect.new()
-	backdrop.color = Color(0, 0, 0, 0.62)
+	backdrop.color = UiTheme.color("backdrop")
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(backdrop)

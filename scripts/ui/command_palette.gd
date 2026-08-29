@@ -52,8 +52,9 @@ func _on_text_changed(text: String) -> void:
 
 
 func _refresh(text: String) -> void:
-	for r in _rows:
-		r.queue_free()
+	for c in _list.get_children():
+		_list.remove_child(c)
+		c.queue_free()
 	_rows.clear()
 	_results = CommandRegistry.query(text)
 

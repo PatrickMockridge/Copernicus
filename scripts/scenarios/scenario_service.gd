@@ -85,4 +85,13 @@ func _s(p_id: String, p_title: String, p_brief: String, p_mode: String, p_requir
 
 
 func _ctx_check(key: String, label: String, expect: Variant = true) -> Dictionary:
-	return {"label": label, "check": func(ctx) -> Variant: return ctx.get(key, false), "expect": expect}
+	return {"label": label, "key": key, "check": func(ctx) -> Variant: return ctx.get(key, false), "expect": expect}
+
+
+## Context keys that some code actually writes (the "producers"). A check whose
+## key has no producer would show a permanent false ✗, so it is hidden by the UI.
+const PRODUCED_KEYS := ["robot_loaded", "ros2_connected", "lidar_active", "camera_active", "imu_active", "listing_created", "robot_registered", "work_settled"]
+
+
+func is_produced(key: String) -> bool:
+	return PRODUCED_KEYS.has(key)

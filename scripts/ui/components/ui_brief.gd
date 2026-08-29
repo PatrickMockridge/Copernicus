@@ -25,10 +25,14 @@ func _render() -> void:
 	if ScenarioService.active == null:
 		body().add_child(UiLabel.new().setup("No active scenario", UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
 		return
-	body().add_child(UiLabel.new().setup(ScenarioService.active.title, UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY))
-	body().add_child(UiLabel.new().setup(ScenarioService.active.brief, UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
+	var headline := UiLabel.new().setup(
+		"%s — %s" % [ScenarioService.active.title, ScenarioService.active.brief],
+		UiLabel.Kind.BODY, UiLabel.Tone.PRIMARY
+	)
+	headline.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body().add_child(headline)
 	_checks_host = VBoxContainer.new()
-	_checks_host.add_theme_constant_override("separation", UiTheme.space("xs"))
+	_checks_host.add_theme_constant_override("separation", 0)
 	body().add_child(_checks_host)
 	_message = UiLabel.new().setup("", UiLabel.Kind.SMALL, UiLabel.Tone.MUTED)
 	body().add_child(_message)
@@ -39,6 +43,9 @@ func _fill_verdict() -> void:
 	if ScenarioService.verdict == null:
 		return
 	for c in ScenarioService.verdict.checks:
+		var key := str(c.get("key", ""))
+		if not key.is_empty() and not ScenarioService.is_produced(key):
+			continue
 		_checks_host.add_child(UiChecklistItem.new().setup(
 			str(c.get("label", "")),
 			bool(c.get("ok", false)),

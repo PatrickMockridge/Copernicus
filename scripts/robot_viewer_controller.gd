@@ -495,6 +495,9 @@ func pan_camera(delta_x: float, delta_y: float) -> void:
 # ===== Input Handling =====
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton or event is InputEventMouseMotion:
+		if not _is_mouse_over_viewport():
+			return
 	if event is InputEventMouseButton:
 		var mouse_event = event as InputEventMouseButton
 		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -520,6 +523,17 @@ func _input(event: InputEvent) -> void:
 				orbit_camera(-motion.relative.x * 0.3, -motion.relative.y * 0.3)
 		elif motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
 			pan_camera(-motion.relative.x * 0.005, motion.relative.y * 0.005)
+
+
+## Only handle camera/context-menu input when the pointer is over the 3D viewport,
+## not over side bars, the terminal, or menus.
+func _is_mouse_over_viewport() -> bool:
+	var vp := get_viewport()
+	if vp is SubViewport:
+		var container := vp.get_parent()
+		if container is SubViewportContainer:
+			return container.get_global_rect().has_point(container.get_global_mouse_position())
+	return true
 
 
 # ===== Debug =====

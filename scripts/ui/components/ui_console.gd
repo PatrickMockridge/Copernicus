@@ -15,6 +15,7 @@ func configure(title: String = "Terminal") -> UiConsole:
 	_output = TextEdit.new()
 	_output.editable = false
 	_output.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_output.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	if UiTheme.font("mono"):
 		_output.add_theme_font_override("font", UiTheme.font("mono"))
 	var sb := StyleBoxFlat.new()
@@ -29,7 +30,10 @@ func configure(title: String = "Terminal") -> UiConsole:
 		_input.add_theme_font_override("font", UiTheme.font("mono"))
 	_input.add_theme_stylebox_override("normal", UiTheme.style("input"))
 	_input.add_theme_stylebox_override("focus", UiTheme.style("input"))
-	_input.text_submitted.connect(func(t: String) -> void: command_submitted.emit(t))
+	_input.text_submitted.connect(func(t: String) -> void:
+		_input.text = ""
+		command_submitted.emit(t)
+	)
 	body().add_child(_input)
 	return self
 
@@ -46,3 +50,8 @@ func echo(line: String) -> void:
 func clear() -> void:
 	if _output:
 		_output.text = ""
+
+
+func focus_input() -> void:
+	if _input:
+		_input.grab_focus()

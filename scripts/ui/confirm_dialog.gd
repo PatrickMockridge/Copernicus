@@ -28,7 +28,7 @@ static func ask(parent: Node, title: String, message: String,
 func _build() -> void:
 	# Dimming overlay
 	var overlay = ColorRect.new()
-	overlay.color = Color(0, 0, 0, 0.5)
+	overlay.color = UiTheme.color("backdrop")
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(overlay)

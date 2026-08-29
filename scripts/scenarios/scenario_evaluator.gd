@@ -15,6 +15,7 @@ static func evaluate(scenario: Scenario, context: Dictionary) -> ValidationResul
 		var ok: bool = (actual == expect)
 		checks.append({
 			"label": c.get("label", ""),
+			"key": c.get("key", ""),
 			"ok": ok,
 			"actual": actual,
 			"expected": expect,
