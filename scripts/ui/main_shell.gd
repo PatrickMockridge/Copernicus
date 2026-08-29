@@ -27,6 +27,7 @@ enum MenuId {
 
 var _workspace: CompositeWorkspace
 var _navigation: NavigationModel
+var _cli: Cli
 var _panels: Dictionary = {}          # id -> Control (cached editor panels)
 var _factories: Dictionary = {}       # id -> Callable -> Control
 var _sidebar_cache: Dictionary = {}   # id -> Control (cached side-bar content)
@@ -73,11 +74,14 @@ func _ready() -> void:
 	_load_plugin_state()
 	_register_routes()
 	_setup_ui()
+	_cli = Cli.new(CommandRegistry)
 	_register_commands()
 	_setup_ros2()
 	_wire_scenario_service()
 	_navigate("editor")
 	_check_node_async()
+	_terminal.echo("COPENICUS TERMINAL v1")
+	_terminal.echo("READY.")
 
 
 # ---------------------------------------------------------------- routes
@@ -203,15 +207,11 @@ func _register_plugin(id: String) -> void:
 	if p.is_empty():
 		return
 	_reg_route(id, p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"])
-	_reg(p["command"], p["command_label"], "View", _navigate.bind(id))
 
 
 func _unregister_plugin(id: String) -> void:
 	var was_current := _navigation.current_id == id
 	_navigation.unregister(id)
-	var p := _plugin_by_id(id)
-	if not p.is_empty():
-		CommandRegistry.unregister(str(p["command"]))
 	_open_tabs.erase(id)
 	if was_current:
 		_navigate("editor")
@@ -614,45 +614,216 @@ func _extensions_row(mod: Dictionary) -> Control:
 # ---------------------------------------------------------------- commands
 
 func _register_commands() -> void:
-	_reg("view.open", "Editor: Open", "View", func() -> void: _navigate("editor"))
-	_reg("wallet.open", "Wallet: Open", "View", func() -> void: _navigate("wallet"))
-	for p in _plugins:
-		if _is_plugin_enabled(p["id"]):
-			_reg(p["command"], p["command_label"], "View", _navigate.bind(p["id"]))
-	_reg("plugins.open", "Plugins: Manage", "View", func() -> void: _navigate("plugins"))
-
-	_reg("robot.open", "Open Robot…", "File", func() -> void: _open_file_dialog())
-	_reg("view.reset", "View: Reset", "View", func() -> void: var v := _viewer(); if v: v.reset_view())
-	_reg("view.wireframe", "View: Toggle Wireframe", "View", _toggle_wireframe)
-	_reg("view.grid", "View: Toggle Grid", "View", _toggle_grid)
-	_reg("view.domain", "View: Toggle Domain Randomization", "View", _toggle_domain)
-	_reg("view.terminal", "View: Toggle Terminal", "View", _toggle_terminal)
-	_reg("sensor.lidar", "Sensors: Toggle Lidar", "View", _toggle_lidar)
-	_reg("sensor.camera", "Sensors: Toggle Camera Frustum", "View", _toggle_camera)
-	_reg("sensor.imu", "Sensors: Toggle IMU Axes", "View", _toggle_imu)
-
-	_reg("tool.ik", "Tools: Inverse Kinematics…", "Tools", func() -> void: _open_selector("res://scenes/ik_selector.tscn"))
-	_reg("tool.physics", "Tools: Physics Backend…", "Tools", func() -> void: _open_selector("res://scenes/physics_selector.tscn"))
-	_reg("tool.nav", "Tools: Navigation…", "Tools", func() -> void: _open_selector("res://scenes/nav_selector.tscn"))
-	_reg("tool.gpu", "Tools: GPU / RL Training…", "Tools", func() -> void: _open_selector("res://scenes/gpu/gpu_backend_selector.tscn"))
-	_reg("tool.omni", "Tools: Omniverse / USD…", "Tools", func() -> void: _open_selector("res://scenes/omni_selector.tscn"))
-	_reg("tool.industrial", "Tools: Industrial Backends…", "Tools", func() -> void: _open_selector("res://scenes/industrial_selector.tscn"))
-	_reg("tool.ros2", "Tools: Connect ROS2", "Tools", _connect_ros2)
-
-	_reg("demo.physics", "Demo: Physics (WASD)", "Demo", func() -> void: _open_demo("res://scenes/physics_demo.tscn"))
-	_reg("demo.turtle", "Demo: Turtle", "Demo", func() -> void: _open_demo("res://scenes/turtle_demo.tscn"))
-
-	_reg("help", "Help: List Commands", "Terminal", _terminal_help)
-	_reg("clear", "Terminal: Clear", "Terminal", _terminal_clear)
+	_cmd("open", "<view>", "Open a view (editor, wallet, marketplace, vcs, coordination, raas, robots, ai, plugins)", "view", _cmd_open)
+	_cmd("load", "<id|path>", "Load a library robot (turtlebot, arm6, …) or a .urdf/.mjcf path", "robot", _cmd_load)
+	_cmd("back", "", "Navigate back", "nav", _cmd_back)
+	_cmd("mode", "", "Show the active scenario and mode", "nav", _cmd_mode)
+	_cmd("wireframe", "[on|off]", "Set or toggle wireframe", "view", _cmd_wireframe)
+	_cmd("grid", "[on|off]", "Set or toggle grid", "view", _cmd_grid)
+	_cmd("sensors", "<lidar|camera|imu> [on|off]", "Set or toggle a sensor", "view", _cmd_sensors)
+	_cmd("demo", "<physics|turtle>", "Open a demo", "demo", _cmd_demo)
+	_cmd("tool", "<ik|physics|nav|gpu|omni|industrial>", "Open a tool selector", "tool", _cmd_tool)
+	_cmd("ros2", "", "Connect the ROS2 bridge", "tool", _cmd_ros2)
+	_cmd("plugins", "", "Open the plugin manager", "meta", _cmd_plugins)
+	_cmd("list", "", "List the command catalog", "meta", _cmd_list)
+	_cmd("commands", "", "Alias for list", "meta", _cmd_list)
+	_cmd("help", "[command]", "Show help for a command", "meta", _cmd_help)
+	_cmd("clear", "", "Clear the terminal", "meta", _cmd_clear)
 
 	# Plugin-contributed commands (modules registered via ModuleRegistry).
 	for cmd in ModuleRegistry.get_contributed_commands():
-		if cmd is Dictionary and cmd.has("id") and cmd.has("handler"):
+		if cmd is Dictionary and cmd.has("name") and cmd.has("handler"):
 			CommandRegistry.register(cmd)
 
 
-func _reg(id: String, label: String, category: String, handler: Callable) -> void:
-	CommandRegistry.register({"id": id, "label": label, "category": category, "description": label, "keywords": label, "handler": handler})
+func _cmd(name: String, syntax: String, description: String, category: String, handler: Callable) -> void:
+	CommandRegistry.register({"name": name, "syntax": syntax, "description": description, "category": category, "handler": handler})
+
+
+# ---------------------------------------------------------------- CLI handlers
+
+func _on_off(v: Variant) -> Variant:
+	match str(v):
+		"on", "true", "1": return true
+		"off", "false", "0": return false
+		_: return null
+
+
+func _cmd_open(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	var view: String = str(args[0])
+	if _navigation.get_route(view) == null:
+		out.call("?BAD ARGUMENT: " + view)
+		return false
+	_navigate(view)
+	return true
+
+
+func _cmd_load(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	var target: String = str(args[0])
+	if target.ends_with(".urdf") or target.ends_with(".mjcf"):
+		if not FileAccess.file_exists(target):
+			out.call("?FILE NOT FOUND")
+			return false
+		_ensure_panel("editor")
+		if target.ends_with(".mjcf"):
+			_workspace.load_mjcf(target)
+		else:
+			_workspace.load_urdf(target)
+		out.call("loaded " + target)
+		return true
+	var lib = get_node_or_null("/root/RobotLibrary")
+	if lib and lib.has_method("build") and lib.build(target) != null:
+		_load_library_robot(target)
+		out.call("loaded " + target)
+		return true
+	out.call("?BAD ARGUMENT: " + target)
+	return false
+
+
+func _cmd_back(_args: Array, _out: Callable) -> bool:
+	return _navigation.back()
+
+
+func _cmd_mode(_args: Array, out: Callable) -> bool:
+	var svc = get_node_or_null("/root/ScenarioService")
+	if svc and svc.active:
+		out.call("%s — %s" % [svc.active.title, svc.active.mode])
+	else:
+		out.call("no active scenario")
+	return true
+
+
+func _cmd_wireframe(args: Array, out: Callable) -> bool:
+	if not _workspace:
+		return false
+	var new_val: bool
+	if args.is_empty():
+		new_val = not _workspace.is_wireframe()
+	else:
+		var parsed = _on_off(args[0])
+		if parsed == null:
+			out.call("?BAD ARGUMENT: " + str(args[0]))
+			return false
+		new_val = parsed
+	_workspace.set_wireframe(new_val)
+	out.call("wireframe " + ("on" if new_val else "off"))
+	return true
+
+
+func _cmd_grid(args: Array, out: Callable) -> bool:
+	if not _workspace:
+		return false
+	var new_val: bool
+	if args.is_empty():
+		new_val = not _workspace.is_grid()
+	else:
+		var parsed = _on_off(args[0])
+		if parsed == null:
+			out.call("?BAD ARGUMENT: " + str(args[0]))
+			return false
+		new_val = parsed
+	_workspace.set_grid(new_val)
+	out.call("grid " + ("on" if new_val else "off"))
+	return true
+
+
+func _cmd_sensors(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	var sensor: String = str(args[0])
+	var set_to: Variant = null
+	if args.size() > 1:
+		set_to = _on_off(args[1])
+		if set_to == null:
+			out.call("?BAD ARGUMENT: " + str(args[1]))
+			return false
+	var new_val: bool = false
+	match sensor:
+		"lidar":
+			new_val = (not _workspace.is_lidar_visible()) if set_to == null else bool(set_to)
+			_set_lidar(new_val)
+		"camera":
+			new_val = (not _workspace.is_camera_visible()) if set_to == null else bool(set_to)
+			_set_camera(new_val)
+		"imu":
+			new_val = (not _workspace.is_imu_visible()) if set_to == null else bool(set_to)
+			_set_imu(new_val)
+		_:
+			out.call("?BAD ARGUMENT: " + sensor)
+			return false
+	out.call("sensors " + sensor + (" on" if new_val else " off"))
+	return true
+
+
+func _cmd_demo(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	match str(args[0]):
+		"physics":
+			_open_demo("res://scenes/physics_demo.tscn", "Physics Demo")
+		"turtle":
+			_open_demo("res://scenes/turtle_demo.tscn", "Turtle Demo")
+		_:
+			out.call("?BAD ARGUMENT: " + str(args[0]))
+			return false
+	return true
+
+
+func _cmd_tool(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	var scene := ""
+	match str(args[0]):
+		"ik": scene = "res://scenes/ik_selector.tscn"
+		"physics": scene = "res://scenes/physics_selector.tscn"
+		"nav": scene = "res://scenes/nav_selector.tscn"
+		"gpu": scene = "res://scenes/gpu/gpu_backend_selector.tscn"
+		"omni": scene = "res://scenes/omni_selector.tscn"
+		"industrial": scene = "res://scenes/industrial_selector.tscn"
+		_:
+			out.call("?BAD ARGUMENT: " + str(args[0]))
+			return false
+	_open_selector(scene)
+	return true
+
+
+func _cmd_ros2(_args: Array, out: Callable) -> bool:
+	_connect_ros2()
+	out.call("ros2 connecting")
+	return true
+
+
+func _cmd_plugins(_args: Array, _out: Callable) -> bool:
+	_navigate("plugins")
+	return true
+
+
+func _cmd_list(_args: Array, out: Callable) -> bool:
+	for line in _cli.catalog_lines():
+		out.call(str(line))
+	return true
+
+
+func _cmd_help(args: Array, out: Callable) -> bool:
+	var name := "" if args.is_empty() else str(args[0])
+	for line in _cli.help_lines(name):
+		out.call(str(line))
+	return true
+
+
+func _cmd_clear(_args: Array, _out: Callable) -> bool:
+	if _terminal:
+		_terminal.clear()
+	return true
 
 
 func _viewer() -> RobotViewerController:
@@ -905,26 +1076,7 @@ func _on_terminal_submit(text: String) -> void:
 	if line.is_empty():
 		return
 	_terminal.echo("> " + line)
-	var cmd := CommandRegistry.find(line)
-	if cmd.is_empty():
-		_terminal.echo("  unknown command: " + line)
-		return
-	CommandRegistry.run(cmd.get("id", ""))
-	_terminal.echo("  ok: " + str(cmd.get("label", "")))
-
-
-func _terminal_clear() -> void:
-	if _terminal:
-		_terminal.clear()
-
-
-func _terminal_help() -> void:
-	if not _terminal:
-		return
-	var lines: Array = ["commands:"]
-	for cmd in CommandRegistry.get_all():
-		lines.append("  %s — %s" % [cmd.get("id", ""), cmd.get("label", "")])
-	_terminal.echo("\n".join(lines))
+	_cli.execute(line, _terminal.echo)
 
 
 # ---------------------------------------------------------------- context menu / input / status
@@ -951,7 +1103,12 @@ func _open_palette() -> void:
 	if _command_palette and is_instance_valid(_command_palette):
 		return
 	_command_palette = CommandPalette.new()
+	_command_palette.command_picked.connect(_on_command_picked)
 	add_child(_command_palette)
+
+
+func _on_command_picked(name: String) -> void:
+	_terminal.set_input(name + " ")
 
 
 func _process(_delta: float) -> void:

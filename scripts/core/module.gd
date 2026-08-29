@@ -26,7 +26,10 @@ static func get_module_category() -> String:
 	return ""
 
 
-## Commands this module contributes to the command palette.
-## Returns [{id, label, category, keywords, handler: Callable}]. Default: none.
+## Commands this module contributes to the terminal (and the command palette).
+## Returns [{name, syntax, description, category, handler}].
+## `handler` is a static Callable(args: Array, out: Callable) -> bool: it receives
+## the parsed args and a line-writer, and returns true on success (writing a
+## "?"-prefixed error on failure). Default: none.
 static func get_commands() -> Array:
 	return []

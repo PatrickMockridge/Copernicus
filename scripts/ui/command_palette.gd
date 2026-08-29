@@ -4,6 +4,8 @@
 class_name CommandPalette
 extends ModalLayer
 
+signal command_picked(name: String)
+
 var _input: LineEdit
 var _list: VBoxContainer
 var _scroll: ScrollContainer
@@ -71,7 +73,7 @@ func _refresh(text: String) -> void:
 
 func _make_row(cmd: Dictionary, index: int) -> Button:
 	var btn := Button.new()
-	btn.text = str(cmd.get("label", ""))
+	btn.text = "%s  %s" % [str(cmd.get("name", "")), str(cmd.get("syntax", ""))]
 	btn.tooltip_text = str(cmd.get("description", ""))
 	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn.flat = true
@@ -94,7 +96,7 @@ func _run(index: int) -> void:
 	if index < 0 or index >= _results.size():
 		return
 	var cmd: Dictionary = _results[index]
-	CommandRegistry.run(cmd.get("id", ""))
+	command_picked.emit(str(cmd.get("name", "")))
 	queue_free()
 
 

@@ -40,6 +40,29 @@ static func get_module_category() -> String:
 	return "coordination"
 
 
+## Commands contributed to the terminal. Handlers are static (see CopernicusModule).
+static func get_commands() -> Array:
+	return [
+		{"name": "register", "syntax": "<robot>", "description": "Register a robot on-chain", "category": "coordination", "handler": _cmd_register},
+	]
+
+
+static func _cmd_register(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	var backend = ModuleRegistry.create("coordination", "RChainCoordination", {})
+	if backend == null:
+		out.call("?COORDINATION UNAVAILABLE")
+		return false
+	var r = backend.register_robot({"name": str(args[0])})
+	if r.is_ok():
+		out.call("registered " + str(args[0]))
+		return true
+	out.call("?ERROR: " + str(r.get_error()))
+	return false
+
+
 func get_my_address() -> String:
 	return _wallet.get_rev_address() if _wallet else ""
 

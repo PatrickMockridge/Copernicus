@@ -1,6 +1,7 @@
 # command_registry.gd
-# Autoload singleton — the command palette's backing store.
-# Modules (and the shell) register commands; the palette queries + runs them.
+# Autoload singleton — the shared command store. The terminal engine (Cli) and
+# the command palette both query it. A command is {name, syntax, description,
+# category, handler: Callable(args, out) -> bool}.
 
 extends Node
 
@@ -8,20 +9,39 @@ var _commands: Array = []
 
 
 func register(cmd: Dictionary) -> void:
-	# cmd: {id, label, category, description, keywords, handler: Callable}
-	if not cmd.has("id") or not cmd.has("handler"):
-		push_error("CommandRegistry.register: command needs 'id' and 'handler'")
+	if not cmd.has("name") or not cmd.has("handler"):
+		push_error("CommandRegistry.register: command needs 'name' and 'handler'")
 		return
-	unregister(cmd["id"])
+	unregister(cmd["name"])
 	_commands.append(cmd)
 
 
-func unregister(id: String) -> void:
+func unregister(name: String) -> void:
 	for i in range(_commands.size() - 1, -1, -1):
-		if _commands[i].get("id", "") == id:
+		if _commands[i].get("name", "") == name:
 			_commands.remove_at(i)
 
 
+## Exact lookup by verb.
+func find_by_name(name: String) -> Dictionary:
+	for cmd in _commands:
+		if cmd.get("name", "") == name:
+			return cmd
+	return {}
+
+
+## Run a command's handler with args, writing output/errors through `out`.
+func run(name: String, args: Array = [], out: Callable = Callable()) -> bool:
+	var cmd := find_by_name(name)
+	if cmd.is_empty():
+		return false
+	var handler = cmd.get("handler")
+	if handler is Callable:
+		return bool(handler.call(args, out))
+	return false
+
+
+## Fuzzy search over name/syntax/category/description (for the palette).
 func query(text: String) -> Array:
 	var q := text.strip_edges().to_lower()
 	if q.is_empty():
@@ -39,37 +59,19 @@ func query(text: String) -> Array:
 
 
 func _score(cmd: Dictionary, q: String) -> int:
-	var label: String = str(cmd.get("label", "")).to_lower()
-	if q in label:
-		return label.find(q)
+	var name: String = str(cmd.get("name", "")).to_lower()
+	if q in name:
+		return name.find(q)
+	var syntax: String = str(cmd.get("syntax", "")).to_lower()
+	if q in syntax:
+		return 100 + syntax.find(q)
 	var cat: String = str(cmd.get("category", "")).to_lower()
 	if q in cat:
-		return 100 + cat.find(q)
+		return 200 + cat.find(q)
 	var desc: String = str(cmd.get("description", "")).to_lower()
 	if q in desc:
-		return 200
-	var kw: String = str(cmd.get("keywords", "")).to_lower()
-	if q in kw:
 		return 300
 	return -1
-
-
-func run(id: String) -> bool:
-	for cmd in _commands:
-		if cmd.get("id", "") == id:
-			var handler = cmd.get("handler")
-			if handler is Callable:
-				handler.call()
-				return true
-	return false
-
-
-## Return the best-matching command for free-text input (e.g. "open robot", "toggle grid"), or {}.
-func find(text: String) -> Dictionary:
-	var results := query(text)
-	if results.is_empty():
-		return {}
-	return results[0]
 
 
 func get_all() -> Array:
