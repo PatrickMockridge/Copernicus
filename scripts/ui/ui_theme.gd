@@ -27,8 +27,8 @@ const COLOR := {
 	"asset_part": Color(0.2, 0.5, 0.2, 1),
 	"asset_world": Color(0.5, 0.3, 0.15, 1),
 	"price": Color(0.9, 0.7, 0.3),
-	"c64_bg": Color(0.0, 0.0, 0.6667),            # #0000aa
-	"c64_text": Color(0.4235, 0.4235, 1.0),       # #6c6cff
+	"c64_bg": Color(0.0, 0.0, 0.3765),            # #000060
+	"c64_text": Color(0.7843, 0.7843, 1.0),       # #c8c8ff
 }
 
 const FONT_SIZE := {

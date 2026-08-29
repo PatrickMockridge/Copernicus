@@ -18,6 +18,10 @@ func configure(title: String = "Terminal") -> UiConsole:
 	frame.bg_color = UiTheme.color("c64_bg")
 	frame.set_border_width_all(2)
 	frame.border_color = UiTheme.color("c64_text")
+	frame.content_margin_left = 16
+	frame.content_margin_right = 8
+	frame.content_margin_top = 6
+	frame.content_margin_bottom = 6
 	add_theme_stylebox_override("panel", frame)
 
 	var clear_sb := StyleBoxFlat.new()
@@ -44,6 +48,7 @@ func configure(title: String = "Terminal") -> UiConsole:
 	_input.add_theme_stylebox_override("focus", clear_sb)
 	_input.add_theme_color_override("font_color", UiTheme.color("c64_text"))
 	_input.add_theme_color_override("caret_color", UiTheme.color("c64_text"))
+	_input.add_theme_color_override("caret_background_color", UiTheme.color("c64_text"))
 	if UiTheme.font("mono"):
 		_input.add_theme_font_override("font", UiTheme.font("mono"))
 	_input.submitted.connect(_on_submit)
