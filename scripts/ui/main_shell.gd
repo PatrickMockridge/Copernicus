@@ -17,7 +17,7 @@ const DemoHost = preload("res://scripts/ui/demo_host.gd")
 const VcsPanel = preload("res://scripts/vcs/ui/vcs_panel.gd")
 
 enum MenuId {
-	FILE_OPEN, FILE_RECENT, FILE_EXIT,
+	FILE_OPEN, FILE_RECENT, FILE_MANUAL, FILE_EXIT,
 	VIEW_RESET, VIEW_WIREFRAME, VIEW_GRID, VIEW_DOMAIN, VIEW_TERMINAL,
 	SENSOR_LIDAR, SENSOR_CAMERA, SENSOR_IMU,
 	TOOL_IK, TOOL_PHYSICS, TOOL_NAV, TOOL_GPU, TOOL_OMNI, TOOL_INDUSTRIAL, TOOL_ROS2,
@@ -93,6 +93,7 @@ func _register_routes() -> void:
 		if _is_plugin_enabled(p["id"]):
 			_reg_route(p["id"], p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"])
 	_reg_route("plugins", "Plugins", "◇", "utility", 3, "plugins.open", false, _make_plugins)
+	_reg_route("manual", "Manual", "▤", "utility", 4, "manual.open", false, _make_manual)
 
 
 func _reg_route(id: String, title: String, glyph: String, section: String, order: int, command_id: String, in_activity_bar: bool, factory: Callable, sidebar_factory: Callable = Callable()) -> void:
@@ -408,6 +409,8 @@ func _setup_menu_bar(root: VBoxContainer) -> void:
 	file_menu.add_child(_recent_menu)
 	file_menu.add_submenu_item("Open Recent", "Open Recent")
 	file_menu.add_separator()
+	file_menu.add_item("Manual…", MenuId.FILE_MANUAL)
+	file_menu.add_separator()
 	file_menu.add_item("Exit", MenuId.FILE_EXIT)
 	file_menu.id_pressed.connect(_on_menu_pressed)
 	_recent_menu.index_pressed.connect(_on_recent_index)
@@ -581,6 +584,10 @@ func _make_plugins() -> Control:
 		for mod in ModuleRegistry.get_available(cat):
 			list.add_child(_extensions_row(mod))
 	return win
+
+
+func _make_manual() -> Control:
+	return UiManual.new().configure()
 
 
 func _plugin_row(p: Dictionary) -> Control:
@@ -838,6 +845,8 @@ func _on_menu_pressed(id: int) -> void:
 	match id:
 		MenuId.FILE_OPEN:
 			_open_file_dialog()
+		MenuId.FILE_MANUAL:
+			_navigate("manual")
 		MenuId.FILE_EXIT:
 			get_tree().quit()
 		MenuId.VIEW_RESET:
