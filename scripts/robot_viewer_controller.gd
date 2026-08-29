@@ -205,8 +205,8 @@ func _create_demo_robot(name: String) -> void:
 	_robot_root.add_child(base)
 
 	# Create wheel joints
-	var left_wheel = _create_wheel("left_wheel", Vector3(-0.12, 0, 0.1))
-	var right_wheel = _create_wheel("right_wheel", Vector3(-0.12, 0, -0.1))
+	var left_wheel = _create_wheel("left_wheel", Vector3(-0.12, -0.01, 0.1))
+	var right_wheel = _create_wheel("right_wheel", Vector3(-0.12, -0.01, -0.1))
 
 	# Add wheels to base
 	base.add_child(left_wheel.joint)
@@ -256,6 +256,8 @@ func _create_wheel(wheel_name: String, position: Vector3) -> Dictionary:
 	var joint = Node3D.new()
 	joint.set_name(wheel_name + "_joint")
 	joint.position = position
+	joint.set_meta("joint_type", "revolute")
+	joint.set_meta("joint_axis", Vector3(0, 0, 1))
 
 	var wheel = Node3D.new()
 	wheel.set_name(wheel_name)
@@ -360,9 +362,9 @@ func _collect_joints() -> void:
 	if not _robot_root:
 		return
 
-	# Find all joint nodes recursively (URDF joints are reparented under their links).
+	# Collect joints by type/metadata (URDF joints carry "joint_type"; also match physics joint nodes).
 	for node in _robot_root.find_children("*", "Node3D", true, false):
-		if node.name.ends_with("_joint") or node.name.contains("wheel"):
+		if node.has_meta("joint_type") or node is PinJoint3D or node is SliderJoint3D:
 			_joint_nodes.append(node)
 
 
@@ -382,14 +384,21 @@ func set_joint_rotation(index: int, angle_degrees: float) -> void:
 	if index < 0 or index >= _joint_nodes.size():
 		return
 	var joint = _joint_nodes[index]
-	joint.rotation_degrees.y = angle_degrees
+	var joint_type: String = joint.get_meta("joint_type", "revolute")
+	var axis: Vector3 = joint.get_meta("joint_axis", Vector3(0, 1, 0))
+	if joint_type == "prismatic":
+		joint.position = axis * angle_degrees
+	else:
+		joint.rotation = axis * deg_to_rad(angle_degrees)
 	joint_changed.emit(joint.name, angle_degrees)
 
 
 func get_joint_rotation(index: int) -> float:
 	if index < 0 or index >= _joint_nodes.size():
 		return 0.0
-	return _joint_nodes[index].rotation_degrees.y
+	var joint = _joint_nodes[index]
+	var axis: Vector3 = joint.get_meta("joint_axis", Vector3(0, 1, 0))
+	return joint.rotation_degrees.dot(axis)
 
 
 func get_joint_limits(index: int) -> Dictionary:

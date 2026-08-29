@@ -52,7 +52,7 @@ func update_frustum() -> void:
 	if not _frustum_mesh or not _show_frustum:
 		return
 
-	_frustum_mesh.clear()
+	_frustum_mesh.mesh = null
 	_frustum_mesh.position = Vector3(0, 0.1, 0)
 
 	var lines = PackedVector3Array()

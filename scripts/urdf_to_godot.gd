@@ -123,7 +123,9 @@ static func parse(urdf_path: String) -> Node3D:
 							link_data[current_link_name]["collision_params"] = {"radius": float(radius)}
 				elif node_name == "material":
 					if current_element == "link":
-						var color_str = parser.get_named_attribute_value_safe("color")
+						var color_str = parser.get_named_attribute_value_safe("rgba")
+						if color_str.is_empty():
+							color_str = parser.get_named_attribute_value_safe("color")
 						if not color_str.is_empty():
 							var parts = color_str.split(" ")
 							if parts.size() >= 3:
@@ -210,42 +212,21 @@ static func _create_link_node(link_name: String, data: Dictionary) -> Node3D:
 	node.transform = t
 
 	# Create visual mesh
+	var visual_mesh: Mesh = null
 	if not data["visual_mesh_path"].is_empty():
-		var mesh = _load_mesh(data["visual_mesh_path"])
-		if mesh:
-			var mesh_instance = MeshInstance3D.new()
-			mesh_instance.set_name("Visual")
-			mesh_instance.mesh = mesh
+		visual_mesh = _load_mesh(data["visual_mesh_path"])
+	if visual_mesh == null:
+		# Fallback to a primitive mesh built from the collision geometry.
+		visual_mesh = _create_visual_mesh(data)
 
-			# Apply material color if no texture
-			var mat = StandardMaterial3D.new()
-			mat.albedo_color = data["material_color"]
-			mesh_instance.material_override = mat
-
-			node.add_child(mesh_instance)
-		else:
-			# Fallback to collision shape as visual
-			var shape = _create_collision_shape(data)
-			if shape:
-				var mesh_instance = MeshInstance3D.new()
-				mesh_instance.set_name("Visual")
-				mesh_instance.mesh = shape
-				var mat = StandardMaterial3D.new()
-				mat.albedo_color = data["material_color"]
-				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-				mesh_instance.material_override = mat
-				node.add_child(mesh_instance)
-	else:
-		# No mesh, create simple collision shape as visual
-		var shape = _create_collision_shape(data)
-		if shape:
-			var mesh_instance = MeshInstance3D.new()
-			mesh_instance.set_name("Visual")
-			mesh_instance.mesh = shape
-			var mat = StandardMaterial3D.new()
-			mat.albedo_color = data["material_color"]
-			mesh_instance.material_override = mat
-			node.add_child(mesh_instance)
+	if visual_mesh:
+		var mesh_instance = MeshInstance3D.new()
+		mesh_instance.set_name("Visual")
+		mesh_instance.mesh = visual_mesh
+		var mat = StandardMaterial3D.new()
+		mat.albedo_color = data["material_color"]
+		mesh_instance.material_override = mat
+		node.add_child(mesh_instance)
 
 	# Create collision shape
 	var collision_shape = _create_collision_shape(data)
@@ -310,6 +291,10 @@ static func _create_joint_node(j: Dictionary, link_nodes: Dictionary) -> Node3D:
 		joint_node.set_meta("limit_upper", limit_upper)
 		joint_node.set_meta("has_limits", true)
 
+	# Store joint type + axis so the viewer can drive the joint along its real axis.
+	joint_node.set_meta("joint_type", joint_type)
+	joint_node.set_meta("joint_axis", j.get("axis_xyz", Vector3(1, 0, 0)))
+
 	return joint_node
 
 
@@ -336,6 +321,30 @@ static func _create_collision_shape(data: Dictionary) -> Shape3D:
 			var shape = BoxShape3D.new()
 			shape.size = Vector3(0.1, 0.1, 0.1)
 			return shape
+
+
+static func _create_visual_mesh(data: Dictionary) -> Mesh:
+	match data.get("collision_type", ""):
+		"box":
+			var box = BoxMesh.new()
+			box.size = data.get("collision_params", {}).get("size", Vector3(0.1, 0.1, 0.1))
+			return box
+		"cylinder":
+			var cyl = CylinderMesh.new()
+			cyl.height = data.get("collision_params", {}).get("length", 1.0)
+			cyl.top_radius = data.get("collision_params", {}).get("radius", 0.05)
+			cyl.bottom_radius = data.get("collision_params", {}).get("radius", 0.05)
+			return cyl
+		"sphere":
+			var sph = SphereMesh.new()
+			var r = data.get("collision_params", {}).get("radius", 0.05)
+			sph.radius = r
+			sph.height = r * 2.0
+			return sph
+		_:
+			var box = BoxMesh.new()
+			box.size = Vector3(0.1, 0.1, 0.1)
+			return box
 
 
 static func _load_mesh(mesh_path: String) -> Mesh:
