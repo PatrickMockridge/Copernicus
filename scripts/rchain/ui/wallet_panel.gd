@@ -35,7 +35,7 @@ func _setup_ui() -> void:
 
 	var v: VBoxContainer = win.body()
 
-	_status = UiLabel.new().setup("", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
+	_status = UiLabel.new().setup("", UiLabel.Kind.SMALL, UiLabel.Tone.MUTED)
 	win.title_actions().add_child(_status)
 
 	v.add_child(UiSeparator.new())
