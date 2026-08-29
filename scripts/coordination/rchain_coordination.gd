@@ -44,20 +44,75 @@ static func get_module_category() -> String:
 static func get_commands() -> Array:
 	return [
 		{"name": "register", "syntax": "<robot>", "description": "Register a robot on-chain", "category": "coordination", "handler": _cmd_register},
+		{"name": "publish", "syntax": "<job>", "description": "Publish a job", "category": "coordination", "handler": _cmd_publish},
+		{"name": "claim", "syntax": "<job> <robot>", "description": "Claim a job for a robot", "category": "coordination", "handler": _cmd_claim},
+		{"name": "settle", "syntax": "<robot> <fee>", "description": "Settle work for a fee", "category": "coordination", "handler": _cmd_settle},
 	]
+
+
+static func _backend():
+	return ModuleRegistry.create("coordination", "RChainCoordination", {})
 
 
 static func _cmd_register(args: Array, out: Callable) -> bool:
 	if args.is_empty():
 		out.call("?SYNTAX ERROR")
 		return false
-	var backend = ModuleRegistry.create("coordination", "RChainCoordination", {})
+	var backend = _backend()
 	if backend == null:
 		out.call("?COORDINATION UNAVAILABLE")
 		return false
 	var r = backend.register_robot({"name": str(args[0])})
 	if r.is_ok():
 		out.call("registered " + str(args[0]))
+		return true
+	out.call("?ERROR: " + str(r.get_error()))
+	return false
+
+
+static func _cmd_publish(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	var backend = _backend()
+	if backend == null:
+		out.call("?COORDINATION UNAVAILABLE")
+		return false
+	var r = backend.publish_job({"id": str(args[0])})
+	if r.is_ok():
+		out.call("published " + str(args[0]))
+		return true
+	out.call("?ERROR: " + str(r.get_error()))
+	return false
+
+
+static func _cmd_claim(args: Array, out: Callable) -> bool:
+	if args.size() < 2:
+		out.call("?SYNTAX ERROR")
+		return false
+	var backend = _backend()
+	if backend == null:
+		out.call("?COORDINATION UNAVAILABLE")
+		return false
+	var r = backend.claim_job(str(args[0]), str(args[1]))
+	if r.is_ok():
+		out.call("claimed " + str(args[0]))
+		return true
+	out.call("?ERROR: " + str(r.get_error()))
+	return false
+
+
+static func _cmd_settle(args: Array, out: Callable) -> bool:
+	if args.size() < 2:
+		out.call("?SYNTAX ERROR")
+		return false
+	var backend = _backend()
+	if backend == null:
+		out.call("?COORDINATION UNAVAILABLE")
+		return false
+	var r = backend.settle_work(str(args[0]), int(args[1]))
+	if r.is_ok():
+		out.call("settled " + str(args[0]))
 		return true
 	out.call("?ERROR: " + str(r.get_error()))
 	return false

@@ -25,6 +25,69 @@ static func _static_init():
 	ModuleRegistry.register("vcs", "GitVcs", preload("res://scripts/vcs/git_vcs.gd"))
 
 
+## Commands contributed to the terminal. Handlers are static (see CopernicusModule).
+static func get_commands() -> Array:
+	return [
+		{"name": "status", "syntax": "", "description": "Show git status", "category": "vcs", "handler": _cmd_status},
+		{"name": "log", "syntax": "", "description": "Show recent commits", "category": "vcs", "handler": _cmd_log},
+		{"name": "commit", "syntax": "<message>", "description": "Commit staged changes", "category": "vcs", "handler": _cmd_commit},
+		{"name": "push", "syntax": "", "description": "Push to the remote", "category": "vcs", "handler": _cmd_push},
+		{"name": "pull", "syntax": "", "description": "Pull from the remote", "category": "vcs", "handler": _cmd_pull},
+		{"name": "clone", "syntax": "<url>", "description": "Clone a repository", "category": "vcs", "handler": _cmd_clone},
+	]
+
+
+static func _finish(r: Result, out: Callable, ok_msg: String) -> bool:
+	if r.is_ok():
+		out.call(ok_msg)
+		return true
+	out.call("?ERROR: " + str(r.get_error()))
+	return false
+
+
+static func _cmd_status(_args: Array, out: Callable) -> bool:
+	var r: Result = GitVcs.new().get_status()
+	if r.is_err():
+		out.call("?ERROR: " + str(r.get_error()))
+		return false
+	var d: Dictionary = r.get_data()
+	out.call("branch: " + str(d.get("branch", "(none)")))
+	out.call("staged %d · modified %d · untracked %d%s" % [d.get("staged", []).size(), d.get("modified", []).size(), d.get("untracked", []).size(), "" if d.get("is_clean", false) else " — has changes"])
+	return true
+
+
+static func _cmd_log(_args: Array, out: Callable) -> bool:
+	var r: Result = GitVcs.new().get_log(20)
+	if r.is_err():
+		out.call("?ERROR: " + str(r.get_error()))
+		return false
+	for c in r.get_data():
+		out.call("%s  %s" % [str(c.get("oid", "")), str(c.get("message", ""))])
+	return true
+
+
+static func _cmd_commit(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	return _finish(GitVcs.new().commit(str(args[0])), out, "committed")
+
+
+static func _cmd_push(_args: Array, out: Callable) -> bool:
+	return _finish(GitVcs.new().push(), out, "pushed")
+
+
+static func _cmd_pull(_args: Array, out: Callable) -> bool:
+	return _finish(GitVcs.new().pull(), out, "pulled")
+
+
+static func _cmd_clone(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	return _finish(GitVcs.new().clone(str(args[0])), out, "cloned")
+
+
 func initialize(config: Dictionary) -> bool:
 	var r := git_exec(["init"])
 	if config.has("remote") and not str(config["remote"]).is_empty():

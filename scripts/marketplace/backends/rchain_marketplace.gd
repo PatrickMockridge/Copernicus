@@ -36,6 +36,69 @@ static func get_module_category() -> String:
 	return "marketplace"
 
 
+## Commands contributed to the terminal. Handlers are static (see CopernicusModule).
+static func get_commands() -> Array:
+	return [
+		{"name": "listings", "syntax": "", "description": "List marketplace listings", "category": "marketplace", "handler": _cmd_listings},
+		{"name": "search", "syntax": "<query>", "description": "Search marketplace listings", "category": "marketplace", "handler": _cmd_search},
+		{"name": "buy", "syntax": "<id>", "description": "Purchase a listing", "category": "marketplace", "handler": _cmd_buy},
+	]
+
+
+static func _marketplace() -> RChainMarketplace:
+	var coord = ModuleRegistry.create("coordination", "RChainCoordination", {})
+	if coord == null:
+		return null
+	var market = RChainMarketplace.new()
+	if not market.initialize({"coordination": coord}):
+		return null
+	return market
+
+
+static func _cmd_listings(_args: Array, out: Callable) -> bool:
+	var market = _marketplace()
+	if market == null:
+		out.call("?MARKETPLACE UNAVAILABLE")
+		return false
+	var listings = market.load_listings()
+	if listings.is_empty():
+		out.call("no listings")
+	else:
+		for l in listings:
+			out.call("%s — %s" % [str(l.get_name()), MarketplaceCore.format_price(l.get_price())])
+	return true
+
+
+static func _cmd_search(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	var market = _marketplace()
+	if market == null:
+		out.call("?MARKETPLACE UNAVAILABLE")
+		return false
+	var results = market.search_listings(str(args[0]))
+	if results.is_empty():
+		out.call("no matches")
+	else:
+		for l in results:
+			out.call("%s — %s" % [str(l.get_name()), MarketplaceCore.format_price(l.get_price())])
+	return true
+
+
+static func _cmd_buy(args: Array, out: Callable) -> bool:
+	if args.is_empty():
+		out.call("?SYNTAX ERROR")
+		return false
+	var market = _marketplace()
+	if market == null:
+		out.call("?MARKETPLACE UNAVAILABLE")
+		return false
+	var ok = market.purchase_listing(str(args[0]))
+	out.call("purchased" if ok else "purchase failed")
+	return ok
+
+
 func is_marketplace_connected() -> bool:
 	return _coordination != null and _coordination.is_coordination_connected()
 
