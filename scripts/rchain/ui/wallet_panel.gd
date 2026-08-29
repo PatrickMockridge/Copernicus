@@ -19,6 +19,7 @@ var _lock_btn: Button
 var _import_btn: Button
 var _mnemonic_label: Label
 var _mnemonic_input: LineEdit
+var _wallet_actions: VBoxContainer
 var _overlay: LoadingOverlay = null
 
 
@@ -121,12 +122,16 @@ func _setup_ui() -> void:
 	_mnemonic_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(_mnemonic_label)
 
-	v.add_child(UiSeparator.new())
+	# Fund operations — only shown when unlocked.
+	_wallet_actions = VBoxContainer.new()
+	_wallet_actions.add_theme_constant_override("separation", UiTheme.space("s"))
+	_wallet_actions.visible = false
+	v.add_child(_wallet_actions)
 
 	# Transfer
-	v.add_child(UiSection.new().setup("Transfer"))
+	_wallet_actions.add_child(UiSection.new().setup("Transfer"))
 	var tx_row := HBoxContainer.new()
-	v.add_child(tx_row)
+	_wallet_actions.add_child(tx_row)
 	_to_input = LineEdit.new()
 	_to_input.placeholder_text = "to REV address"
 	_to_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -139,16 +144,14 @@ func _setup_ui() -> void:
 	send_btn.pressed.connect(_on_transfer)
 	tx_row.add_child(send_btn)
 
-	v.add_child(UiSeparator.new())
-
 	# Deploy / Explore console
-	v.add_child(UiSection.new().setup("Deploy / Explore"))
+	_wallet_actions.add_child(UiSection.new().setup("Deploy / Explore"))
 	_term = TextEdit.new()
 	_term.custom_minimum_size.y = 70
 	_term.placeholder_text = "rholang term"
-	v.add_child(_term)
+	_wallet_actions.add_child(_term)
 	var term_row := HBoxContainer.new()
-	v.add_child(term_row)
+	_wallet_actions.add_child(term_row)
 	var deploy_btn := UiButton.new().setup("Deploy", UiButton.Variant.SECONDARY)
 	deploy_btn.pressed.connect(_on_deploy)
 	term_row.add_child(deploy_btn)
@@ -159,7 +162,7 @@ func _setup_ui() -> void:
 	_output = TextEdit.new()
 	_output.custom_minimum_size.y = 100
 	_output.editable = false
-	v.add_child(_output)
+	_wallet_actions.add_child(_output)
 
 
 func _ensure_identity() -> void:
@@ -174,6 +177,8 @@ func _ensure_identity() -> void:
 
 func _refresh() -> void:
 	var w: RChainWallet = RChainService.wallet
+	if _wallet_actions:
+		_wallet_actions.visible = w.is_ready()
 	if w.is_ready():
 		_address_label.text = "Address: " + w.get_rev_address()
 		_status.text = "unlocked"
