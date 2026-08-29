@@ -6,6 +6,8 @@ extends Control
 
 signal robot_loaded(node: Node3D)
 signal publish_requested(robot_name: String)
+signal wireframe_changed(enabled: bool)
+signal grid_changed(enabled: bool)
 
 const RobotViewerController = preload("res://scripts/robot_viewer_controller.gd")
 const JointPanel = preload("res://scripts/joint_panel.gd")
@@ -72,10 +74,12 @@ func _setup_workspace() -> void:
 
 	# ---- Toolbar overlay on viewport ----
 	_toolbar = ViewportToolbar.new()
-	_toolbar.wireframe_toggled.connect(_robot_viewer.set_show_debug)
-	_toolbar.grid_toggled.connect(_robot_viewer.set_grid_visible)
+	_toolbar.wireframe_clicked.connect(func() -> void: set_wireframe(not _robot_viewer.is_show_debug()))
+	_toolbar.grid_clicked.connect(func() -> void: set_grid(not _robot_viewer.is_grid_visible()))
 	_toolbar.reset_view.connect(_robot_viewer.reset_view)
 	_viewport_container.add_child(_toolbar)
+	_toolbar.set_wireframe(false)
+	_toolbar.set_grid(true)
 
 	# ---- Panel area (right 30%) ----
 	_panel_area = VBoxContainer.new()
@@ -153,6 +157,30 @@ func load_urdf(path: String) -> void:
 
 func get_robot_viewer() -> RobotViewerController:
 	return _robot_viewer
+
+
+func set_wireframe(enabled: bool) -> void:
+	if _robot_viewer:
+		_robot_viewer.set_show_debug(enabled)
+	if _toolbar:
+		_toolbar.set_wireframe(enabled)
+	wireframe_changed.emit(enabled)
+
+
+func set_grid(enabled: bool) -> void:
+	if _robot_viewer:
+		_robot_viewer.set_grid_visible(enabled)
+	if _toolbar:
+		_toolbar.set_grid(enabled)
+	grid_changed.emit(enabled)
+
+
+func is_wireframe() -> bool:
+	return _robot_viewer != null and _robot_viewer.is_show_debug()
+
+
+func is_grid() -> bool:
+	return _robot_viewer != null and _robot_viewer.is_grid_visible()
 
 
 func get_joint_panel() -> JointPanel:

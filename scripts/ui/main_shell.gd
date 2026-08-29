@@ -102,6 +102,8 @@ func _make_workspace() -> Control:
 	# (emitted during _ready) is not missed.
 	_workspace.publish_requested.connect(_on_publish_requested)
 	_workspace.robot_loaded.connect(_on_robot_loaded_for_scenario)
+	_workspace.wireframe_changed.connect(_on_wireframe_changed)
+	_workspace.grid_changed.connect(_on_grid_changed)
 	return _workspace
 
 
@@ -579,24 +581,25 @@ func _on_menu_pressed(id: int) -> void:
 			var v := _viewer()
 			if v: v.reset_view()
 		MenuId.VIEW_WIREFRAME:
-			var on := _toggle(_view_menu, MenuId.VIEW_WIREFRAME)
-			var vw := _viewer()
-			if vw: vw.set_show_debug(on)
+			if _workspace:
+				_workspace.set_wireframe(not _workspace.is_wireframe())
 		MenuId.VIEW_GRID:
-			var on := _toggle(_view_menu, MenuId.VIEW_GRID)
-			var vg := _viewer()
-			if vg: vg.set_grid_visible(on)
+			if _workspace:
+				_workspace.set_grid(not _workspace.is_grid())
 		MenuId.VIEW_DOMAIN:
 			if _workspace:
-				_workspace.set_domain_randomization(_toggle(_view_menu, MenuId.VIEW_DOMAIN))
+				_set_domain(not _workspace.is_domain_randomization_enabled())
 		MenuId.VIEW_TERMINAL:
 			_toggle_terminal()
 		MenuId.SENSOR_LIDAR:
-			_set_lidar(_toggle(_sensors_menu, MenuId.SENSOR_LIDAR))
+			if _workspace:
+				_set_lidar(not _workspace.is_lidar_visible())
 		MenuId.SENSOR_CAMERA:
-			_set_camera(_toggle(_sensors_menu, MenuId.SENSOR_CAMERA))
+			if _workspace:
+				_set_camera(not _workspace.is_camera_visible())
 		MenuId.SENSOR_IMU:
-			_set_imu(_toggle(_sensors_menu, MenuId.SENSOR_IMU))
+			if _workspace:
+				_set_imu(not _workspace.is_imu_visible())
 		MenuId.TOOL_IK:
 			_open_selector("res://scenes/ik_selector.tscn")
 		MenuId.TOOL_PHYSICS:
@@ -619,25 +622,17 @@ func _on_menu_pressed(id: int) -> void:
 			Toast.show_toast(self, "Copernicus — Robot Design Interface", Toast.Level.INFO)
 
 
-func _toggle(menu: PopupMenu, id: int) -> bool:
-	var idx := menu.get_item_index(id)
-	menu.toggle_item_checked(idx)
-	return menu.is_item_checked(idx)
-
-
 func _toggle_wireframe() -> void:
-	var v := _viewer()
-	if v:
-		v.set_show_debug(not v.is_show_debug())
+	if _workspace:
+		_workspace.set_wireframe(not _workspace.is_wireframe())
 
 func _toggle_grid() -> void:
-	var v := _viewer()
-	if v:
-		v.set_grid_visible(not v.is_grid_visible())
+	if _workspace:
+		_workspace.set_grid(not _workspace.is_grid())
 
 func _toggle_domain() -> void:
 	if _workspace:
-		_workspace.set_domain_randomization(not _workspace.is_domain_randomization_enabled())
+		_set_domain(not _workspace.is_domain_randomization_enabled())
 
 func _toggle_lidar() -> void:
 	if _workspace:
@@ -651,29 +646,63 @@ func _toggle_imu() -> void:
 	if _workspace:
 		_set_imu(not _workspace.is_imu_visible())
 
+func _set_domain(enabled: bool) -> void:
+	if not _workspace:
+		return
+	_workspace.set_domain_randomization(enabled)
+	_set_menu_checked(_view_menu, MenuId.VIEW_DOMAIN, enabled)
+	_set_menu_checked(_context_menu, MenuId.VIEW_DOMAIN, enabled)
+
 func _set_lidar(visible: bool) -> void:
 	if not _workspace:
 		return
 	_workspace.set_lidar_visible(visible)
+	_set_menu_checked(_sensors_menu, MenuId.SENSOR_LIDAR, visible)
+	_set_menu_checked(_context_menu, MenuId.SENSOR_LIDAR, visible)
 	_mark_scenario("lidar_active", visible)
 
 func _set_camera(visible: bool) -> void:
 	if not _workspace:
 		return
 	_workspace.set_camera_visible(visible)
+	_set_menu_checked(_sensors_menu, MenuId.SENSOR_CAMERA, visible)
+	_set_menu_checked(_context_menu, MenuId.SENSOR_CAMERA, visible)
 	_mark_scenario("camera_active", visible)
 
 func _set_imu(visible: bool) -> void:
 	if not _workspace:
 		return
 	_workspace.set_imu_visible(visible)
+	_set_menu_checked(_sensors_menu, MenuId.SENSOR_IMU, visible)
+	_set_menu_checked(_context_menu, MenuId.SENSOR_IMU, visible)
 	_mark_scenario("imu_active", visible)
 
 func _toggle_terminal() -> void:
-	_terminal.visible = not _terminal.visible
-	_workbench.dragger_visibility = SplitContainer.DRAGGER_VISIBLE if _terminal.visible else SplitContainer.DRAGGER_HIDDEN
-	if _terminal.visible:
+	_set_terminal_visible(not _terminal.visible)
+
+
+func _set_terminal_visible(visible: bool) -> void:
+	_terminal.visible = visible
+	_workbench.dragger_visibility = SplitContainer.DRAGGER_VISIBLE if visible else SplitContainer.DRAGGER_HIDDEN
+	_set_menu_checked(_view_menu, MenuId.VIEW_TERMINAL, visible)
+	if visible:
 		_terminal.focus_input()
+
+
+func _on_wireframe_changed(enabled: bool) -> void:
+	_set_menu_checked(_view_menu, MenuId.VIEW_WIREFRAME, enabled)
+	_set_menu_checked(_context_menu, MenuId.VIEW_WIREFRAME, enabled)
+
+
+func _on_grid_changed(enabled: bool) -> void:
+	_set_menu_checked(_view_menu, MenuId.VIEW_GRID, enabled)
+	_set_menu_checked(_context_menu, MenuId.VIEW_GRID, enabled)
+
+
+func _set_menu_checked(menu: PopupMenu, id: int, checked: bool) -> void:
+	var idx := menu.get_item_index(id)
+	if idx >= 0:
+		menu.set_item_checked(idx, checked)
 
 
 # ---------------------------------------------------------------- file / demos
