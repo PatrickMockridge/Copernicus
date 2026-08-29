@@ -5,6 +5,7 @@
 extends Node
 
 signal verdict_changed(verdict)
+signal scenario_changed(current_id: String)
 
 var model: ProgressionModel
 var context: Dictionary = {}   # live state, populated by the shell (robot_loaded, joints, sensors, ...)
@@ -23,6 +24,7 @@ func _ready() -> void:
 func activate(id: String) -> void:
 	model.activate(id)
 	active = model.current()
+	scenario_changed.emit(id)
 	reevaluate()
 
 
@@ -63,10 +65,10 @@ func _build_ladder() -> void:
 	]))
 	model.register(_s("set_the_pose", "Set the Pose", "Move every joint of the sample arm and return it to zero.", "design", ["first_light"], [
 		_ctx_check("all_joints_zeroed", "All joints zeroed"),
-	]))
+	], "arm6"))
 	model.register(_s("reach_the_target", "Reach the Target", "Configure Arm6 so its end-effector reaches the target marker.", "design", ["set_the_pose"], [
 		_ctx_check("end_effector_reached", "End-effector on target"),
-	]))
+	], "arm6"))
 	model.register(_s("see_what_it_sees", "See What It Sees", "Turn on every sensor and confirm it produces output.", "test", ["reach_the_target"], [
 		_ctx_check("lidar_active", "LIDAR live"),
 		_ctx_check("camera_active", "Camera live"),
@@ -74,7 +76,7 @@ func _build_ladder() -> void:
 	]))
 	model.register(_s("make_it_move", "Make It Move", "Drive the differential-drive base with WASD.", "test", ["see_what_it_sees"], [
 		_ctx_check("robot_moved", "Robot moved"),
-	]))
+	], "physics_demo"))
 	model.register(_s("wire_it_to_ros2", "Wire It to ROS2", "Connect the bridge and confirm a data stream.", "test", ["make_it_move"], [
 		_ctx_check("ros2_connected", "ROS2 connected"),
 	]))
@@ -92,10 +94,11 @@ func _build_ladder() -> void:
 	]))
 
 
-func _s(p_id: String, p_title: String, p_brief: String, p_mode: String, p_requires: Array, p_checks: Array) -> Scenario:
+func _s(p_id: String, p_title: String, p_brief: String, p_mode: String, p_requires: Array, p_checks: Array, p_setup: String = "") -> Scenario:
 	var s := Scenario.make(p_id, p_title, p_brief, p_mode)
 	s.requires = p_requires
 	s.checks = p_checks
+	s.setup = p_setup
 	return s
 
 

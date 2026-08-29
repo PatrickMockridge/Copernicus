@@ -71,6 +71,7 @@ func _ready() -> void:
 	_setup_ui()
 	_register_commands()
 	_setup_ros2()
+	_wire_scenario_service()
 	_navigate("editor")
 	_check_node_async()
 
@@ -935,6 +936,35 @@ func _on_joints_zeroed() -> void:
 
 func _on_target_reached() -> void:
 	_mark_scenario("end_effector_reached", true)
+
+
+func _wire_scenario_service() -> void:
+	var svc = get_node_or_null("/root/ScenarioService")
+	if svc and svc.has_signal("scenario_changed"):
+		svc.scenario_changed.connect(_on_scenario_changed)
+
+
+func _on_scenario_changed(_id: String) -> void:
+	var svc = get_node_or_null("/root/ScenarioService")
+	if not svc or not svc.active:
+		return
+	match str(svc.active.setup):
+		"arm6":
+			_load_library_robot("arm6")
+		"physics_demo":
+			_open_demo("res://scenes/physics_demo.tscn", "Physics Demo")
+		_:
+			pass
+
+
+func _load_library_robot(id: String) -> void:
+	_ensure_panel("editor")
+	var lib = get_node_or_null("/root/RobotLibrary")
+	if lib and lib.has_method("build"):
+		var robot = lib.build(id)
+		if robot and _workspace:
+			_workspace.load_robot_node(robot)
+			_navigate("editor")
 
 
 # ---------------------------------------------------------------- persistence

@@ -409,6 +409,7 @@ func _collect_joints() -> void:
 
 func _find_end_effector() -> void:
 	_end_effector = null
+	_target_reached_emitted = false
 	if not _robot_root:
 		return
 	for node in _robot_root.find_children("ee_link", "", true, false):

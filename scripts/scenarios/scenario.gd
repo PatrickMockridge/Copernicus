@@ -10,7 +10,7 @@ var title: String = ""
 var brief: String = ""
 var mode: String = "design"        # design | test | publish | operate
 var requires: Array = []           # prerequisite scenario ids (unlock order)
-var setup: Callable                # optional: loads starting state (may be empty)
+var setup: String = ""             # optional: robot id / "physics_demo" to auto-load on activation
 var checks: Array = []             # [{label, check: Callable(ctx)->Variant, expect}]
 var manual_refs: Array = []        # pointers into the manual (doc ids), never hints
 
