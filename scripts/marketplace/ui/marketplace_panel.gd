@@ -48,15 +48,22 @@ func _ready() -> void:
 
 
 func _setup_marketplace() -> void:
-	# Default to the rholang (RChain) marketplace; fall back to the mock when no
-	# node is reachable. The header "Backend" button opens the selector to switch.
+	# Start on the mock (non-blocking); upgrade to the rholang (RChain) marketplace
+	# once a node is confirmed reachable. The reachability check runs on a
+	# TaskRunner thread so the main thread never blocks.
+	set_backend(MockMarketplace.new())
 	var coordination = ModuleRegistry.create("coordination", "RChainCoordination", {})
-	if coordination and coordination.is_coordination_connected():
-		var rchain := RChainMarketplace.new()
-		rchain.initialize({"coordination": coordination})
-		set_backend(rchain)
-	else:
-		set_backend(MockMarketplace.new())
+	if coordination == null:
+		return
+	RChainService.run_async(
+		func() -> Variant: return coordination.is_coordination_connected(),
+		func(connected) -> void:
+			if connected:
+				var rchain := RChainMarketplace.new()
+				rchain.initialize({"coordination": coordination})
+				set_backend(rchain)
+				_refresh_listings()
+	)
 
 
 func set_backend(backend: MarketplaceCore) -> void:

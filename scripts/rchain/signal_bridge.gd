@@ -1,38 +1,41 @@
 class_name SignalBridge
 extends Node
 ## Adapter between Godot signals and rholang channels (docs/rchain/coordination-model.md).
-## emit() deploys a channel send; a background poll loop diffs data-at-name and emits
-## channel_data on the main thread (via call_deferred).
+## emit() deploys a channel send; a periodic poll (Timer → TaskRunner) diffs
+## data-at-name and emits channel_data on the main thread.
 
 signal channel_data(channel: String, data: Variant)
 
 var _node: RNodeClient = null
 var _sdk: RholangSDK = null
 var _wallet: RChainWallet = null
+var _runner: TaskRunner = null
 
 var _channels: Dictionary = {}  # channel_name -> last_seen (Array of normalized values)
 var _mutex: Mutex = Mutex.new()
-var _poll_thread: Thread = null
-var _running: bool = false
 var _poll_interval: float = 1.0
+var _running: bool = false
+var _timer: Timer = null
 
 
 func _ready() -> void:
 	_running = true
-	_poll_thread = Thread.new()
-	_poll_thread.start(_poll_loop)
+	_timer = Timer.new()
+	_timer.wait_time = _poll_interval
+	_timer.timeout.connect(_on_poll_timeout)
+	add_child(_timer)
+	_timer.start()
 
 
 func _exit_tree() -> void:
 	_running = false
-	if _poll_thread and _poll_thread.is_alive():
-		_poll_thread.wait_to_finish()
 
 
-func setup(node: RNodeClient, sdk: RholangSDK, wallet: RChainWallet) -> void:
+func setup(node: RNodeClient, sdk: RholangSDK, wallet: RChainWallet, runner: TaskRunner) -> void:
 	_node = node
 	_sdk = sdk
 	_wallet = wallet
+	_runner = runner
 
 
 ## Subscribe to a rholang channel; new data will emit channel_data(channel, data).
@@ -50,17 +53,17 @@ func emit(channel: String, data: Dictionary) -> Result:
 	return _wallet.deploy_term(term)
 
 
-## Poll all subscribed channels for new data (runs on the background thread).
-func _poll_loop() -> void:
-	while _running:
-		_poll_once()
-		OS.delay_msec(int(_poll_interval * 1000.0))
+func _on_poll_timeout() -> void:
+	if _runner and _running:
+		_runner.run(_poll_once, _on_poll_done)
 
 
-func _poll_once() -> void:
-	if _node == null or _sdk == null:
-		return
+## Poll all subscribed channels for new data (runs on a TaskRunner worker thread).
+## Returns [{channel, value}] to emit on the main thread.
+func _poll_once() -> Array:
 	var to_emit: Array = []
+	if not _running or _node == null or _sdk == null:
+		return to_emit
 	for channel in _channel_names():
 		var name_rho := _sdk.name_to_rho(str(channel))
 		var r := _node.data_at_name(name_rho, 1)
@@ -74,12 +77,13 @@ func _poll_once() -> void:
 			_set_channel(channel, normalized)
 			for value in normalized:
 				to_emit.append({"channel": str(channel), "value": value})
-	for item in to_emit:
-		call_deferred("_emit_data", item["channel"], item["value"])
+	return to_emit
 
 
-func _emit_data(channel: String, value: Variant) -> void:
-	channel_data.emit(channel, value)
+func _on_poll_done(to_emit) -> void:
+	if to_emit is Array:
+		for item in to_emit:
+			channel_data.emit(item["channel"], item["value"])
 
 
 func _channel_names() -> Array:

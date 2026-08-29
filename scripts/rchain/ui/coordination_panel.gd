@@ -22,12 +22,19 @@ func _ready() -> void:
 
 
 func _setup_coordination() -> void:
+	# Start on the mock (non-blocking); switch to the real backend + wire its
+	# signals once a node is confirmed reachable (checked on a TaskRunner thread).
+	_coordination = MockCoordination.new()
 	var backend = ModuleRegistry.create("coordination", "RChainCoordination", {})
-	if backend and backend.is_coordination_connected():
-		_coordination = backend
-	else:
-		_coordination = MockCoordination.new()
-	_connect_signals()
+	if backend == null:
+		_connect_signals()
+		return
+	RChainService.run_async(
+		func() -> Variant: return backend.is_coordination_connected(),
+		func(connected) -> void:
+			_coordination = backend if connected else _coordination
+			_connect_signals()
+	)
 
 
 ## Subscribe to the backend's domain signals (domain-signal rule: signals are
