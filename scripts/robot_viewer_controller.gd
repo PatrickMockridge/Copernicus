@@ -7,6 +7,7 @@ extends Node3D
 
 signal robot_loaded(node: Node3D)
 signal joint_changed(joint_name: String, position: float)
+signal context_menu_requested()
 
 const URDFToGodot = preload("res://scripts/urdf_to_godot.gd")
 
@@ -17,6 +18,8 @@ var _cam_distance: float = 3.0
 var _cam_yaw: float = 0.0
 var _cam_pitch: float = 30.0
 var _cam_pan: Vector2 = Vector2.ZERO
+var _right_pressed: bool = false
+var _right_drag_distance: float = 0.0
 var _show_debug: bool = false
 var _joint_nodes: Array = []
 var _grid_node: MeshInstance3D
@@ -417,6 +420,10 @@ func get_robot_root() -> Node3D:
 	return _robot_root
 
 
+func get_camera() -> Camera3D:
+	return _camera
+
+
 # ===== Camera Controls =====
 
 func set_camera_yaw(yaw_degrees: float) -> void:
@@ -456,8 +463,18 @@ func _input(event: InputEvent) -> void:
 			set_camera_distance(_cam_distance - 0.3)
 		elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			set_camera_distance(_cam_distance + 0.3)
+		elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+			if mouse_event.pressed:
+				_right_pressed = true
+				_right_drag_distance = 0.0
+			else:
+				if _right_pressed and _right_drag_distance < 5.0:
+					context_menu_requested.emit()
+				_right_pressed = false
 	elif event is InputEventMouseMotion:
 		var motion = event as InputEventMouseMotion
+		if _right_pressed:
+			_right_drag_distance += motion.relative.length()
 		if motion.button_mask & MOUSE_BUTTON_MASK_RIGHT:
 			if Input.is_key_pressed(KEY_SHIFT) or motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
 				pan_camera(-motion.relative.x * 0.005, motion.relative.y * 0.005)

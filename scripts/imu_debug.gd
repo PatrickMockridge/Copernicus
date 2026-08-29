@@ -31,7 +31,6 @@ func _setup_axes() -> void:
 func _create_axis(name: String, color: Color, direction: Vector3) -> MeshInstance3D:
 	var axis = MeshInstance3D.new()
 	axis.set_name(name)
-	axis.position = Vector3(0, 0.1, 0)
 
 	# Create cylinder
 	var cylinder = CylinderMesh.new()
@@ -40,19 +39,18 @@ func _create_axis(name: String, color: Color, direction: Vector3) -> MeshInstanc
 	cylinder.height = _axis_length
 	axis.mesh = cylinder
 
-	# Position at halfway point and orient
-	axis.position = direction * (_axis_length / 2.0)
-
-	# Rotate cylinder to point along direction
-	axis.look_at(direction, Vector3.UP)
-	axis.rotate_object_local(Vector3.RIGHT, PI / 2.0)
-
 	var mat = StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	axis.material_override = mat
 
+	# Add to tree before orienting (look_at requires the node to be in the tree).
 	add_child(axis)
+	axis.position = direction * (_axis_length / 2.0)
+	var up := Vector3.UP if absf(direction.dot(Vector3.UP)) < 0.99 else Vector3.FORWARD
+	axis.look_at(axis.position + direction, up)
+	axis.rotate_object_local(Vector3.RIGHT, PI / 2.0)
+
 	return axis
 
 

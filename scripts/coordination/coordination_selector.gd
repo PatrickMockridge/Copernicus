@@ -4,6 +4,10 @@ extends BaseSelector
 
 signal backend_selected(backend_class: String)
 
+# Preload backends so their _static_init registers them with ModuleRegistry.
+const MockCoordination = preload("res://scripts/coordination/mock_coordination.gd")
+const RChainCoordination = preload("res://scripts/coordination/rchain_coordination.gd")
+
 
 func _get_title() -> String:
 	return "Select Coordination Backend"

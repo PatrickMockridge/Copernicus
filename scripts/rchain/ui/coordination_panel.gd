@@ -26,7 +26,17 @@ func _setup_ui() -> void:
 	var v := VBoxContainer.new()
 	panel.add_child(v)
 	v.add_theme_constant_override("separation", 8)
-	v.add_child(CopernicusTheme.make_heading("Coordination"))
+
+	var header := HBoxContainer.new()
+	v.add_child(header)
+	var title := CopernicusTheme.make_heading("Coordination")
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title)
+	var backend_btn := Button.new()
+	backend_btn.text = "Backend"
+	backend_btn.tooltip_text = "Select coordination backend"
+	backend_btn.pressed.connect(_on_backend_pressed)
+	header.add_child(backend_btn)
 
 	# registry
 	v.add_child(CopernicusTheme.make_body("Register robot"))
@@ -113,6 +123,19 @@ func _setup_ui() -> void:
 
 	_status = CopernicusTheme.make_body("")
 	v.add_child(_status)
+
+
+func _on_backend_pressed() -> void:
+	var selector = load("res://scenes/rchain/coordination_selector.tscn").instantiate()
+	selector.backend_selected.connect(_on_backend_selected)
+	add_child(selector)
+
+
+func _on_backend_selected(backend_id: String) -> void:
+	var backend = CoordinationSelector.create_backend(backend_id, {})
+	if backend:
+		_coordination = backend
+		_status.text = "Backend: " + backend_id
 
 
 func _on_register() -> void:

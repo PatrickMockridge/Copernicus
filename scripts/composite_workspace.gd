@@ -9,6 +9,9 @@ signal robot_loaded(node: Node3D)
 const RobotViewerController = preload("res://scripts/robot_viewer_controller.gd")
 const JointPanel = preload("res://scripts/joint_panel.gd")
 const PublishPanel = preload("res://scripts/publish_panel.gd")
+const LidarDebug = preload("res://scripts/lidar_debug.gd")
+const CameraDebug = preload("res://scripts/camera_debug.gd")
+const ImuDebug = preload("res://scripts/imu_debug.gd")
 
 var _viewport_container: SubViewportContainer
 var _sub_viewport: SubViewport
@@ -18,6 +21,9 @@ var _tab_container: TabContainer
 var _joint_panel: JointPanel
 var _status_label: Label
 var _toolbar: ViewportToolbar
+var _lidar_debug: LidarDebug
+var _camera_debug: CameraDebug
+var _imu_debug: ImuDebug
 
 
 func _ready() -> void:
@@ -46,6 +52,22 @@ func _setup_workspace() -> void:
 	_robot_viewer.set_name("RobotViewer")
 	_robot_viewer.robot_loaded.connect(_on_robot_loaded)
 	_sub_viewport.add_child(_robot_viewer)
+
+	# ---- Sensor debug (hidden by default; toggled via View menu) ----
+	_lidar_debug = LidarDebug.new()
+	_lidar_debug.set_name("LidarDebug")
+	_lidar_debug.visible = false
+	_robot_viewer.add_child(_lidar_debug)
+
+	_camera_debug = CameraDebug.new()
+	_camera_debug.set_name("CameraDebug")
+	_camera_debug.visible = false
+	_robot_viewer.add_child(_camera_debug)
+
+	_imu_debug = ImuDebug.new()
+	_imu_debug.set_name("ImuDebug")
+	_imu_debug.visible = false
+	_robot_viewer.add_child(_imu_debug)
 
 	# ---- Toolbar overlay on viewport ----
 	_toolbar = ViewportToolbar.new()
@@ -104,6 +126,14 @@ func _world_setup() -> void:
 func _on_robot_loaded(robot_node: Node3D) -> void:
 	if _status_label:
 		_status_label.text = "Robot: " + robot_node.name
+	if _lidar_debug:
+		_lidar_debug.set_robot(robot_node)
+	if _camera_debug:
+		_camera_debug.set_robot(robot_node)
+		if _robot_viewer.get_camera():
+			_camera_debug.set_camera(_robot_viewer.get_camera())
+	if _imu_debug:
+		_imu_debug.set_robot(robot_node)
 	robot_loaded.emit(robot_node)
 
 
@@ -128,6 +158,39 @@ func get_joint_panel() -> JointPanel:
 	return _joint_panel
 
 
+func set_lidar_visible(visible: bool) -> void:
+	if not _lidar_debug:
+		return
+	_lidar_debug.visible = visible
+	_lidar_debug.set_debug_visible(visible)
+	if visible and _robot_viewer.get_robot_root():
+		_lidar_debug.set_robot(_robot_viewer.get_robot_root())
+		_lidar_debug.scan()
+
+
+func set_camera_visible(visible: bool) -> void:
+	if not _camera_debug:
+		return
+	_camera_debug.visible = visible
+	_camera_debug.set_frustum_visible(visible)
+	if visible:
+		_camera_debug.update_frustum()
+
+
+func set_imu_visible(visible: bool) -> void:
+	if not _imu_debug:
+		return
+	_imu_debug.visible = visible
+	_imu_debug.set_axes_visible(visible)
+
+
+func set_domain_randomization(enabled: bool) -> void:
+	if _robot_viewer:
+		_robot_viewer.enable_domain_randomization(enabled)
+
+
 func _process(_delta: float) -> void:
 	if _toolbar:
 		_toolbar.set_fps(Engine.get_frames_per_second())
+	if _lidar_debug and _lidar_debug.visible and _robot_viewer.get_robot_root():
+		_lidar_debug.scan()
