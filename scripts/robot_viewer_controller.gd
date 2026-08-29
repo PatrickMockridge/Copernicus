@@ -360,6 +360,32 @@ func load_urdf(urdf_path: String) -> bool:
 	return true
 
 
+func load_mjcf(mjcf_path: String) -> bool:
+	var MJCFToGodot = load("res://scripts/mjcf_to_godot.gd")
+	if _robot_root and is_instance_valid(_robot_root):
+		_robot_root.queue_free()
+
+	_robot_root = MJCFToGodot.parse(mjcf_path)
+	if not _robot_root:
+		push_error("RobotViewer: Failed to load MJCF: " + mjcf_path)
+		return false
+
+	add_child(_robot_root)
+	_collect_joints()
+	robot_loaded.emit(_robot_root)
+	print("RobotViewer: Loaded MJCF: " + mjcf_path)
+	return true
+
+
+func load_robot_node(node: Node3D) -> void:
+	if _robot_root and is_instance_valid(_robot_root):
+		_robot_root.queue_free()
+	_robot_root = node
+	add_child(_robot_root)
+	_collect_joints()
+	robot_loaded.emit(_robot_root)
+
+
 func _collect_joints() -> void:
 	_joint_nodes.clear()
 	if not _robot_root:
@@ -414,6 +440,18 @@ func get_joint_limits(index: int) -> Dictionary:
 			"upper": joint.get_meta("limit_upper", 180.0)
 		}
 	return {"lower": -180.0, "upper": 180.0}
+
+
+func get_joint_type(index: int) -> String:
+	if index < 0 or index >= _joint_nodes.size():
+		return "revolute"
+	return str(_joint_nodes[index].get_meta("joint_type", "revolute"))
+
+
+func get_joint_axis(index: int) -> Vector3:
+	if index < 0 or index >= _joint_nodes.size():
+		return Vector3(0, 1, 0)
+	return _joint_nodes[index].get_meta("joint_axis", Vector3(0, 1, 0))
 
 
 func get_robot_root() -> Node3D:
@@ -503,6 +541,18 @@ func set_show_debug(show: bool) -> void:
 func set_grid_visible(visible: bool) -> void:
 	if _grid_node:
 		_grid_node.visible = visible
+
+
+func is_show_debug() -> bool:
+	return _show_debug
+
+
+func is_grid_visible() -> bool:
+	return _grid_node != null and _grid_node.visible
+
+
+func is_domain_randomization_enabled() -> bool:
+	return _domain_randomize_enabled
 
 
 func reset_view() -> void:

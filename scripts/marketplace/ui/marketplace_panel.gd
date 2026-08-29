@@ -13,6 +13,10 @@ signal closed()
 const Listing = preload("res://scripts/marketplace/listing.gd")
 const MarketplaceCore = preload("res://scripts/marketplace/marketplace_core.gd")
 const MockMarketplace = preload("res://scripts/marketplace/backends/mock_marketplace.gd")
+const RChainMarketplace = preload("res://scripts/marketplace/backends/rchain_marketplace.gd")
+# Preload the coordination backends so RChainCoordination registers with ModuleRegistry.
+const MockCoordination = preload("res://scripts/coordination/mock_coordination.gd")
+const RChainCoordination = preload("res://scripts/coordination/rchain_coordination.gd")
 
 ## Marketplace backend
 var _marketplace: MarketplaceCore
@@ -44,8 +48,15 @@ func _ready() -> void:
 
 
 func _setup_marketplace() -> void:
-	# Default to mock; the header "Backend" button opens the selector to switch.
-	set_backend(MockMarketplace.new())
+	# Default to the rholang (RChain) marketplace; fall back to the mock when no
+	# node is reachable. The header "Backend" button opens the selector to switch.
+	var coordination = ModuleRegistry.create("coordination", "RChainCoordination", {})
+	if coordination and coordination.is_coordination_connected():
+		var rchain := RChainMarketplace.new()
+		rchain.initialize({"coordination": coordination})
+		set_backend(rchain)
+	else:
+		set_backend(MockMarketplace.new())
 
 
 func set_backend(backend: MarketplaceCore) -> void:

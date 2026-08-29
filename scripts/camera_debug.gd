@@ -53,7 +53,10 @@ func update_frustum() -> void:
 		return
 
 	_frustum_mesh.mesh = null
-	_frustum_mesh.position = Vector3(0, 0.1, 0)
+	if _robot_node and is_instance_valid(_robot_node):
+		_frustum_mesh.position = _robot_node.position + Vector3(0, 0.1, 0)
+	else:
+		_frustum_mesh.position = Vector3(0, 0.1, 0)
 
 	var lines = PackedVector3Array()
 

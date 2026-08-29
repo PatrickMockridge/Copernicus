@@ -4,6 +4,8 @@ extends Control
 ## executes it, and the fee scales with the work done (fee = work × rate).
 ## Subclasses provide the robot, actuator, command and copy via the hooks below.
 
+signal closed()
+
 var _coordination: CoordinationCore
 var _actuator = null  # RobotActuator | KukaArmActuator (duck-typed actuate())
 var _bridge: RaasBridge
@@ -211,4 +213,5 @@ func _on_fee_settled(_robot: String, fee: int) -> void:
 
 
 func _on_back() -> void:
-	get_tree().change_scene_to_file("res://scenes/rchain/raas_launcher.tscn")
+	closed.emit()
+	queue_free()

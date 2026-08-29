@@ -6,6 +6,10 @@ extends BaseSelector
 
 signal solver_selected(solver_class: String)
 
+# Preload backends so their _static_init registers them with ModuleRegistry.
+const AnalyticalIKSolver = preload("res://scripts/ik/analytical_ik_solver.gd")
+const MoveItIKBridge = preload("res://scripts/ik/moveit_ik_bridge.gd")
+
 
 func _get_title() -> String:
 	return "Select IK Solver"

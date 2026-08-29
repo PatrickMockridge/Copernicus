@@ -306,11 +306,18 @@ static func _add_geom_to_node(parent: Node3D, geom: Dictionary) -> void:
 static func _create_joint_from_mjcf(data: Dictionary) -> Node3D:
 	var joint_type = data.get("type", "hinge")
 	var joint_name = data.get("name", "joint")
+	var axis: Vector3 = Vector3(0, 0, 1)
+	if data.has("axis"):
+		var a = data["axis"]
+		if a.size() >= 3:
+			axis = Vector3(float(a[0]), float(a[1]), float(a[2]))
 
 	match joint_type:
 		"hinge", "ball":
 			var pin = PinJoint3D.new()
 			pin.set_name(joint_name)
+			pin.set_meta("joint_type", "revolute")
+			pin.set_meta("joint_axis", axis)
 			if data.has("range"):
 				var r = data["range"]
 				if r.size() >= 2:
@@ -321,6 +328,8 @@ static func _create_joint_from_mjcf(data: Dictionary) -> Node3D:
 		"slide":
 			var slider = SliderJoint3D.new()
 			slider.set_name(joint_name)
+			slider.set_meta("joint_type", "prismatic")
+			slider.set_meta("joint_axis", axis)
 			if data.has("range"):
 				var r = data["range"]
 				if r.size() >= 2:

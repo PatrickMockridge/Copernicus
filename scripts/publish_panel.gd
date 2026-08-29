@@ -356,13 +356,13 @@ func _on_publish_progress(stage: String, percent: float) -> void:
 	_status_label.text = stage
 
 
-func _on_publish_complete(hyperobject: RobotHyperobject) -> void:
+func _on_publish_complete(result: Dictionary) -> void:
 	_is_publishing = false
 	_dismiss_loading()
 	_progress_bar.value = 100.0
 	_progress_label.text = "Complete!"
 
-	var repo_id = hyperobject.get_repo_id()
+	var repo_id = result.get("repo_id", "")
 	_status_label.text = "Published! Repo ID: %s" % repo_id
 
 	_publish_btn.disabled = true

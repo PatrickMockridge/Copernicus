@@ -189,6 +189,34 @@ func set_domain_randomization(enabled: bool) -> void:
 		_robot_viewer.enable_domain_randomization(enabled)
 
 
+func is_domain_randomization_enabled() -> bool:
+	return _robot_viewer != null and _robot_viewer.is_domain_randomization_enabled()
+
+
+func is_lidar_visible() -> bool:
+	return _lidar_debug != null and _lidar_debug.visible
+
+
+func is_camera_visible() -> bool:
+	return _camera_debug != null and _camera_debug.visible
+
+
+func is_imu_visible() -> bool:
+	return _imu_debug != null and _imu_debug.visible
+
+
+func load_mjcf(path: String) -> void:
+	if _robot_viewer:
+		_robot_viewer.load_mjcf(path)
+		_status_label.text = "Robot: " + path.get_file()
+
+
+func load_robot_node(node: Node3D) -> void:
+	if _robot_viewer:
+		_robot_viewer.load_robot_node(node)
+		_status_label.text = "Robot: " + node.name
+
+
 func _process(_delta: float) -> void:
 	if _toolbar:
 		_toolbar.set_fps(Engine.get_frames_per_second())

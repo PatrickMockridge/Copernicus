@@ -1,27 +1,22 @@
 # robot_publisher.gd
-# Orchestrates the full robot publish flow:
-#   1. Collect robot files (scripts, scenes, meshes, URDF)
-#   2. Create/update git repo for ARIADNE
-#   3. Bundle files and create manifest
-#   4. Publish to Arweave via AO SDK
-#   5. Create AO Hyperobject
-#   6. List on marketplace (optional)
+# Publish flow: upload robot files to Arweave (plain storage), then register the
+# robot on RChain (rholang) as the source of truth. No AO process is spawned.
 
 class_name RobotPublisher
 extends Node
 
 signal publish_progress(stage: String, percent: float)
-signal publish_complete(hyperobject: RobotHyperobject)
+signal publish_complete(result: Dictionary)
 signal publish_failed(error: String)
 
 const Result = preload("res://addons/primitives/result.gd")
-const RobotHyperobject = preload("res://scripts/robot_hyperobject.gd")
-const Bundler = preload("res://addons/hyperobject/sdk/bundler.gd")
 const Manifest = preload("res://addons/hyperobject/sdk/manifest.gd")
+const Storage = preload("res://addons/hyperobject/sdk/storage.gd")
+# Preload coordination backends so RChainCoordination registers with ModuleRegistry.
+const MockCoordination = preload("res://scripts/coordination/mock_coordination.gd")
+const RChainCoordination = preload("res://scripts/coordination/rchain_coordination.gd")
 
-var _ao: AOSDK
-var _hyperobject: Hyperobject
-var _wallet: Wallet
+var _storage: Storage
 
 # Publish configuration
 var _config: Dictionary = {}
@@ -48,73 +43,51 @@ func configure(config: Dictionary) -> void:
 func publish(config: Dictionary) -> Result:
 	_config = config
 
-	# Stage 1: Validate wallet and config
 	_emit_progress("Validating...", 0.0)
 	var validation = _validate_config(config)
 	if validation.is_err():
 		publish_failed.emit(validation.get_error())
 		return validation
 
-	# Stage 2: Initialize AO SDK
-	_emit_progress("Initializing...", 10.0)
-	var init_result = _initialize_sdk()
-	if init_result.is_err():
-		publish_failed.emit(init_result.get_error())
-		return init_result
-
-	# Stage 3: Collect and bundle files
 	_emit_progress("Collecting files...", 15.0)
 	var files = _collect_robot_files(config.get("files", []))
 	if files.is_empty():
 		publish_failed.emit("No robot files found to publish")
 		return Result.err("No robot files found")
 
-	_emit_progress("Creating bundle...", 25.0)
+	_emit_progress("Uploading to Arweave...", 30.0)
 	var manifest_tx_id = _create_bundle(files)
 	if manifest_tx_id.is_empty():
 		publish_failed.emit("Failed to upload files to Arweave")
 		return Result.err("Failed to upload files")
 
-	# Stage 4: Create RobotHyperobject
-	_emit_progress("Creating Hyperobject...", 60.0)
-	var robot_hyperobject = RobotHyperobject.from_files(
-		config.get("name", "UnnamedRobot"),
-		files,
-		_ao
-	)
-	robot_hyperobject.set_description(config.get("description", ""))
-	robot_hyperobject.set_repo_id(manifest_tx_id)
-	robot_hyperobject.set_owner(_wallet.get_address() if _wallet else "")
+	_emit_progress("Registering on RChain...", 70.0)
+	var coordination = ModuleRegistry.create("coordination", "RChainCoordination", {})
+	if coordination == null:
+		publish_failed.emit("RChain coordination unavailable")
+		return Result.err("RChain coordination unavailable")
 
-	if config.has("robot_type"):
-		robot_hyperobject.set_robot_type(config.get("robot_type"))
+	var record := {
+		"name": config.get("name", "UnnamedRobot"),
+		"asset_tx_id": manifest_tx_id,
+		"metadata": {
+			"description": config.get("description", ""),
+			"asset_type": config.get("asset_type", "ROBOT"),
+			"price": config.get("price", 0),
+		},
+	}
+	var reg = coordination.register_robot(record)
+	if reg.is_err():
+		# Don't hard-fail: the Arweave upload already succeeded.
+		_emit_progress("Registered (offline): " + reg.get_error(), 95.0)
+	else:
+		_emit_progress("Registered on RChain", 95.0)
 
-	# Stage 5: Spawn AO process
-	_emit_progress("Spawning AO process...", 75.0)
-	var spawn_result = robot_hyperobject.spawn_ao_process()
-	if spawn_result.is_err():
-		publish_failed.emit("Failed to spawn AO process: " + spawn_result.get_error())
-		return spawn_result
-
-	# Stage 6: List for sale (optional)
-	var price = config.get("price", 0.0)
-	if price > 0.0:
-		_emit_progress("Listing on marketplace...", 90.0)
-		var list_result = robot_hyperobject.list_for_sale(price)
-		if list_result.is_err():
-			print("Warning: Failed to list for sale: " + list_result.get_error())
-			# Don't fail the whole publish for this
-
-	# Stage 7: Complete
 	_emit_progress("Complete!", 100.0)
-	publish_complete.emit(robot_hyperobject)
+	var result := {"repo_id": manifest_tx_id, "address": coordination.get_my_address()}
+	publish_complete.emit(result)
 
-	return Result.ok({
-		"hyperobject": robot_hyperobject,
-		"repo_id": manifest_tx_id,
-		"process_id": robot_hyperobject.get_process_id(),
-		"owner": robot_hyperobject.get_owner()
-	})
+	return Result.ok(result)
 
 
 ## ===== File Collection =====
@@ -153,22 +126,10 @@ func _validate_config(config: Dictionary) -> Result:
 	return Result.ok({})
 
 
-func _initialize_sdk() -> Result:
-	_ao = AOSDK.new()
-
-	# Get wallet from Hyperobject singleton if available
-	var hyperobject_node = get_node_or_null("/root/Hyperobject")
-	if hyperobject_node and hyperobject_node.has_method("get_ao"):
-		_ao = hyperobject_node.get_ao()
-		_wallet = _ao.get_wallet()
-	elif hyperobject_node and hyperobject_node.has_method("get_wallet"):
-		_wallet = hyperobject_node.get_wallet()
-
-	# Initialize AO SDK
-	var hyperbeam_url = _config.get("hyperbeam_url", "https://mu.ardrive.io/v1")
-	var arweave_gateway = _config.get("arweave_gateway", "https://arweave.net")
-
-	return _ao.initialize(hyperbeam_url, arweave_gateway)
+func _get_storage() -> Storage:
+	if _storage == null:
+		_storage = Storage.new(_config.get("arweave_gateway", "https://arweave.net"))
+	return _storage
 
 
 func _collect_robot_files(file_paths: Array) -> Array:
@@ -188,9 +149,7 @@ func _collect_robot_files(file_paths: Array) -> Array:
 
 
 func _create_bundle(files: Array) -> String:
-	if not _ao:
-		return ""
-
+	var storage := _get_storage()
 	var manifest = Manifest.new()
 
 	for file_path in files:
@@ -204,23 +163,18 @@ func _create_bundle(files: Array) -> String:
 		var ext = file_path.get_extension().to_lower()
 		var content_type = FileUtils.get_content_type(ext)
 
-		# Upload directly to Arweave
-		var upload_result = _ao.upload_asset(file_path, {"Content-Type": content_type})
+		var upload_result = storage.upload_file(file_path, {"Content-Type": content_type})
 		if upload_result.is_ok():
 			var info = upload_result.get_data()
 			var tx_id = info.get("tx_id", "")
 			if not tx_id.is_empty():
-				# Extract relative path
-				var rel_path = _get_relative_path(file_path)
-				manifest.add_path(rel_path, tx_id, content_type)
+				manifest.add_path(_get_relative_path(file_path), tx_id, content_type)
 
-	# Upload manifest
 	var manifest_data = JSON.stringify(manifest.to_manifest()).to_utf8_buffer()
-	var manifest_result = _ao.upload_data(manifest_data, {"Content-Type": "application/x.arweave-manifest+json"})
+	var manifest_result = storage.upload_data(manifest_data, {"Content-Type": "application/x.arweave-manifest+json"})
 
 	if manifest_result.is_ok():
-		var info = manifest_result.get_data()
-		return info.get("tx_id", "")
+		return manifest_result.get_data().get("tx_id", "")
 
 	return ""
 

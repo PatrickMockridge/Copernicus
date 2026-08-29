@@ -6,6 +6,10 @@ extends BaseSelector
 
 signal backend_selected(backend_class: String)
 
+# Preload backends so their _static_init registers them with ModuleRegistry.
+const MockMarketplace = preload("res://scripts/marketplace/backends/mock_marketplace.gd")
+const RChainMarketplace = preload("res://scripts/marketplace/backends/rchain_marketplace.gd")
+
 
 func _get_title() -> String:
 	return "Select Marketplace"

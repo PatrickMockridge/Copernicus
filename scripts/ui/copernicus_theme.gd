@@ -1,31 +1,31 @@
 # copernicus_theme.gd
 # Shared theme autoload — single source of truth for StyleBoxes, colors, spacing and fonts.
 #
-# Modern minimal dark palette (hex → Color):
-#   BG      #0f0f13   Card    #17171d   Border  #26262e
-#   Text    #f2f2f4   Text2   #9b9ba6   Text3   #565662
-#   Accent  #7c8cff   Success #3dd68c   Warning #f5b83d   Error #f26d6d
+# Stark-terminal palette (hex → Color), Zachtronics / IDE-influenced:
+#   BG      #0a0a0c   Card    #0e0e12   Border  #2a2a2e
+#   Text    #c8c8c8   Text2   #7a7a82   Text3   #4a4a52
+#   Accent  #7ce      Success #62e884   Warning #f0c674   Error #ff7b72
 
 extends Node
 
-const BG_DARK := Color(0.0588, 0.0588, 0.0745)        # #0f0f13
-const BG_CARD := Color(0.0902, 0.0902, 0.1137)        # #17171d
-const BORDER_DIM := Color(0.149, 0.149, 0.1804)       # #26262e
-const BORDER_CARD := Color(0.149, 0.149, 0.1804)      # #26262e
+const BG_DARK := Color(0.0392, 0.0392, 0.0471)        # #0a0a0c
+const BG_CARD := Color(0.0549, 0.0549, 0.0706)        # #0e0e12
+const BORDER_DIM := Color(0.1647, 0.1647, 0.1804)      # #2a2a2e
+const BORDER_CARD := Color(0.1647, 0.1647, 0.1804)     # #2a2a2e
 
-const TEXT_PRIMARY := Color(0.949, 0.949, 0.9569)     # #f2f2f4
-const TEXT_SECONDARY := Color(0.6078, 0.6078, 0.651)  # #9b9ba6
-const TEXT_DISABLED := Color(0.3373, 0.3373, 0.3843)  # #565662
+const TEXT_PRIMARY := Color(0.7843, 0.7843, 0.7843)    # #c8c8c8
+const TEXT_SECONDARY := Color(0.4784, 0.4784, 0.5098)  # #7a7a82
+const TEXT_DISABLED := Color(0.2902, 0.2902, 0.3216)   # #4a4a52
 
-const ACCENT := Color(0.4863, 0.549, 1.0)             # #7c8cff
-const SUCCESS := Color(0.2392, 0.8392, 0.549)         # #3dd68c
-const WARNING := Color(0.9608, 0.7216, 0.2392)        # #f5b83d
-const ERROR := Color(0.949, 0.4275, 0.4275)           # #f26d6d
+const ACCENT := Color(0.4667, 0.8, 0.9333)             # #7ce
+const SUCCESS := Color(0.3843, 0.9098, 0.5176)         # #62e884
+const WARNING := Color(0.9412, 0.7765, 0.4549)         # #f0c674
+const ERROR := Color(1.0, 0.4824, 0.4471)              # #ff7b72
 
-const FONT_SIZE_TITLE := 24
-const FONT_SIZE_HEADING := 18
-const FONT_SIZE_BODY := 14
-const FONT_SIZE_SMALL := 12
+const FONT_SIZE_TITLE := 20
+const FONT_SIZE_HEADING := 15
+const FONT_SIZE_BODY := 13
+const FONT_SIZE_SMALL := 11
 
 const SPACE_XS := 4
 const SPACE_S := 8
@@ -33,8 +33,8 @@ const SPACE_M := 12
 const SPACE_L := 20
 const SPACE_XL := 28
 
-const RADIUS_SM := 6
-const RADIUS_MD := 10
+const RADIUS_SM := 0
+const RADIUS_MD := 0
 
 var _theme: Theme
 var _display_font: Font = null
@@ -48,11 +48,11 @@ func _ready() -> void:
 
 
 func _load_fonts() -> void:
-	var body := load("res://assets/fonts/Inter.ttf") as Font
-	if body:
-		_theme.default_font = body
-	_display_font = load("res://assets/fonts/SpaceGrotesk.ttf") as Font
+	# Monospace-first: JetBrains Mono is the default body font.
 	_mono_font = load("res://assets/fonts/JetBrainsMono.ttf") as Font
+	if _mono_font:
+		_theme.default_font = _mono_font
+	_display_font = load("res://assets/fonts/SpaceGrotesk.ttf") as Font
 
 
 func display_font() -> Font:
@@ -63,15 +63,15 @@ func mono_font() -> Font:
 	return _mono_font
 
 
-## Extend the .tres (Panels only) with the dark control styles, so controls stop
+## Extend the .tres with the terminal control styles, so controls stop
 ## rendering with Godot's stock light theme on the dark panels.
 func _build_control_styles() -> void:
 	# Button
-	_theme.set_stylebox("normal", "Button", _button_style(Color(0.13, 0.13, 0.16), BORDER_DIM))
-	_theme.set_stylebox("hover", "Button", _button_style(Color(0.17, 0.17, 0.21), BORDER_CARD))
-	_theme.set_stylebox("pressed", "Button", _button_style(Color(0.10, 0.10, 0.13), BORDER_DIM))
-	_theme.set_stylebox("disabled", "Button", _button_style(Color(0.11, 0.11, 0.14, 0.5), BORDER_DIM))
-	_theme.set_stylebox("focus", "Button", _button_style(Color(0.13, 0.13, 0.16), ACCENT))
+	_theme.set_stylebox("normal", "Button", _button_style(BG_CARD, BORDER_DIM))
+	_theme.set_stylebox("hover", "Button", _button_style(Color(0.10, 0.10, 0.14), BORDER_CARD))
+	_theme.set_stylebox("pressed", "Button", _button_style(BG_DARK, BORDER_DIM))
+	_theme.set_stylebox("disabled", "Button", _button_style(Color(0.05, 0.05, 0.07, 0.6), BORDER_DIM))
+	_theme.set_stylebox("focus", "Button", _button_style(BG_CARD, ACCENT))
 	_theme.set_color("font_color", "Button", TEXT_PRIMARY)
 	_theme.set_color("font_disabled_color", "Button", TEXT_DISABLED)
 
@@ -79,35 +79,35 @@ func _build_control_styles() -> void:
 	_theme.set_color("font_color", "Label", TEXT_PRIMARY)
 
 	# LineEdit / TextEdit
-	_theme.set_stylebox("normal", "LineEdit", _flat(Color(0.08, 0.08, 0.10), BORDER_DIM, RADIUS_SM))
-	_theme.set_stylebox("focus", "LineEdit", _flat(Color(0.08, 0.08, 0.10), ACCENT, RADIUS_SM))
+	_theme.set_stylebox("normal", "LineEdit", _flat(Color(0.05, 0.05, 0.06), BORDER_DIM, RADIUS_SM))
+	_theme.set_stylebox("focus", "LineEdit", _flat(Color(0.05, 0.05, 0.06), ACCENT, RADIUS_SM))
 	_theme.set_color("font_color", "LineEdit", TEXT_PRIMARY)
-	_theme.set_stylebox("normal", "TextEdit", _flat(Color(0.08, 0.08, 0.10), BORDER_DIM, RADIUS_SM))
-	_theme.set_stylebox("focus", "TextEdit", _flat(Color(0.08, 0.08, 0.10), ACCENT, RADIUS_SM))
+	_theme.set_stylebox("normal", "TextEdit", _flat(Color(0.05, 0.05, 0.06), BORDER_DIM, RADIUS_SM))
+	_theme.set_stylebox("focus", "TextEdit", _flat(Color(0.05, 0.05, 0.06), ACCENT, RADIUS_SM))
 	_theme.set_color("font_color", "TextEdit", TEXT_PRIMARY)
 
 	# CheckBox (radio)
 	_theme.set_stylebox("on", "CheckBox", _flat(ACCENT, ACCENT, RADIUS_SM))
-	_theme.set_stylebox("off", "CheckBox", _flat(Color(0.13, 0.13, 0.16), BORDER_DIM, RADIUS_SM))
+	_theme.set_stylebox("off", "CheckBox", _flat(BG_CARD, BORDER_DIM, RADIUS_SM))
 	_theme.set_color("font_color", "CheckBox", TEXT_PRIMARY)
 
 	# HSeparator
 	_theme.set_stylebox("separator", "HSeparator", _flat(BORDER_DIM, Color(0, 0, 0, 0), 0))
 
 	# HSlider
-	_theme.set_stylebox("slider", "HSlider", _flat(BORDER_DIM, Color(0, 0, 0, 0), 2))
-	_theme.set_stylebox("grabber_area", "HSlider", _flat(BORDER_DIM, Color(0, 0, 0, 0), 2))
-	_theme.set_stylebox("grabber_area_highlight", "HSlider", _flat(ACCENT, Color(0, 0, 0, 0), 2))
+	_theme.set_stylebox("slider", "HSlider", _flat(BORDER_DIM, Color(0, 0, 0, 0), 0))
+	_theme.set_stylebox("grabber_area", "HSlider", _flat(BORDER_DIM, Color(0, 0, 0, 0), 0))
+	_theme.set_stylebox("grabber_area_highlight", "HSlider", _flat(ACCENT, Color(0, 0, 0, 0), 0))
 
 	# OptionButton
-	_theme.set_stylebox("normal", "OptionButton", _button_style(Color(0.13, 0.13, 0.16), BORDER_DIM))
-	_theme.set_stylebox("hover", "OptionButton", _button_style(Color(0.17, 0.17, 0.21), BORDER_CARD))
-	_theme.set_stylebox("pressed", "OptionButton", _button_style(Color(0.10, 0.10, 0.13), BORDER_DIM))
+	_theme.set_stylebox("normal", "OptionButton", _button_style(BG_CARD, BORDER_DIM))
+	_theme.set_stylebox("hover", "OptionButton", _button_style(Color(0.10, 0.10, 0.14), BORDER_CARD))
+	_theme.set_stylebox("pressed", "OptionButton", _button_style(BG_DARK, BORDER_DIM))
 	_theme.set_color("font_color", "OptionButton", TEXT_PRIMARY)
 
 	# TabContainer
-	_theme.set_stylebox("tab_unselected", "TabContainer", _flat(Color(0.11, 0.11, 0.14), BORDER_DIM, RADIUS_SM))
-	_theme.set_stylebox("tab_selected", "TabContainer", _flat(Color(0.16, 0.16, 0.20), ACCENT, RADIUS_SM))
+	_theme.set_stylebox("tab_unselected", "TabContainer", _flat(BG_DARK, BORDER_DIM, RADIUS_SM))
+	_theme.set_stylebox("tab_selected", "TabContainer", _flat(BG_CARD, ACCENT, RADIUS_SM))
 	_theme.set_color("font_selected_color", "TabContainer", TEXT_PRIMARY)
 	_theme.set_color("font_unselected_color", "TabContainer", TEXT_SECONDARY)
 
@@ -119,11 +119,11 @@ func _build_control_styles() -> void:
 	_theme.set_stylebox("panel", "TabContainer", _flat(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0))
 
 	# SpinBox
-	_theme.set_stylebox("updown", "SpinBox", _flat(Color(0.13, 0.13, 0.16), BORDER_DIM, RADIUS_SM))
+	_theme.set_stylebox("updown", "SpinBox", _flat(BG_CARD, BORDER_DIM, RADIUS_SM))
 	_theme.set_color("font_color", "SpinBox", TEXT_PRIMARY)
 
 	# ProgressBar
-	_theme.set_stylebox("background", "ProgressBar", _flat(Color(0.08, 0.08, 0.10), BORDER_DIM, RADIUS_SM))
+	_theme.set_stylebox("background", "ProgressBar", _flat(Color(0.05, 0.05, 0.06), BORDER_DIM, RADIUS_SM))
 	_theme.set_stylebox("fill", "ProgressBar", _flat(ACCENT, ACCENT, RADIUS_SM))
 
 
@@ -178,8 +178,8 @@ func make_heading(text: String) -> Label:
 	label.text = text
 	label.add_theme_font_size_override("font_size", FONT_SIZE_HEADING)
 	label.add_theme_color_override("font_color", TEXT_PRIMARY)
-	if _display_font:
-		label.add_theme_font_override("font", _display_font)
+	if _mono_font:
+		label.add_theme_font_override("font", _mono_font)
 	return label
 
 
@@ -190,6 +190,75 @@ func make_body(text: String) -> Label:
 	label.add_theme_color_override("font_color", TEXT_SECONDARY)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return label
+
+
+func make_console_line(text: String) -> Label:
+	var label = Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", FONT_SIZE_BODY)
+	label.add_theme_color_override("font_color", TEXT_SECONDARY)
+	if _mono_font:
+		label.add_theme_font_override("font", _mono_font)
+	return label
+
+
+## A small uppercase section label (IDE-style section header).
+func make_section(text: String) -> Label:
+	var label = Label.new()
+	label.text = text.to_upper()
+	label.add_theme_font_size_override("font_size", FONT_SIZE_SMALL)
+	label.add_theme_color_override("font_color", TEXT_DISABLED)
+	return label
+
+
+## A bordered title bar for a window/panel (bottom border only).
+func make_title_bar(text: String) -> PanelContainer:
+	var bar := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = BG_CARD
+	sb.border_width_bottom = 1
+	sb.border_color = BORDER_DIM
+	sb.content_margin_left = SPACE_S
+	sb.content_margin_right = SPACE_S
+	sb.content_margin_top = SPACE_XS
+	sb.content_margin_bottom = SPACE_XS
+	bar.add_theme_stylebox_override("panel", sb)
+	var label = Label.new()
+	label.text = text.to_upper()
+	label.add_theme_font_size_override("font_size", FONT_SIZE_SMALL)
+	label.add_theme_color_override("font_color", ACCENT)
+	if _mono_font:
+		label.add_theme_font_override("font", _mono_font)
+	bar.add_child(label)
+	return bar
+
+
+## A bordered window frame with a title bar. Returns {window, body} where `body`
+## is the VBoxContainer to add content into.
+func make_window(title: String) -> Dictionary:
+	var win := PanelContainer.new()
+	var sb := _flat(BG_CARD, BORDER_DIM, RADIUS_SM)
+	sb.set_content_margin_all(0)
+	win.add_theme_stylebox_override("panel", sb)
+
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 0)
+	win.add_child(v)
+
+	if not title.is_empty():
+		v.add_child(make_title_bar(title))
+
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", SPACE_S)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", SPACE_M)
+	margin.add_theme_constant_override("margin_right", SPACE_M)
+	margin.add_theme_constant_override("margin_top", SPACE_M)
+	margin.add_theme_constant_override("margin_bottom", SPACE_M)
+	margin.add_child(body)
+	v.add_child(margin)
+
+	return {"window": win, "body": body}
 
 
 func make_separator() -> HSeparator:

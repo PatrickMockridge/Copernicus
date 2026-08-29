@@ -132,3 +132,131 @@ func deploy_term(term: String) -> Result:
 	if signed.is_err():
 		return signed
 	return _node.deploy(signed.get_data())
+
+
+# ---------------------------------------------------------------------------
+# Key management: password-protected keystore + lock lifecycle.
+# ---------------------------------------------------------------------------
+
+const KEYSTORE_PATH := "user://wallet.ks"
+const KDF_ITERATIONS := 100000
+
+var _locked: bool = false
+
+
+func has_keystore() -> bool:
+	return FileAccess.file_exists(KEYSTORE_PATH)
+
+
+func is_locked() -> bool:
+	return _locked
+
+
+func lock() -> void:
+	_private_key = ""
+	_public_key = ""
+	_rev_address = ""
+	_address = ""
+	_locked = true
+
+
+func unlock(password: String) -> Result:
+	return load_keystore(password)
+
+
+## Encrypt + persist the current key under `password` (PBKDF2-HMAC-SHA256 → AES-256-CBC).
+func save_keystore(password: String) -> Result:
+	if _private_key.is_empty():
+		return Result.err("no key to save")
+	var crypto := Crypto.new()
+	var salt := crypto.generate_random_bytes(16)
+	var iv := crypto.generate_random_bytes(16)
+	var key := _pbkdf2_sha256(password, salt, KDF_ITERATIONS, 32)
+	var encrypted := _aes_encrypt(_private_key.to_utf8_buffer(), key, iv)
+	var data := {
+		"address": _rev_address,
+		"public_key": _public_key,
+		"private_key": Marshalls.raw_to_base64(encrypted),
+		"salt": Marshalls.raw_to_base64(salt),
+		"iv": Marshalls.raw_to_base64(iv),
+		"kdf": "pbkdf2_hmac_sha256",
+		"iterations": KDF_ITERATIONS,
+	}
+	var f := FileAccess.open(KEYSTORE_PATH, FileAccess.WRITE)
+	if not f:
+		return Result.err("cannot write keystore")
+	f.store_string(JSON.stringify(data))
+	_locked = false
+	return Result.ok({"address": _rev_address})
+
+
+func load_keystore(password: String) -> Result:
+	if not FileAccess.file_exists(KEYSTORE_PATH):
+		return Result.err("no keystore found")
+	var f := FileAccess.open(KEYSTORE_PATH, FileAccess.READ)
+	var parsed = JSON.parse_string(f.get_as_text())
+	if not parsed is Dictionary:
+		return Result.err("invalid keystore")
+	var salt := Marshalls.base64_to_raw(parsed["salt"])
+	var iv := Marshalls.base64_to_raw(parsed["iv"])
+	var iterations := int(parsed.get("iterations", KDF_ITERATIONS))
+	var key := _pbkdf2_sha256(password, salt, iterations, 32)
+	var dec := _aes_decrypt(Marshalls.base64_to_raw(parsed["private_key"]), key, iv)
+	if dec.is_empty():
+		return Result.err("wrong password")
+	var r := from_private_key(dec.get_string_from_ascii())
+	if r.is_ok():
+		_locked = false
+	return r
+
+
+func _pbkdf2_sha256(password: String, salt: PackedByteArray, iterations: int, dklen: int) -> PackedByteArray:
+	var crypto := Crypto.new()
+	var pw := password.to_utf8_buffer()
+	var out := PackedByteArray()
+	var block_index := 1
+	while out.size() < dklen:
+		var block := _hmac_sha256(crypto, pw, _concat(salt, _int32_be(block_index)))
+		var u := block
+		for _i in range(iterations - 1):
+			u = _hmac_sha256(crypto, pw, u)
+			for j in range(block.size()):
+				block[j] = block[j] ^ u[j]
+		out.append_array(block)
+		block_index += 1
+	return out.slice(0, dklen)
+
+
+func _hmac_sha256(crypto: Crypto, key: PackedByteArray, msg: PackedByteArray) -> PackedByteArray:
+	return crypto.hmac_digest(HashingContext.HASH_SHA256, key, msg)
+
+
+func _aes_encrypt(data: PackedByteArray, key: PackedByteArray, iv: PackedByteArray) -> PackedByteArray:
+	# The private key is always a whole number of 16-byte blocks, so update()
+	# returns the full ciphertext and no final-block flush is required.
+	var ctx := AESContext.new()
+	ctx.start(AESContext.MODE_CBC_ENCRYPT, key, iv)
+	return ctx.update(data)
+
+
+func _aes_decrypt(data: PackedByteArray, key: PackedByteArray, iv: PackedByteArray) -> PackedByteArray:
+	var ctx := AESContext.new()
+	ctx.start(AESContext.MODE_CBC_DECRYPT, key, iv)
+	return ctx.update(data)
+
+
+func _int32_be(v: int) -> PackedByteArray:
+	var b := PackedByteArray()
+	b.resize(4)
+	b[0] = (v >> 24) & 0xff
+	b[1] = (v >> 16) & 0xff
+	b[2] = (v >> 8) & 0xff
+	b[3] = v & 0xff
+	return b
+
+
+func _concat(a: PackedByteArray, b: PackedByteArray) -> PackedByteArray:
+	var c := a.duplicate()
+	c.append_array(b)
+	return c
+

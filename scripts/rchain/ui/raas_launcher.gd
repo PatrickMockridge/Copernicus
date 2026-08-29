@@ -1,7 +1,10 @@
 class_name RaasLauncher
 extends Control
-## Launcher for the robotics-as-a-service demos. Lists the available robots; each
-## card opens its own demo scene.
+## In-place launcher for the robotics-as-a-service demos. Emits `demo_requested`
+## with the demo scene path; the shell opens it as an overlay in the editor.
+
+signal demo_requested(scene_path: String)
+
 
 func _ready() -> void:
 	_setup_ui()
@@ -16,10 +19,6 @@ func _setup_ui() -> void:
 	var v := VBoxContainer.new()
 	panel.add_child(v)
 	v.add_theme_constant_override("separation", 12)
-	var back := Button.new()
-	back.text = "Back"
-	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/main.tscn"))
-	v.add_child(back)
 
 	v.add_child(CopernicusTheme.make_heading("Robotics-as-a-Service Demos"))
 	v.add_child(CopernicusTheme.make_body(
@@ -55,7 +54,7 @@ func _make_card(title: String, description: String, scene_path: String) -> Contr
 
 	var open := Button.new()
 	open.text = "Open"
-	open.pressed.connect(func() -> void: get_tree().change_scene_to_file(scene_path))
+	open.pressed.connect(func() -> void: demo_requested.emit(scene_path))
 	h.add_child(open)
 
 	return card

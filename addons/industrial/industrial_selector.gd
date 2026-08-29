@@ -6,6 +6,11 @@ extends BaseSelector
 
 signal backend_selected(backend_class: String)
 
+# Preload backends so their _static_init registers them with ModuleRegistry.
+const MockIndustrial = preload("res://addons/industrial/backends/mock_industrial.gd")
+const MotomanBridge = preload("res://addons/industrial/backends/motoman_bridge.gd")
+const OpcuaBridge = preload("res://addons/industrial/backends/opcua_bridge.gd")
+
 
 func _get_title() -> String:
 	return "Select Industrial Robot"

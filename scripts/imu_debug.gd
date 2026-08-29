@@ -56,6 +56,8 @@ func _create_axis(name: String, color: Color, direction: Vector3) -> MeshInstanc
 
 func set_robot(robot: Node3D) -> void:
 	_robot_node = robot
+	if robot:
+		position = robot.position
 
 
 func set_axes_visible(visible: bool) -> void:

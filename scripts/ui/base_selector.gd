@@ -3,7 +3,7 @@
 # Domain selectors extend this and override the virtual getter methods.
 
 class_name BaseSelector
-extends Control
+extends ModalLayer
 
 signal option_selected(id: String)
 signal cancelled()
@@ -51,6 +51,7 @@ func _populate_options(container: VBoxContainer) -> void:
 
 
 func _ready() -> void:
+	super._ready()
 	_button_group = ButtonGroup.new()
 	_button_group.allow_unpress = false
 	_setup_ui()
@@ -64,9 +65,9 @@ func _ready() -> void:
 
 func _setup_ui() -> void:
 	var panel = PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.custom_minimum_size = Vector2(560, 460)
 	CopernicusTheme.style_panel(panel)
-	add_child(panel)
+	content().add_child(panel)
 
 	var content = VBoxContainer.new()
 	panel.add_child(content)
@@ -165,3 +166,7 @@ func _on_cancel_pressed() -> void:
 func _on_apply_pressed() -> void:
 	option_selected.emit(_selected_id)
 	queue_free()
+
+
+func _on_escape() -> void:
+	_on_cancel_pressed()

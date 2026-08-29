@@ -6,6 +6,10 @@ extends BaseSelector
 
 signal backend_selected(backend_class: String)
 
+# Preload backends so their _static_init registers them with ModuleRegistry.
+const GodotPhysicsBackend = preload("res://scripts/physics/godot_physics_backend.gd")
+const PyBulletBackend = preload("res://scripts/physics/pybullet_backend.gd")
+
 
 func _get_title() -> String:
 	return "Select Physics Backend"

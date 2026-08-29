@@ -6,6 +6,11 @@ extends BaseSelector
 
 signal backend_selected(backend_class: String)
 
+# Preload backends so their _static_init registers them with ModuleRegistry.
+const PyTorchLearner = preload("res://scripts/gpu/backends/pytorch_learner.gd")
+const ComputeRaycast = preload("res://scripts/gpu/backends/compute_raycast.gd")
+const CUDAPhysics = preload("res://scripts/gpu/backends/cuda_physics.gd")
+
 
 func _get_title() -> String:
 	return "Select GPU Backend"

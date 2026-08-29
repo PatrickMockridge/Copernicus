@@ -6,6 +6,10 @@ extends BaseSelector
 
 signal planner_selected(planner_class: String)
 
+# Preload backends so their _static_init registers them with ModuleRegistry.
+const AStarGridPlanner = preload("res://scripts/nav/astar_grid_planner.gd")
+const Nav2Bridge = preload("res://scripts/nav/nav2_bridge.gd")
+
 
 func _get_title() -> String:
 	return "Select Navigation Planner"
