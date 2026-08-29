@@ -6,7 +6,7 @@ class_name LearningPanel
 extends Control
 
 ## PyTorch learner backend
-var _learner: RefCounted = null
+var _learner: GPUBackend = null
 
 ## Training state
 var _is_training: bool = false
@@ -176,21 +176,50 @@ func _stats_row(grid: GridContainer, label_text: String, value: String, value_na
 
 func _initialize_learner() -> void:
 	_learner = PyTorchLearner.new()
+	# Consume the backend's signals (domain-signal rule): readiness, errors,
+	# per-step loss, and episode completions all update the dashboard.
+	_learner.backend_ready.connect(_on_backend_ready)
+	_learner.backend_error.connect(_on_backend_error)
+	_learner.training_step.connect(_on_training_step)
+	_learner.episode_complete.connect(_on_episode_complete)
 	var config = {
 		"state_dim": 24,
 		"action_dim": 4,
 		"hidden_dim": 128,
 		"device": "cuda" if GPUBackend.check_pytorch_available() else "cpu"
 	}
-	if _learner.initialize(config):
-		_update_label(_status_value, "Ready")
-	else:
+	if not _learner.initialize(config):
 		_update_label(_status_value, "Init Failed")
 
 
 func _update_label(label: Label, text: String) -> void:
 	if label:
 		label.text = text
+
+
+func _on_backend_ready() -> void:
+	_update_label(_status_value, "Ready")
+
+
+func _on_backend_error(message: String) -> void:
+	_update_label(_status_value, "Error: " + message)
+
+
+func _on_training_step(loss: float) -> void:
+	_last_loss = loss
+	_loss_history.append(loss)
+	if _loss_history.size() > _max_history:
+		_loss_history.pop_front()
+	_update_label(_loss_value, "%.4f" % loss)
+
+
+func _on_episode_complete(reward: float) -> void:
+	_episode_count += 1
+	_reward_history.append(reward)
+	if _reward_history.size() > _max_history:
+		_reward_history.pop_front()
+	_update_label(_episode_value, str(_episode_count))
+	_update_label(_reward_value, "%.2f" % reward)
 
 
 func _on_epsilon_changed(value: float) -> void:
@@ -221,7 +250,7 @@ func _on_save_model() -> void:
 		_update_label(_status_value, "Save failed")
 
 
-func get_learner() -> RefCounted:
+func get_learner() -> GPUBackend:
 	return _learner
 
 
@@ -231,26 +260,9 @@ func is_training() -> bool:
 
 func train_step(observations: Array, actions: Array, rewards: Array) -> Dictionary:
 	if _learner and _is_training:
-		var result = _learner.train_step(observations, actions, rewards)
-		_last_loss = result.get("loss", 0.0)
-
-		# Update metrics history
-		var reward = result.get("episode_reward", result.get("mean_reward", 0.0))
-		if reward != 0.0:
-			_reward_history.append(reward)
-			if _reward_history.size() > _max_history:
-				_reward_history.pop_front()
-
-		_loss_history.append(_last_loss)
-		if _loss_history.size() > _max_history:
-			_loss_history.pop_front()
-
-		# Update UI
-		_update_label(_loss_value, "%.4f" % _last_loss)
-		_update_label(_reward_value, "%.2f" % reward)
-		_update_label(_steps_value, str(_total_steps))
-
-		return result
+		# The learner emits training_step/episode_complete; the handlers above
+		# update the dashboard, so there is no manual UI polling here.
+		return _learner.train_step(observations, actions, rewards)
 	return {"loss": 0.0, "done": false}
 
 
