@@ -15,7 +15,7 @@ var _camera: Camera3D
 var _cam_pivot: Node3D
 var _cam_distance: float = 3.0
 var _cam_yaw: float = 0.0
-var _cam_pitch: float = -30.0
+var _cam_pitch: float = 30.0
 var _cam_pan: Vector2 = Vector2.ZERO
 var _show_debug: bool = false
 var _joint_nodes: Array = []
@@ -451,11 +451,11 @@ func _input(event: InputEvent) -> void:
 		var motion = event as InputEventMouseMotion
 		if motion.button_mask & MOUSE_BUTTON_MASK_RIGHT:
 			if Input.is_key_pressed(KEY_SHIFT) or motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
-				pan_camera(-motion.relative_x * 0.005, motion.relative_y * 0.005)
+				pan_camera(-motion.relative.x * 0.005, motion.relative.y * 0.005)
 			else:
-				orbit_camera(-motion.relative_x * 0.3, -motion.relative_y * 0.3)
+				orbit_camera(-motion.relative.x * 0.3, -motion.relative.y * 0.3)
 		elif motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
-			pan_camera(-motion.relative_x * 0.005, motion.relative_y * 0.005)
+			pan_camera(-motion.relative.x * 0.005, motion.relative.y * 0.005)
 
 
 # ===== Debug =====
@@ -481,7 +481,7 @@ func set_grid_visible(visible: bool) -> void:
 
 func reset_view() -> void:
 	_cam_yaw = 0.0
-	_cam_pitch = -30.0
+	_cam_pitch = 30.0
 	_cam_distance = 3.0
 	_cam_pan = Vector2.ZERO
 	_update_camera_transform()
