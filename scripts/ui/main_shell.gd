@@ -12,6 +12,8 @@ const WalletPanel = preload("res://scripts/rchain/ui/wallet_panel.gd")
 const CoordinationPanel = preload("res://scripts/rchain/ui/coordination_panel.gd")
 const RobotGallery = preload("res://scripts/robots/ui/robot_gallery.gd")
 const RaasLauncher = preload("res://scripts/rchain/ui/raas_launcher.gd")
+const DemoHost = preload("res://scripts/ui/demo_host.gd")
+const VcsPanel = preload("res://scripts/vcs/ui/vcs_panel.gd")
 
 enum MenuId {
 	FILE_OPEN, FILE_RECENT, FILE_EXIT,
@@ -25,6 +27,7 @@ enum MenuId {
 const ACTIVITY_SPECS := [
 	["viewer", "▦", "Viewer"],
 	["robots", "◧", "Robots"],
+	["vcs", "⇅", "Version Control"],
 	["marketplace", "◫", "Marketplace"],
 	["wallet", "◈", "Wallet"],
 	["coordination", "◍", "Coordination"],
@@ -60,7 +63,7 @@ var _command_palette: CommandPalette
 var _last_dir: String = ""
 var _recent_robots: Array = []
 var _current_activity: String = "viewer"
-var _raas_demo: Control = null
+var _overlay: Control = null
 
 
 func _ready() -> void:
@@ -406,6 +409,8 @@ func _setup_panels() -> void:
 	gallery.robot_loaded.connect(func() -> void: _select_activity("viewer"))
 	_add_panel("robots", "Robots", gallery)
 
+	_add_panel("vcs", "Version Control", VcsPanel.new())
+
 	var raas = RaasLauncher.new()
 	raas.demo_requested.connect(_on_raas_demo_requested)
 	_add_panel("raas", "RaaS", raas)
@@ -463,9 +468,9 @@ func _extensions_row(mod: Dictionary) -> Control:
 # ---------------------------------------------------------------- navigation
 
 func _select_activity(id: String) -> void:
-	if id != "raas" and _raas_demo and is_instance_valid(_raas_demo):
-		_raas_demo.queue_free()
-		_raas_demo = null
+	if _overlay and is_instance_valid(_overlay):
+		_overlay.queue_free()
+		_overlay = null
 	_current_activity = id
 	for key in _activity_buttons:
 		CopernicusTheme.set_nav_active(_activity_buttons[key], key == id)
@@ -474,14 +479,14 @@ func _select_activity(id: String) -> void:
 
 
 func _on_raas_demo_requested(scene_path: String) -> void:
-	if _raas_demo and is_instance_valid(_raas_demo):
-		_raas_demo.queue_free()
+	if _overlay and is_instance_valid(_overlay):
+		_overlay.queue_free()
 	var demo = load(scene_path).instantiate()
 	demo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_editor_content.add_child(demo)
-	_raas_demo = demo
+	_overlay = demo
 	if demo.has_signal("closed"):
-		demo.closed.connect(func() -> void: _raas_demo = null)
+		demo.closed.connect(func() -> void: _overlay = null)
 
 
 func _show_side_for(id: String) -> void:
@@ -539,6 +544,7 @@ func _on_tab_close(index: int) -> void:
 func _register_commands() -> void:
 	_reg("view.open", "Viewer: Open Workspace", "View", func() -> void: _select_activity("viewer"))
 	_reg("robots.open", "Robots: Open Library", "View", func() -> void: _select_activity("robots"))
+	_reg("vcs.open", "Version Control: Open", "View", func() -> void: _select_activity("vcs"))
 	_reg("marketplace.open", "Marketplace: Open", "View", func() -> void: _select_activity("marketplace"))
 	_reg("wallet.open", "Wallet: Open", "View", func() -> void: _select_activity("wallet"))
 	_reg("coordination.open", "Coordination: Open", "View", func() -> void: _select_activity("coordination"))
@@ -622,9 +628,9 @@ func _on_menu_pressed(id: int) -> void:
 		MenuId.TOOL_ROS2:
 			_connect_ros2()
 		MenuId.TOOL_PHYSICS_DEMO:
-			_open_demo("res://scenes/physics_demo.tscn")
+			_open_demo("res://scenes/physics_demo.tscn", "Physics Demo")
 		MenuId.TOOL_TURTLE_DEMO:
-			_open_demo("res://scenes/turtle_demo.tscn")
+			_open_demo("res://scenes/turtle_demo.tscn", "Turtle Demo")
 		MenuId.HELP_ABOUT:
 			Toast.show_toast(self, "Copernicus — Robot Design Interface", Toast.Level.INFO)
 
@@ -699,8 +705,17 @@ func _on_recent_index(index: int) -> void:
 		_on_file_selected(_recent_robots[index])
 
 
-func _open_demo(scene_path: String) -> void:
-	get_tree().change_scene_to_file(scene_path)
+func _open_demo(scene_path: String, title: String = "") -> void:
+	if title.is_empty():
+		title = scene_path.get_file().get_basename().capitalize().replace("_", " ")
+	if _overlay and is_instance_valid(_overlay):
+		_overlay.queue_free()
+	var host = DemoHost.new()
+	host.setup(scene_path, title)
+	host.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_editor_content.add_child(host)
+	_overlay = host
+	host.closed.connect(func() -> void: _overlay = null)
 
 
 func _open_selector(scene_path: String) -> void:

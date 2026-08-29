@@ -45,6 +45,26 @@ func from_private_key(priv_hex: String) -> Result:
 	return _apply_keypair({"private_key": priv_hex.trim_prefix("0x"), "public_key": pk.get_data()})
 
 
+## Derive the identity from a BIP-39 mnemonic (matches ~/RWallet's m/44'/60'/0'/0/0 path).
+func from_mnemonic(mnemonic: String) -> Result:
+	var r := RChainCrypto.mnemonic_to_private_key(mnemonic)
+	if r.is_err():
+		return r
+	return from_private_key(r.get_data())
+
+
+## Generate a fresh 24-word mnemonic and apply its derived key. Returns {mnemonic}.
+func generate_mnemonic() -> Result:
+	var r := RChainCrypto.generate_mnemonic()
+	if r.is_err():
+		return r
+	var mnemonic: String = r.get_data()
+	var applied := from_mnemonic(mnemonic)
+	if applied.is_err():
+		return applied
+	return Result.ok({"mnemonic": mnemonic})
+
+
 func _apply_keypair(d: Dictionary) -> Result:
 	_private_key = str(d.get("private_key", ""))
 	_public_key = str(d.get("public_key", ""))

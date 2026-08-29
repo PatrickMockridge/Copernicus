@@ -79,3 +79,28 @@ static func base58_decode(s: String) -> Result:
 	if b.is_empty() and not s.is_empty():
 		return Result.err("invalid base58")
 	return Result.ok(b)
+
+
+static func generate_mnemonic() -> Result:
+	var m: String = RChainCryptoNative.generate_mnemonic()
+	if m.is_empty():
+		return Result.err("failed to generate mnemonic")
+	return Result.ok(m)
+
+
+static func is_valid_mnemonic(mnemonic: String) -> bool:
+	return RChainCryptoNative.is_valid_mnemonic(mnemonic)
+
+
+static func mnemonic_to_seed(mnemonic: String) -> Result:
+	var seed: String = RChainCryptoNative.mnemonic_to_seed(mnemonic)
+	if seed.is_empty():
+		return Result.err("invalid mnemonic")
+	return Result.ok(seed)
+
+
+static func mnemonic_to_private_key(mnemonic: String) -> Result:
+	var pk: String = RChainCryptoNative.mnemonic_to_private_key(mnemonic)
+	if pk.is_empty():
+		return Result.err("invalid mnemonic")
+	return Result.ok(pk)

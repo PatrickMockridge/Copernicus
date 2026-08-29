@@ -17,6 +17,8 @@ var _create_btn: Button
 var _unlock_btn: Button
 var _lock_btn: Button
 var _import_btn: Button
+var _mnemonic_label: Label
+var _mnemonic_input: LineEdit
 var _overlay: LoadingOverlay = null
 
 
@@ -103,6 +105,32 @@ func _setup_ui() -> void:
 	_import_btn.pressed.connect(_on_import)
 	adv_row.add_child(_import_btn)
 
+	# Import mnemonic (collapsed by default)
+	var mnem_toggle := Button.new()
+	mnem_toggle.text = "Import mnemonic phrase…"
+	mnem_toggle.flat = true
+	mnem_toggle.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	mnem_toggle.pressed.connect(_on_mnemonic_import_toggle)
+	v.add_child(mnem_toggle)
+	var mnem_row := HBoxContainer.new()
+	mnem_row.name = "MnemonicRow"
+	mnem_row.visible = false
+	v.add_child(mnem_row)
+	_mnemonic_input = LineEdit.new()
+	_mnemonic_input.placeholder_text = "24-word recovery phrase"
+	_mnemonic_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mnem_row.add_child(_mnemonic_input)
+	var mnem_import_btn := CopernicusTheme.make_secondary_button("Import")
+	mnem_import_btn.pressed.connect(_on_import_mnemonic)
+	mnem_row.add_child(mnem_import_btn)
+
+	# Recovery phrase (shown after create)
+	v.add_child(CopernicusTheme.make_section("Recovery phrase"))
+	_mnemonic_label = CopernicusTheme.make_body("")
+	_mnemonic_label.add_theme_color_override("font_color", CopernicusTheme.WARNING)
+	_mnemonic_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(_mnemonic_label)
+
 	v.add_child(CopernicusTheme.make_separator())
 
 	# Transfer
@@ -176,10 +204,14 @@ func _on_create() -> void:
 		_status.text = "Password must be 6+ characters"
 		return
 	var w: RChainWallet = RChainService.wallet
-	if not w.is_ready():
-		w.generate()
+	var gen := w.generate_mnemonic()
+	if gen.is_err():
+		_status.text = "Error: " + gen.get_error()
+		return
+	var mnemonic: String = gen.get_data().get("mnemonic", "")
 	var r := w.save_keystore(pw)
-	_status.text = "Saved: " + (w.get_rev_address() if r.is_ok() else r.get_error())
+	_status.text = "Saved" if r.is_ok() else r.get_error()
+	_mnemonic_label.text = mnemonic
 	_refresh()
 
 
@@ -204,6 +236,22 @@ func _on_import() -> void:
 	var r := RChainService.wallet.from_private_key(_priv_input.text.strip_edges())
 	_status.text = "Imported" if r.is_ok() else r.get_error()
 	_refresh()
+
+
+func _on_import_mnemonic() -> void:
+	var mnemonic := _mnemonic_input.text.strip_edges()
+	if not RChainCrypto.is_valid_mnemonic(mnemonic):
+		_status.text = "Invalid mnemonic phrase"
+		return
+	var r := RChainService.wallet.from_mnemonic(mnemonic)
+	_status.text = "Imported" if r.is_ok() else r.get_error()
+	_refresh()
+
+
+func _on_mnemonic_import_toggle() -> void:
+	var row := find_child("MnemonicRow", true, false)
+	if row:
+		row.visible = not row.visible
 
 
 func _on_refresh_balance() -> void:

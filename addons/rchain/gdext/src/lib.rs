@@ -6,13 +6,15 @@
 
 use godot::prelude::*;
 
+use bip32::{DerivationPath, XPrv};
+use bip39::{Language, Mnemonic};
 use blake2::digest::consts::U32;
 use blake2::{Blake2b, Digest as Blake2bDigest};
 use k256::ecdsa::{
     signature::hazmat::{PrehashSigner, PrehashVerifier},
     Signature, SigningKey, VerifyingKey,
 };
-use rand_core::OsRng;
+use rand_core::{OsRng, RngCore};
 use sha3::Keccak256;
 
 struct RChainGdext;
@@ -191,6 +193,22 @@ fn verify_deploy_inner(d: &DeployData, deployer_hex: &str, sig_hex: &str) -> boo
     vk.verify_prehash(&hash, &sig).is_ok()
 }
 
+/// Ethereum HD path used by ~/RWallet to turn a mnemonic into an account.
+const ETH_DERIVATION_PATH: &str = "m/44'/60'/0'/0/0";
+
+fn mnemonic_to_privkey(mnemonic: &str) -> Result<[u8; 32], String> {
+    let m = Mnemonic::parse_in(Language::English, mnemonic).map_err(|e| e.to_string())?;
+    let seed = m.to_seed("");
+    let path: DerivationPath = ETH_DERIVATION_PATH
+        .parse()
+        .map_err(|e| format!("invalid path: {e}"))?;
+    let xprv = XPrv::derive_from_path(&seed, &path).map_err(|e| e.to_string())?;
+    let sk = xprv.private_key().to_bytes();
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&sk[..]);
+    Ok(out)
+}
+
 // ---------------------------------------------------------------------------
 // Godot API
 // ---------------------------------------------------------------------------
@@ -313,6 +331,37 @@ impl RChainCryptoNative {
             Err(_) => PackedByteArray::new(),
         }
     }
+
+    #[func]
+    fn generate_mnemonic() -> GString {
+        let mut entropy = [0u8; 32];
+        OsRng.fill_bytes(&mut entropy);
+        match Mnemonic::from_entropy_in(Language::English, &entropy) {
+            Ok(m) => GString::from(m.to_string().as_str()),
+            Err(_) => GString::new(),
+        }
+    }
+
+    #[func]
+    fn is_valid_mnemonic(mnemonic: GString) -> bool {
+        Mnemonic::parse_in(Language::English, &mnemonic.to_string()).is_ok()
+    }
+
+    #[func]
+    fn mnemonic_to_seed(mnemonic: GString) -> GString {
+        match Mnemonic::parse_in(Language::English, &mnemonic.to_string()) {
+            Ok(m) => GString::from(hex_encode(&m.to_seed("")).as_str()),
+            Err(_) => GString::new(),
+        }
+    }
+
+    #[func]
+    fn mnemonic_to_private_key(mnemonic: GString) -> GString {
+        match mnemonic_to_privkey(&mnemonic.to_string()) {
+            Ok(sk) => GString::from(hex_encode(&sk).as_str()),
+            Err(_) => GString::new(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -377,5 +426,33 @@ mod tests {
         let d = deploy_data();
         let (_, signature) = sign_deploy_inner(&d, PRIV).unwrap();
         assert_eq!(signature, SIG);
+    }
+
+    // BIP-39 "abandon…about" vector, empty passphrase (matches RWallet's `mnemonicToSeed`).
+    const ABANDON_MNEMONIC: &str =
+        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    const ABANDON_SEED: &str = "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4";
+
+    #[test]
+    fn mnemonic_seed_matches_bip39_vector() {
+        let m = Mnemonic::parse_in(Language::English, ABANDON_MNEMONIC).unwrap();
+        let seed = m.to_seed("");
+        assert_eq!(hex_encode(&seed), ABANDON_SEED);
+    }
+
+    #[test]
+    fn mnemonic_derives_valid_key() {
+        let sk = mnemonic_to_privkey(ABANDON_MNEMONIC).unwrap();
+        assert!(sk.iter().any(|&b| b != 0), "derived key must be non-zero");
+    }
+
+    #[test]
+    fn generate_mnemonic_roundtrip() {
+        let mut entropy = [0u8; 32];
+        OsRng.fill_bytes(&mut entropy);
+        let m = Mnemonic::from_entropy_in(Language::English, &entropy).unwrap();
+        assert_eq!(m.to_string().split_whitespace().count(), 24);
+        let sk = mnemonic_to_privkey(&m.to_string()).unwrap();
+        assert!(sk.iter().any(|&b| b != 0));
     }
 }
