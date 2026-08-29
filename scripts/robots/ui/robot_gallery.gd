@@ -19,25 +19,17 @@ func set_workspace(ws: CompositeWorkspace) -> void:
 
 
 func _build() -> void:
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
-	add_child(panel)
+	var win := UiPanel.new().setup("Robot Library")
+	win.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(win)
 
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", CopernicusTheme.SPACE_S)
-	panel.add_child(v)
-
-	var header := HBoxContainer.new()
-	v.add_child(header)
-	var title := CopernicusTheme.make_heading("Robot Library")
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
-	var imp := CopernicusTheme.make_secondary_button("Import URDF/MJCF…")
+	var imp := UiButton.new().setup("Import URDF/MJCF…", UiButton.Variant.SECONDARY)
 	imp.pressed.connect(func() -> void: import_requested.emit())
-	header.add_child(imp)
+	win.title_actions().add_child(imp)
 
-	v.add_child(CopernicusTheme.make_separator())
+	var v: VBoxContainer = win.body()
+
+	v.add_child(UiSeparator.new())
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -46,16 +38,16 @@ func _build() -> void:
 
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", CopernicusTheme.SPACE_M)
+	list.add_theme_constant_override("separation", UiTheme.space("m"))
 	scroll.add_child(list)
 
 	for cat in RobotLibrary.get_categories():
-		list.add_child(CopernicusTheme.make_section(RobotLibrary.get_categories()[cat]))
+		list.add_child(UiSection.new().setup(RobotLibrary.get_categories()[cat]))
 		var grid := GridContainer.new()
 		grid.columns = 3
 		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		grid.add_theme_constant_override("h_separation", CopernicusTheme.SPACE_S)
-		grid.add_theme_constant_override("v_separation", CopernicusTheme.SPACE_S)
+		grid.add_theme_constant_override("h_separation", UiTheme.space("s"))
+		grid.add_theme_constant_override("v_separation", UiTheme.space("s"))
 		list.add_child(grid)
 		for d in RobotLibrary.get_definitions():
 			if d["category"] == cat:
@@ -63,39 +55,9 @@ func _build() -> void:
 
 
 func _make_card(d: Dictionary) -> Control:
-	var card := Button.new()
+	var card := UiCard.new().setup(d["name"], d["description"], d["color"])
 	card.custom_minimum_size = Vector2(180, 118)
-	card.add_theme_stylebox_override("normal", CopernicusTheme.card_background())
-	card.add_theme_stylebox_override("hover", CopernicusTheme.card_background())
-	card.add_theme_stylebox_override("pressed", CopernicusTheme.card_background())
-	card.add_theme_stylebox_override("focus", CopernicusTheme.card_background())
 	card.pressed.connect(func() -> void: _on_load(d["id"]))
-
-	var v := VBoxContainer.new()
-	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_theme_constant_override("separation", CopernicusTheme.SPACE_XS)
-	card.add_child(v)
-
-	var swatch := ColorRect.new()
-	swatch.color = d["color"]
-	swatch.custom_minimum_size.y = 44
-	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_child(swatch)
-
-	var name := Label.new()
-	name.text = d["name"]
-	name.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
-	v.add_child(name)
-
-	var desc := Label.new()
-	desc.text = d["description"]
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	desc.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
-	desc.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
-	v.add_child(desc)
-
 	return card
 
 

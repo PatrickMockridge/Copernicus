@@ -83,13 +83,13 @@ func _ready() -> void:
 func _setup_ui() -> void:
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
+	panel.add_theme_stylebox_override("panel", UiTheme.style("panel"))
 	add_child(panel)
 
 	var v := VBoxContainer.new()
 	panel.add_child(v)
 	v.add_theme_constant_override("separation", 8)
-	v.add_child(CopernicusTheme.make_heading(_heading()))
+	v.add_child(UiLabel.new().setup(_heading(), UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY))
 
 	v.add_child(_build_walkthrough())
 
@@ -112,30 +112,30 @@ func _setup_ui() -> void:
 	row.add_child(back_btn)
 	_add_extra_buttons(row)
 
-	_status = CopernicusTheme.make_body(_idle_status())
+	_status = UiLabel.new().setup(_idle_status(), UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(_status)
 
 
 func _build_walkthrough() -> Control:
 	var card := PanelContainer.new()
-	CopernicusTheme.style_card(card)
+	card.add_theme_stylebox_override("panel", UiTheme.style("card"))
 
 	var wv := VBoxContainer.new()
 	card.add_child(wv)
 	wv.add_theme_constant_override("separation", 4)
-	wv.add_child(CopernicusTheme.make_heading("Walkthrough"))
+	wv.add_child(UiLabel.new().setup("Walkthrough", UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY))
 
 	var intro := _walkthrough_intro()
 	if not intro.is_empty():
-		wv.add_child(CopernicusTheme.make_body(intro))
+		wv.add_child(UiLabel.new().setup(intro, UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
 
 	var steps := _walkthrough_steps()
 	for i in range(steps.size()):
 		var label := Label.new()
 		label.text = "%d. %s" % [i + 1, steps[i]]
-		label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_BODY)
-		label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+		label.add_theme_font_size_override("font_size", UiTheme.font_size("body"))
+		label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		wv.add_child(label)
 		_step_labels.append(label)
@@ -148,7 +148,7 @@ func _set_step(active: int) -> void:
 		var is_active: bool = i + 1 == active
 		_step_labels[i].add_theme_color_override(
 			"font_color",
-			CopernicusTheme.ACCENT if is_active else CopernicusTheme.TEXT_SECONDARY
+			UiTheme.color("accent") if is_active else UiTheme.color("text_muted")
 		)
 
 

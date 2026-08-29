@@ -36,13 +36,13 @@ static func show_toast(parent: Node, message: String, level: Level = Level.INFO,
 func _border_color(level: Level) -> Color:
 	match level:
 		Level.SUCCESS:
-			return CopernicusTheme.SUCCESS
+			return UiTheme.color("success")
 		Level.WARNING:
-			return CopernicusTheme.WARNING
+			return UiTheme.color("warning")
 		Level.ERROR:
-			return CopernicusTheme.ERROR
+			return UiTheme.color("error")
 		_:
-			return CopernicusTheme.ACCENT
+			return UiTheme.color("accent")
 
 
 func _build(message: String, level: Level) -> void:
@@ -81,8 +81,8 @@ func _build(message: String, level: Level) -> void:
 	# Message
 	var label = Label.new()
 	label.text = message
-	label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
-	label.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
+	label.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
+	label.add_theme_color_override("font_color", UiTheme.color("text"))
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hbox.add_child(label)

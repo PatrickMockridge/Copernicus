@@ -77,6 +77,11 @@ func get_listings_by_owner(owner: String) -> Array:
 	return []
 
 
+## Get the current user's listings.
+func get_my_listings() -> Array:
+	return get_listings_by_owner(get_my_address())
+
+
 ## Get listings purchased by address
 func get_purchases_by_buyer(buyer: String) -> Array:
 	push_error("MarketplaceCore.get_purchases_by_buyer() must be implemented by subclass")
@@ -131,19 +136,19 @@ static func get_requirements() -> String:
 
 ## ===== Price Formatting =====
 
-static func format_price(winston: int) -> String:
-	var ar = float(winston) / 1e12
-	if ar < 0.001:
-		return "%.0f winston" % winston
-	elif ar < 1:
-		return "%.3f AR" % ar
+static func format_price(drops: int) -> String:
+	var rev = float(drops) / 1e8
+	if rev < 0.000001:
+		return "%.0f drops" % drops
+	elif rev < 1:
+		return "%.4f REV" % rev
 	else:
-		return "%.2f AR" % ar
+		return "%.2f REV" % rev
 
 
-static func parse_price(ar_string: String) -> int:
-	var ar = float(ar_string)
-	return int(ar * 1e12)
+static func parse_price(rev_string: String) -> int:
+	var rev = float(rev_string)
+	return int(rev * 1e8)
 
 
 ## ===== Filter Helpers =====

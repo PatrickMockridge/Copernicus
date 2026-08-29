@@ -16,7 +16,7 @@ func _get_title() -> String:
 
 
 func _get_info_text() -> String:
-	return "Mock marketplace is great for testing. AO Marketplace requires a wallet with AR tokens."
+	return "RChain and Mock price in REV. The legacy AO backend uses AR."
 
 
 func _get_button_group_name() -> String:

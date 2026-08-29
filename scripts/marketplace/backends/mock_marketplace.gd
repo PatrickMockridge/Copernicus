@@ -23,7 +23,7 @@ func _create_sample_listings():
 			"name": "TurtleBot Classic",
 			"asset_type": "ROBOT",
 			"description": "Classic differential drive robot with LIDAR. Perfect for indoor navigation research.",
-			"price": 500000000000,  # 0.5 AR
+			"price": 500000000,  # 5 REV
 			"creator": "copernicus_team",
 			"preview_url": ""
 		},
@@ -31,7 +31,7 @@ func _create_sample_listings():
 			"name": "Robotic Arm 6-DOF",
 			"asset_type": "ROBOT",
 			"description": "6 degrees of freedom robotic arm. Great for pick-and-place tasks.",
-			"price": 1200000000000,  # 1.2 AR
+			"price": 1200000000,  # 12 REV
 			"creator": "robotics_lab",
 			"preview_url": ""
 		},
@@ -39,7 +39,7 @@ func _create_sample_listings():
 			"name": "AGV Wheel Module",
 			"asset_type": "PART",
 			"description": "Omni-directional wheel module. 75mm diameter, compatible with standard servos.",
-			"price": 150000000000,  # 0.15 AR
+			"price": 150000000,  # 1.5 REV
 			"creator": "parts_guild",
 			"preview_url": ""
 		},
@@ -47,7 +47,7 @@ func _create_sample_listings():
 			"name": "RGB-D Camera Rig",
 			"asset_type": "PART",
 			"description": "Intel RealSense D435i camera mount. Includes calibration target.",
-			"price": 80000000000,  # 0.08 AR
+			"price": 80000000,  # 0.8 REV
 			"creator": "sensor_world",
 			"preview_url": ""
 		},
@@ -55,7 +55,7 @@ func _create_sample_listings():
 			"name": "Warehouse Environment",
 			"asset_type": "WORLD",
 			"description": "Complete warehouse scene with shelving, pallets, and path networks. 20m x 15m.",
-			"price": 2000000000000,  # 2 AR
+			"price": 2000000000,  # 20 REV
 			"creator": "env_studio",
 			"preview_url": ""
 		},
@@ -63,7 +63,7 @@ func _create_sample_listings():
 			"name": "Lab Environment",
 			"asset_type": "WORLD",
 			"description": "Research lab environment with workbenches, storage, and robot charging stations.",
-			"price": 1500000000000,  # 1.5 AR
+			"price": 1500000000,  # 15 REV
 			"creator": "env_studio",
 			"preview_url": ""
 		},
@@ -71,7 +71,7 @@ func _create_sample_listings():
 			"name": " quadruped Robot",
 			"asset_type": "ROBOT",
 			"description": "4-legged robot with compliant joints. Uses inverse kinematics for natural movement.",
-			"price": 3000000000000,  # 3 AR
+			"price": 3000000000,  # 30 REV
 			"creator": "quad_legged",
 			"preview_url": ""
 		},
@@ -79,7 +79,7 @@ func _create_sample_listings():
 			"name": "Gripper Attachment",
 			"asset_type": "PART",
 			"description": "2-finger parallel gripper. 50mm stroke, self-centering. URDF included.",
-			"price": 100000000000,  # 0.1 AR
+			"price": 100000000,  # 1 REV
 			"creator": "end_effector_co",
 			"preview_url": ""
 		}

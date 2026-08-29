@@ -46,8 +46,8 @@ func _build_buttons() -> void:
 	_add_button("reset", "Reset", _on_reset_view)
 
 	_fps_label = Label.new()
-	_fps_label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
-	_fps_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_DISABLED)
+	_fps_label.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
+	_fps_label.add_theme_color_override("font_color", UiTheme.color("text_faint"))
 	_fps_label.size_flags_horizontal = Control.SIZE_SHRINK_END
 	add_child(_fps_label)
 
@@ -57,7 +57,7 @@ func _build_buttons() -> void:
 func _add_button(id: String, text: String, callback: Callable) -> void:
 	var btn = Button.new()
 	btn.text = text
-	btn.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
+	btn.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
 	btn.pressed.connect(callback)
 	add_child(btn)
 	_buttons[id] = btn
@@ -102,7 +102,7 @@ func _update_button_states() -> void:
 
 
 func _set_btn_color(btn: Button, active: bool) -> void:
-	btn.add_theme_color_override("font_color", CopernicusTheme.ACCENT if active else CopernicusTheme.TEXT_DISABLED)
+	btn.add_theme_color_override("font_color", UiTheme.color("accent") if active else UiTheme.color("text_faint"))
 
 
 func set_fps(fps: int) -> void:

@@ -29,6 +29,6 @@ corner_radius_bottom_right = 0
 corner_radius_bottom_left = 0
 
 [resource]
-default_font_size = 13
+default_font_size = 14
 Panel/StyleBoxes/panel_background = SubResource(1)
 Panel/StyleBoxes/card_background = SubResource(2)

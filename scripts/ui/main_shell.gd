@@ -25,14 +25,14 @@ enum MenuId {
 }
 
 const ACTIVITY_SPECS := [
-	["viewer", "▦", "Viewer"],
-	["robots", "◧", "Robots"],
-	["vcs", "⇅", "Version Control"],
-	["marketplace", "◫", "Marketplace"],
-	["wallet", "◈", "Wallet"],
-	["coordination", "◍", "Coordination"],
-	["raas", "▸", "RaaS"],
-	["extensions", "◇", "Extensions"],
+	["viewer", "▦", "Viewer", "design"],
+	["robots", "◧", "Robots", "design"],
+	["vcs", "⇅", "Version Control", "design"],
+	["marketplace", "◫", "Marketplace", "publish"],
+	["wallet", "◈", "Wallet", "publish"],
+	["coordination", "◍", "Coordination", "publish"],
+	["raas", "▸", "RaaS", "operate"],
+	["extensions", "◇", "Extensions", "utility"],
 ]
 
 var _workspace: CompositeWorkspace
@@ -51,6 +51,9 @@ var _terminal_input: LineEdit
 var _status_left: HBoxContainer
 var _status_right: HBoxContainer
 var _status_wallet: Label
+var _status_node: Label
+var _status_ros2: Label
+var _status_mode: Label
 var _fps_label: Label
 
 var _file_dialog: FileDialog
@@ -64,6 +67,7 @@ var _last_dir: String = ""
 var _recent_robots: Array = []
 var _current_activity: String = "viewer"
 var _overlay: Control = null
+var _ros2_connected: bool = false
 
 
 func _ready() -> void:
@@ -71,7 +75,30 @@ func _ready() -> void:
 	_setup_ui()
 	_setup_panels()
 	_register_commands()
+	_setup_ros2()
 	_select_activity("viewer")
+	_check_node_async()
+
+
+func _setup_ros2() -> void:
+	var ros2 = get_node_or_null("/root/GodotROS2")
+	if ros2 and ros2.has_signal("initialization_completed"):
+		ros2.initialization_completed.connect(func(success: bool) -> void: _ros2_connected = success)
+
+
+func _check_node_async() -> void:
+	var rchain = get_node_or_null("/root/RChainService")
+	if rchain and rchain.node and rchain.has_method("run_async"):
+		rchain.run_async(func() -> Variant: return rchain.node.get_status(), _on_node_checked)
+
+
+func _on_node_checked(r) -> void:
+	if not _status_node:
+		return
+	if r != null and r.is_ok():
+		_status_node.text = "node: ✓"
+	else:
+		_status_node.text = "node: offline"
 
 
 func _load_persisted() -> void:
@@ -98,7 +125,7 @@ func _save_persisted() -> void:
 
 func _setup_ui() -> void:
 	var bg := ColorRect.new()
-	bg.color = CopernicusTheme.BG_DARK
+	bg.color = UiTheme.color("bg")
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
@@ -108,6 +135,8 @@ func _setup_ui() -> void:
 	add_child(root)
 
 	_setup_menu_bar(root)
+
+	root.add_child(_build_spine())
 
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -137,25 +166,42 @@ func _setup_ui() -> void:
 	_setup_context_menu()
 
 
+func _build_spine() -> Control:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 0)
+	var brief := UiBrief.new().configure()
+	brief.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(brief)
+	v.add_child(UiStageRail.new().setup())
+	return v
+
+
 func _build_activity_bar() -> Control:
 	var bar := PanelContainer.new()
 	bar.custom_minimum_size.x = 48
 	bar.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = CopernicusTheme.BG_CARD
+	sb.bg_color = UiTheme.color("panel")
 	sb.border_width_right = 1
-	sb.border_color = CopernicusTheme.BORDER_DIM
+	sb.border_color = UiTheme.color("border")
 	bar.add_theme_stylebox_override("panel", sb)
 
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", CopernicusTheme.SPACE_XS)
+	v.add_theme_constant_override("separation", UiTheme.space("xs"))
 	v.alignment = BoxContainer.ALIGNMENT_BEGIN
 	bar.add_child(v)
 
+	var last_mode := ""
 	for spec in ACTIVITY_SPECS:
+		if last_mode != "" and spec[3] != last_mode:
+			var sep := ColorRect.new()
+			sep.custom_minimum_size = Vector2(32, 1)
+			sep.color = UiTheme.color("border")
+			v.add_child(sep)
+		last_mode = spec[3]
 		var btn := Button.new()
 		btn.text = spec[1]
-		btn.tooltip_text = spec[2]
+		btn.tooltip_text = "%s — %s" % [spec[2], spec[3]]
 		btn.flat = true
 		btn.custom_minimum_size = Vector2(40, 40)
 		btn.add_theme_font_size_override("font_size", 18)
@@ -167,13 +213,6 @@ func _build_activity_bar() -> Control:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(spacer)
 
-	var settings := Button.new()
-	settings.text = "≡"
-	settings.tooltip_text = "Settings"
-	settings.flat = true
-	settings.custom_minimum_size = Vector2(40, 40)
-	v.add_child(settings)
-
 	return bar
 
 
@@ -183,21 +222,29 @@ func _build_side_bar() -> Control:
 	_side_bar.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_side_bar.visible = false
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = CopernicusTheme.BG_CARD
+	sb.bg_color = UiTheme.color("panel")
 	sb.border_width_right = 1
-	sb.border_color = CopernicusTheme.BORDER_DIM
+	sb.border_color = UiTheme.color("border")
 	_side_bar.add_theme_stylebox_override("panel", sb)
 
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", CopernicusTheme.SPACE_S)
+	v.add_theme_constant_override("separation", 0)
 	_side_bar.add_child(v)
 
-	_side_title = CopernicusTheme.make_heading("")
-	v.add_child(_side_title)
+	var tb := UiTitleBar.new().setup("")
+	_side_title = tb.label()
+	_side_title.add_theme_color_override("font_color", UiTheme.color("text"))
+	v.add_child(tb)
 
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", UiTheme.space("m"))
+	margin.add_theme_constant_override("margin_right", UiTheme.space("m"))
+	margin.add_theme_constant_override("margin_top", UiTheme.space("m"))
+	margin.add_theme_constant_override("margin_bottom", UiTheme.space("m"))
+	v.add_child(margin)
 	_side_content = Control.new()
 	_side_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	v.add_child(_side_content)
+	margin.add_child(_side_content)
 
 	return _side_bar
 
@@ -208,6 +255,7 @@ func _build_editor_group() -> Control:
 	v.add_theme_constant_override("separation", 0)
 
 	_tab_bar = TabBar.new()
+	_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_NEVER
 	_tab_bar.tab_changed.connect(_on_tab_changed)
 	_tab_bar.tab_close_pressed.connect(_on_tab_close)
 	v.add_child(_tab_bar)
@@ -221,32 +269,30 @@ func _build_editor_group() -> Control:
 
 
 func _build_panel_host() -> Control:
-	_panel_host = PanelContainer.new()
+	var win := UiPanel.new().setup("Terminal")
+	_panel_host = win
 	_panel_host.custom_minimum_size.y = 140
 	_panel_host.visible = false
-	CopernicusTheme.style_panel(_panel_host)
 
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 0)
-	_panel_host.add_child(v)
+	var v: VBoxContainer = win.body()
 
-	var bar := HBoxContainer.new()
-	bar.add_theme_constant_override("separation", CopernicusTheme.SPACE_S)
-	v.add_child(bar)
-	bar.add_child(CopernicusTheme.make_section("Terminal"))
 	var close := Button.new()
 	close.text = "×"
 	close.flat = true
 	close.pressed.connect(func() -> void: _panel_host.visible = false)
-	bar.add_child(close)
+	win.title_actions().add_child(close)
 
 	_terminal_output = TextEdit.new()
 	_terminal_output.editable = false
 	_terminal_output.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if UiTheme.font("mono"):
+		_terminal_output.add_theme_font_override("font", UiTheme.font("mono"))
 	v.add_child(_terminal_output)
 
 	_terminal_input = LineEdit.new()
-	_terminal_input.placeholder_text = "> type a command"
+	_terminal_input.placeholder_text = "> command"
+	if UiTheme.font("mono"):
+		_terminal_input.add_theme_font_override("font", UiTheme.font("mono"))
 	_terminal_input.text_submitted.connect(_on_terminal_submit)
 	v.add_child(_terminal_input)
 
@@ -255,32 +301,51 @@ func _build_panel_host() -> Control:
 
 func _build_status_bar() -> Control:
 	var bar := PanelContainer.new()
+	bar.custom_minimum_size.y = 28
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = CopernicusTheme.BG_CARD
+	sb.bg_color = UiTheme.color("panel")
 	sb.border_width_top = 1
-	sb.border_color = CopernicusTheme.BORDER_DIM
+	sb.border_color = UiTheme.color("border")
+	sb.content_margin_left = UiTheme.space("m")
+	sb.content_margin_right = UiTheme.space("m")
 	bar.add_theme_stylebox_override("panel", sb)
 
 	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", CopernicusTheme.SPACE_M)
+	h.add_theme_constant_override("separation", UiTheme.space("m"))
 	bar.add_child(h)
 
 	_status_left = HBoxContainer.new()
 	_status_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_status_left.add_theme_constant_override("separation", CopernicusTheme.SPACE_M)
+	_status_left.add_theme_constant_override("separation", UiTheme.space("m"))
 	h.add_child(_status_left)
 
-	_status_wallet = CopernicusTheme.make_body("wallet: —")
+	_status_wallet = _status_item("wallet")
 	_status_left.add_child(_status_wallet)
-	_status_left.add_child(CopernicusTheme.make_body("node: —"))
-	_status_left.add_child(CopernicusTheme.make_body("ros2: —"))
+	_status_node = _status_item("node")
+	_status_left.add_child(_status_node)
+	_status_ros2 = _status_item("ros2")
+	_status_left.add_child(_status_ros2)
+	_status_mode = _status_item("mode")
+	_status_left.add_child(_status_mode)
 
 	_status_right = HBoxContainer.new()
 	h.add_child(_status_right)
-	_fps_label = CopernicusTheme.make_body("0 fps")
+	var term_btn := Button.new()
+	term_btn.text = "Terminal"
+	term_btn.flat = true
+	term_btn.pressed.connect(_toggle_terminal)
+	_status_right.add_child(term_btn)
+	_fps_label = UiLabel.new().setup("0 fps", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
 	_status_right.add_child(_fps_label)
 
 	return bar
+
+
+func _status_item(name: String) -> Label:
+	var label := UiLabel.new().setup("%s: —" % name, UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
+	label.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
+	label.add_theme_color_override("font_color", UiTheme.color("text"))
+	return label
 
 
 func _setup_menu_bar(root: VBoxContainer) -> void:
@@ -388,9 +453,11 @@ func _setup_context_menu() -> void:
 func _setup_panels() -> void:
 	_workspace = CompositeWorkspace.new()
 	_add_panel("viewer", "Viewer", _workspace)
+	_workspace.publish_requested.connect(_on_publish_requested)
 	var robot_viewer = _workspace.get_robot_viewer()
 	if robot_viewer:
 		robot_viewer.context_menu_requested.connect(_on_context_menu_requested)
+		robot_viewer.robot_loaded.connect(_on_robot_loaded_for_scenario)
 
 	var ai = AiAssistantPanel.new()
 	_add_panel("ai", "AI Assistant", ai)
@@ -399,6 +466,7 @@ func _setup_panels() -> void:
 
 	var marketplace = MarketplacePanel.new()
 	_add_panel("marketplace", "Marketplace", marketplace)
+	marketplace.closed.connect(func() -> void: _select_activity("viewer"))
 
 	_add_panel("wallet", "Wallet", WalletPanel.new())
 	_add_panel("coordination", "Coordination", CoordinationPanel.new())
@@ -418,6 +486,23 @@ func _setup_panels() -> void:
 	_add_panel("extensions", "Extensions", _build_extensions_panel())
 
 
+func _on_robot_loaded_for_scenario(_node: Node3D) -> void:
+	var svc = get_node_or_null("/root/ScenarioService")
+	if svc:
+		svc.context["robot_loaded"] = true
+		svc.reevaluate()
+
+
+func _on_publish_requested(robot_name: String) -> void:
+	if _overlay and is_instance_valid(_overlay):
+		_overlay.queue_free()
+	var panel = PublishPanel.show_for_robot(robot_name)
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_editor_content.add_child(panel)
+	_overlay = panel
+	panel.tree_exited.connect(func() -> void: _overlay = null)
+
+
 func _add_panel(id: String, title: String, panel: Control) -> void:
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_editor_content.add_child(panel)
@@ -428,15 +513,11 @@ func _add_panel(id: String, title: String, panel: Control) -> void:
 
 
 func _build_extensions_panel() -> Control:
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", CopernicusTheme.SPACE_M)
-	panel.add_child(v)
-	v.add_child(CopernicusTheme.make_heading("Extensions"))
-	v.add_child(CopernicusTheme.make_body("Modules contribute commands, views and status items. Registered via ModuleRegistry._static_init."))
-	v.add_child(CopernicusTheme.make_separator())
+	var win := UiPanel.new().setup("Extensions")
+	win.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var v: VBoxContainer = win.body()
+	v.add_child(UiLabel.new().setup("Modules contribute commands, views and status items. Registered via ModuleRegistry._static_init.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
+	v.add_child(UiSeparator.new())
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(scroll)
@@ -444,23 +525,23 @@ func _build_extensions_panel() -> Control:
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
 	for cat in ModuleRegistry.get_all_categories():
-		list.add_child(CopernicusTheme.make_section(str(cat)))
+		list.add_child(UiSection.new().setup(str(cat)))
 		for mod in ModuleRegistry.get_available(cat):
 			list.add_child(_extensions_row(mod))
-	return panel
+	return win
 
 
 func _extensions_row(mod: Dictionary) -> Control:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", CopernicusTheme.SPACE_S)
+	row.add_theme_constant_override("separation", UiTheme.space("s"))
 	var name := Label.new()
 	name.text = str(mod.get("name", mod.get("id", "?")))
 	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
+	name.add_theme_color_override("font_color", UiTheme.color("text"))
 	row.add_child(name)
 	var avail := Label.new()
 	avail.text = "●" if mod.get("available", false) else "○"
-	avail.add_theme_color_override("font_color", CopernicusTheme.SUCCESS if mod.get("available", false) else CopernicusTheme.TEXT_DISABLED)
+	avail.add_theme_color_override("font_color", UiTheme.color("success") if mod.get("available", false) else UiTheme.color("text_faint"))
 	row.add_child(avail)
 	return row
 
@@ -473,7 +554,7 @@ func _select_activity(id: String) -> void:
 		_overlay = null
 	_current_activity = id
 	for key in _activity_buttons:
-		CopernicusTheme.set_nav_active(_activity_buttons[key], key == id)
+		_activity_buttons[key].add_theme_color_override("font_color", UiTheme.color("accent") if key == id else UiTheme.color("text"))
 	_show_side_for(id)
 	_focus_tab(id)
 
@@ -493,9 +574,13 @@ func _show_side_for(id: String) -> void:
 	match id:
 		"viewer":
 			_side_bar.visible = true
-			_side_title.text = "Viewer"
+			_side_title.text = "Workspace"
 			_clear_side()
-			_side_content.add_child(CopernicusTheme.make_empty_state("Workspace", "Right-click the viewport for options."))
+			var info := UiLabel.new().setup("No robot loaded", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
+			var viewer = _workspace.get_robot_viewer()
+			if viewer and viewer.get_robot_root():
+				info.text = "%s — %d joints" % [viewer.get_robot_root().name, viewer.get_joint_count()]
+			_side_content.add_child(info)
 		"extensions":
 			_side_bar.visible = true
 			_side_title.text = "Extensions"
@@ -533,7 +618,7 @@ func _on_tab_close(index: int) -> void:
 	if index < 0 or index >= _tabs.size():
 		return
 	var id: String = _tabs[index]["id"]
-	if id in ["viewer", "marketplace", "wallet", "coordination", "robots", "raas", "extensions"]:
+	if id in ["viewer", "ai", "robots", "vcs", "marketplace", "wallet", "coordination", "raas", "extensions"]:
 		return  # primary destinations stay open
 	_tab_bar.remove_tab(index)
 	_tabs.remove_at(index)
@@ -550,6 +635,7 @@ func _register_commands() -> void:
 	_reg("coordination.open", "Coordination: Open", "View", func() -> void: _select_activity("coordination"))
 	_reg("raas.open", "RaaS: Open Demos", "View", func() -> void: _select_activity("raas"))
 	_reg("extensions.open", "Extensions: List Modules", "View", func() -> void: _select_activity("extensions"))
+	_reg("ai.open", "AI Assistant: Open", "View", func() -> void: _focus_tab("ai"))
 
 	_reg("robot.open", "Open Robot…", "File", func() -> void: _open_file_dialog())
 	_reg("view.reset", "View: Reset", "View", func() -> void: _workspace.get_robot_viewer().reset_view())
@@ -571,6 +657,14 @@ func _register_commands() -> void:
 
 	_reg("demo.physics", "Demo: Physics (WASD)", "Demo", func() -> void: _open_demo("res://scenes/physics_demo.tscn"))
 	_reg("demo.turtle", "Demo: Turtle", "Demo", func() -> void: _open_demo("res://scenes/turtle_demo.tscn"))
+
+	_reg("help", "Help: List Commands", "Terminal", _terminal_help)
+	_reg("clear", "Terminal: Clear", "Terminal", _terminal_clear)
+
+	# Plugin-contributed commands (modules registered via ModuleRegistry).
+	for cmd in ModuleRegistry.get_contributed_commands():
+		if cmd is Dictionary and cmd.has("id") and cmd.has("handler"):
+			CommandRegistry.register(cmd)
 
 
 func _reg(id: String, label: String, category: String, handler: Callable) -> void:
@@ -739,20 +833,39 @@ func _on_terminal_submit(text: String) -> void:
 	var line := text.strip_edges()
 	if line.is_empty():
 		return
-	_terminal_output.text += "> " + line + "\n"
-	if not CommandRegistry.run(_line_to_id(line)):
-		var matched := false
-		for cmd in CommandRegistry.query(line):
-			if str(cmd.get("label", "")).to_lower().begins_with(line.to_lower()):
-				CommandRegistry.run(cmd.get("id", ""))
-				matched = true
-				break
-		if not matched:
-			_terminal_output.text += "  unknown command: " + line + "\n"
+	_echo("> " + line)
+	var cmd := CommandRegistry.find(line)
+	if cmd.is_empty():
+		_echo("  unknown command: " + line)
+		return
+	CommandRegistry.run(cmd.get("id", ""))
+	_echo("  ok: " + str(cmd.get("label", "")))
 
 
-func _line_to_id(line: String) -> String:
-	return line.strip_edges().replace(" ", "_").to_lower()
+func _echo(msg: String) -> void:
+	if not _terminal_output:
+		return
+	_terminal_output.text += msg + "\n"
+	var sb := _terminal_output.get_v_scroll_bar()
+	if sb:
+		sb.value = sb.max_value
+
+
+func _terminal_clear() -> void:
+	if _terminal_output:
+		_terminal_output.text = ""
+
+
+func _terminal_help() -> void:
+	if not _terminal_output:
+		return
+	var lines: Array = ["commands:"]
+	for cmd in CommandRegistry.get_all():
+		lines.append("  %s — %s" % [cmd.get("id", ""), cmd.get("label", "")])
+	_terminal_output.text += "\n".join(lines) + "\n"
+	var sb := _terminal_output.get_v_scroll_bar()
+	if sb:
+		sb.value = sb.max_value
 
 
 # ---------------------------------------------------------------- context menu
@@ -792,3 +905,11 @@ func _update_status() -> void:
 		_status_wallet.text = "wallet: " + (addr.left(12) + "…" if addr.length() > 12 else addr)
 	else:
 		_status_wallet.text = "wallet: —"
+	if _status_ros2:
+		_status_ros2.text = "ros2: ✓" if _ros2_connected else "ros2: —"
+	if _status_mode:
+		var svc = get_node_or_null("/root/ScenarioService")
+		var mode := "—"
+		if svc and svc.active:
+			mode = str(svc.active.mode)
+		_status_mode.text = "mode: " + mode

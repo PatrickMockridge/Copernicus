@@ -50,11 +50,11 @@ func _setup_ui() -> void:
 	add_child(vbox)
 
 	# Header
-	vbox.add_child(CopernicusTheme.make_heading("PyTorch RL Training"))
+	vbox.add_child(UiLabel.new().setup("PyTorch RL Training", UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY))
 
 	var desc = Label.new()
 	desc.text = "Train robot policies using DQN, PPO, or SAC with GPU acceleration."
-	desc.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	desc.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(desc)
 
@@ -80,7 +80,7 @@ func _setup_ui() -> void:
 	# Chart area (placeholder - would need shader or Line2D for actual chart)
 	var chart_container = PanelContainer.new()
 	chart_container.custom_minimum_size.y = 120
-	CopernicusTheme.style_card(chart_container)
+	chart_container.add_theme_stylebox_override("panel", UiTheme.style("card"))
 	vbox.add_child(chart_container)
 
 	var chart_label = Label.new()
@@ -147,7 +147,7 @@ func _setup_ui() -> void:
 	# Info
 	var info = Label.new()
 	info.text = "Supports DQN, PPO, and SAC algorithms. Metrics tracked for episode reward, loss, and policy entropy."
-	info.add_theme_color_override("font_color", CopernicusTheme.TEXT_DISABLED)
+	info.add_theme_color_override("font_color", UiTheme.color("text_faint"))
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(info)
 

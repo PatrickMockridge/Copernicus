@@ -11,20 +11,17 @@ func _ready() -> void:
 
 
 func _setup_ui() -> void:
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
-	add_child(panel)
+	var win := UiPanel.new().setup("RaaS Demos")
+	win.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(win)
 
-	var v := VBoxContainer.new()
-	panel.add_child(v)
-	v.add_theme_constant_override("separation", 12)
+	var v: VBoxContainer = win.body()
 
-	v.add_child(CopernicusTheme.make_heading("Robotics-as-a-Service Demos"))
-	v.add_child(CopernicusTheme.make_body(
-		"Choose a robot. Each demo shows the RaaS flow: fund a job on-chain, execute it, and settle a work-metered fee (work × rate)."
+	v.add_child(UiLabel.new().setup(
+		"Choose a robot. Each demo shows the RaaS flow: fund a job on-chain, execute it, and settle a work-metered fee (work × rate).",
+		UiLabel.Kind.BODY, UiLabel.Tone.MUTED
 	))
-	v.add_child(CopernicusTheme.make_separator())
+	v.add_child(UiSeparator.new())
 
 	v.add_child(_make_card(
 		"TurtleBot — Drive",
@@ -39,21 +36,18 @@ func _setup_ui() -> void:
 
 
 func _make_card(title: String, description: String, scene_path: String) -> Control:
-	var card := PanelContainer.new()
-	CopernicusTheme.style_card(card)
-
+	var card := UiPanel.new().setup("")
 	var h := HBoxContainer.new()
-	card.add_child(h)
-	h.add_theme_constant_override("separation", 12)
+	h.add_theme_constant_override("separation", UiTheme.space("m"))
+	card.body().add_child(h)
 
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(text)
-	text.add_child(CopernicusTheme.make_heading(title))
-	text.add_child(CopernicusTheme.make_body(description))
+	text.add_child(UiLabel.new().setup(title, UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY))
+	text.add_child(UiLabel.new().setup(description, UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
 
-	var open := Button.new()
-	open.text = "Open"
+	var open := UiButton.new().setup("Open", UiButton.Variant.SECONDARY)
 	open.pressed.connect(func() -> void: demo_requested.emit(scene_path))
 	h.add_child(open)
 

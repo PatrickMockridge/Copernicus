@@ -72,37 +72,23 @@ func set_backend(backend: MarketplaceCore) -> void:
 
 
 func _setup_ui() -> void:
-	# Main panel
-	var panel = PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
-	add_child(panel)
+	var win = UiPanel.new().setup("Marketplace")
+	win.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(win)
 
-	var main_vbox = VBoxContainer.new()
-	panel.add_child(main_vbox)
-
-	# Header with title and close button
-	var header = HBoxContainer.new()
-	header.alignment = BoxContainer.ALIGNMENT_END
-	main_vbox.add_child(header)
-
-	var title = Label.new()
-	title.text = "Copernicus Marketplace"
-	title.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_HEADING)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
+	var main_vbox: VBoxContainer = win.body()
 
 	var backend_btn = Button.new()
 	backend_btn.text = "Backend"
 	backend_btn.tooltip_text = "Select marketplace backend"
 	backend_btn.pressed.connect(_on_backend_pressed)
-	header.add_child(backend_btn)
+	win.title_actions().add_child(backend_btn)
 
 	var close_btn = Button.new()
-	close_btn.text = "X"
+	close_btn.text = "×"
 	close_btn.tooltip_text = "Close"
 	close_btn.pressed.connect(_on_close_pressed)
-	header.add_child(close_btn)
+	win.title_actions().add_child(close_btn)
 
 	# Tab bar
 	_tab_bar = HBoxContainer.new()
@@ -172,13 +158,13 @@ func _setup_ui() -> void:
 	_create_panel = PanelContainer.new()
 	_create_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_create_panel.visible = false
-	CopernicusTheme.style_card(_create_panel)
+	_create_panel.add_theme_stylebox_override("panel", UiTheme.style("card"))
 	main_vbox.add_child(_create_panel)
 
 	# Status label
 	_status_label = Label.new()
 	_status_label.text = "Loading..."
-	_status_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	_status_label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	main_vbox.add_child(_status_label)
 
 	# Load initial listings
@@ -186,7 +172,7 @@ func _setup_ui() -> void:
 
 
 func _refresh_listings() -> void:
-	_set_status("Loading...", CopernicusTheme.TEXT_SECONDARY)
+	_set_status("Loading...", UiTheme.color("text_muted"))
 	var filter = _get_current_filter()
 	_all_listings = _marketplace.load_listings(filter)
 
@@ -245,12 +231,12 @@ func _set_status(text: String, color: Color) -> void:
 
 func _on_listings_loaded(listings: Array) -> void:
 	_display_listings(_apply_sort(listings))
-	_set_status("%d listings found" % listings.size(), CopernicusTheme.TEXT_SECONDARY)
+	_set_status("%d listings found" % listings.size(), UiTheme.color("text_muted"))
 
 
 func _on_search_completed(results: Array) -> void:
 	_display_listings(_apply_sort(results))
-	_set_status("%d results found" % results.size(), CopernicusTheme.TEXT_SECONDARY)
+	_set_status("%d results found" % results.size(), UiTheme.color("text_muted"))
 
 
 func _apply_sort(listings: Array) -> Array:
@@ -268,28 +254,32 @@ func _apply_sort(listings: Array) -> Array:
 
 
 func _on_listing_purchased(listing: Listing, buyer: String) -> void:
-	_set_status("Purchased: " + listing.get_name(), CopernicusTheme.SUCCESS)
+	_set_status("Purchased: " + listing.get_name(), UiTheme.color("success"))
 	_refresh_listings()
 
 
 func _on_purchase_failed(listing: Listing, reason: String) -> void:
-	_set_status("Purchase failed: " + reason, CopernicusTheme.ERROR)
+	_set_status("Purchase failed: " + reason, UiTheme.color("error"))
 
 
 func _on_listing_created(listing: Listing) -> void:
-	_set_status("Created listing: " + listing.get_name(), CopernicusTheme.SUCCESS)
+	_set_status("Created listing: " + listing.get_name(), UiTheme.color("success"))
 	_refresh_listings()
+	var svc = get_node_or_null("/root/ScenarioService")
+	if svc:
+		svc.context["listing_created"] = true
+		svc.reevaluate()
 
 
 func _on_error(message: String) -> void:
-	_set_status("Error: " + message, CopernicusTheme.ERROR)
+	_set_status("Error: " + message, UiTheme.color("error"))
 
 
 func _display_listings(listings: Array) -> void:
 	_clear_listings()
 
 	if listings.is_empty():
-		_listings_container.add_child(CopernicusTheme.make_empty_state("No listings", "Try adjusting your search or filters."))
+		_listings_container.add_child(UiLabel.new().setup("No listings — Try adjusting your search or filters.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
 		return
 
 	for listing in listings:
@@ -304,7 +294,7 @@ func _clear_listings() -> void:
 
 func _create_listing_card(listing: Listing) -> Control:
 	var container = PanelContainer.new()
-	CopernicusTheme.style_card(container)
+	container.add_theme_stylebox_override("panel", UiTheme.style("card"))
 
 	var vbox = VBoxContainer.new()
 	container.add_child(vbox)
@@ -319,7 +309,7 @@ func _create_listing_card(listing: Listing) -> Control:
 		"Part": Color(0.2, 0.5, 0.2, 1),
 		"World": Color(0.5, 0.3, 0.15, 1),
 	}
-	preview_style.bg_color = type_colors.get(type_str, CopernicusTheme.BG_CARD)
+	preview_style.bg_color = type_colors.get(type_str, UiTheme.color("panel"))
 	preview_style.set_corner_radius_all(4)
 	preview.add_theme_stylebox_override("panel", preview_style)
 	vbox.add_child(preview)
@@ -329,7 +319,7 @@ func _create_listing_card(listing: Listing) -> Control:
 	preview_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	preview_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	preview_lbl.add_theme_font_size_override("font_size", 18)
-	preview_lbl.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
+	preview_lbl.add_theme_color_override("font_color", UiTheme.color("text"))
 	preview.add_child(preview_lbl)
 
 	# Name
@@ -342,15 +332,15 @@ func _create_listing_card(listing: Listing) -> Control:
 	# Creator
 	var creator_lbl = Label.new()
 	creator_lbl.text = "by " + listing.get_creator()
-	creator_lbl.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
-	creator_lbl.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
+	creator_lbl.add_theme_color_override("font_color", UiTheme.color("text_muted"))
+	creator_lbl.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
 	vbox.add_child(creator_lbl)
 
 	# Price
 	var price_lbl = Label.new()
 	price_lbl.text = MarketplaceCore.format_price(listing.get_price())
 	price_lbl.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
-	price_lbl.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
+	price_lbl.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
 	vbox.add_child(price_lbl)
 
 	# Buttons
@@ -397,17 +387,21 @@ func _show_detail_panel(listing: Listing) -> void:
 
 	var panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
+	panel.add_theme_stylebox_override("panel", UiTheme.style("panel"))
 	_detail_panel.add_child(panel)
-
-	var close_btn = Button.new()
-	close_btn.text = "X"
-	close_btn.position = Vector2(380, 10)
-	close_btn.pressed.connect(_detail_panel.queue_free)
-	panel.add_child(close_btn)
 
 	var vbox = VBoxContainer.new()
 	panel.add_child(vbox)
+
+	var header = HBoxContainer.new()
+	vbox.add_child(header)
+	var spacer = Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(spacer)
+	var close_btn = Button.new()
+	close_btn.text = "×"
+	close_btn.pressed.connect(_detail_panel.queue_free)
+	header.add_child(close_btn)
 
 	var title_lbl = Label.new()
 	title_lbl.text = listing.get_name()
@@ -416,7 +410,7 @@ func _show_detail_panel(listing: Listing) -> void:
 
 	var type_lbl = Label.new()
 	type_lbl.text = listing.get_asset_type_string()
-	type_lbl.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	type_lbl.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	vbox.add_child(type_lbl)
 
 	var desc_lbl = Label.new()
@@ -449,14 +443,14 @@ func _show_create_panel() -> void:
 
 	var title = Label.new()
 	title.text = "Create New Listing"
-	title.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_HEADING)
-	title.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
+	title.add_theme_font_size_override("font_size", UiTheme.font_size("heading"))
+	title.add_theme_color_override("font_color", UiTheme.color("text"))
 	form.add_child(title)
 
 	# Name field
 	var name_label = Label.new()
 	name_label.text = "Asset Name"
-	name_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	name_label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	form.add_child(name_label)
 	var name_input = LineEdit.new()
 	name_input.placeholder_text = "e.g., Robot Arm v2"
@@ -465,7 +459,7 @@ func _show_create_panel() -> void:
 	# Description
 	var desc_label = Label.new()
 	desc_label.text = "Description"
-	desc_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	desc_label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	form.add_child(desc_label)
 	var desc_input = TextEdit.new()
 	desc_input.custom_minimum_size.y = 80
@@ -474,8 +468,8 @@ func _show_create_panel() -> void:
 
 	# Price
 	var price_label = Label.new()
-	price_label.text = "Price (AR)"
-	price_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	price_label.text = "Price (REV)"
+	price_label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	form.add_child(price_label)
 	var price_input = SpinBox.new()
 	price_input.min_value = 0.0
@@ -494,7 +488,7 @@ func _show_create_panel() -> void:
 			"name": asset_name,
 			"asset_type": "ROBOT",
 			"description": desc_input.text,
-			"price": int(price_input.value * 1e12),
+			"price": int(price_input.value * 1e8),
 			"files": []
 		}
 		var listing = _marketplace.create_listing(config)

@@ -19,14 +19,14 @@ func _ready() -> void:
 func _build() -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(620, 400)
-	CopernicusTheme.style_panel(panel)
+	panel.add_theme_stylebox_override("panel", UiTheme.style("panel"))
 	content().add_child(panel)
 
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 0)
 	panel.add_child(v)
 
-	v.add_child(CopernicusTheme.make_title_bar("Command Palette"))
+	v.add_child(UiTitleBar.new().setup("Command Palette"))
 
 	_input = LineEdit.new()
 	_input.placeholder_text = "Type a command…"
@@ -60,12 +60,12 @@ func _refresh(text: String) -> void:
 	var groups := CommandRegistry.group_by_category(_results)
 	var idx := 0
 	for cat in groups:
-		_list.add_child(CopernicusTheme.make_section(cat))
+		_list.add_child(UiSection.new().setup(cat))
 		for cmd in groups[cat]:
 			_list.add_child(_make_row(cmd, idx))
 			idx += 1
 	if _results.is_empty():
-		_list.add_child(CopernicusTheme.make_empty_state("No commands", "No matching command."))
+		_list.add_child(UiLabel.new().setup("No commands — No matching command.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
 
 
 func _make_row(cmd: Dictionary, index: int) -> Button:

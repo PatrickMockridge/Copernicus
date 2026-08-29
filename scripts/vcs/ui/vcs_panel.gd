@@ -19,72 +19,64 @@ func _ready() -> void:
 
 
 func _setup_ui() -> void:
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
-	add_child(panel)
+	var win := UiPanel.new().setup("Version Control")
+	win.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(win)
 
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", CopernicusTheme.SPACE_S)
-	panel.add_child(v)
-
-	var header := HBoxContainer.new()
-	v.add_child(header)
-	var title := CopernicusTheme.make_heading("Version Control")
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
-	var backend_btn := CopernicusTheme.make_secondary_button("Backend")
+	var backend_btn := UiButton.new().setup("Backend", UiButton.Variant.SECONDARY)
 	backend_btn.pressed.connect(_on_backend_pressed)
-	header.add_child(backend_btn)
+	win.title_actions().add_child(backend_btn)
 
-	_status_label = CopernicusTheme.make_body("")
+	var v: VBoxContainer = win.body()
+
+	_status_label = UiLabel.new().setup("", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(_status_label)
 
-	v.add_child(CopernicusTheme.make_separator())
+	v.add_child(UiSeparator.new())
 
-	v.add_child(CopernicusTheme.make_section("Remote"))
+	v.add_child(UiSection.new().setup("Remote"))
 	var remote_row := HBoxContainer.new()
 	v.add_child(remote_row)
 	_remote_input = LineEdit.new()
 	_remote_input.placeholder_text = "git URL or Ariadne repo id"
 	_remote_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	remote_row.add_child(_remote_input)
-	var set_remote_btn := CopernicusTheme.make_secondary_button("Set Remote")
+	var set_remote_btn := UiButton.new().setup("Set Remote", UiButton.Variant.SECONDARY)
 	set_remote_btn.pressed.connect(_on_set_remote)
 	remote_row.add_child(set_remote_btn)
-	var clone_btn := CopernicusTheme.make_secondary_button("Clone")
+	var clone_btn := UiButton.new().setup("Clone", UiButton.Variant.SECONDARY)
 	clone_btn.pressed.connect(_on_clone)
 	remote_row.add_child(clone_btn)
 
-	v.add_child(CopernicusTheme.make_separator())
+	v.add_child(UiSeparator.new())
 
-	v.add_child(CopernicusTheme.make_section("Commit"))
+	v.add_child(UiSection.new().setup("Commit"))
 	var commit_row := HBoxContainer.new()
 	v.add_child(commit_row)
 	_message_input = LineEdit.new()
 	_message_input.placeholder_text = "commit message"
 	_message_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	commit_row.add_child(_message_input)
-	var commit_btn := CopernicusTheme.make_primary_button("Commit")
+	var commit_btn := UiButton.new().setup("Commit", UiButton.Variant.PRIMARY)
 	commit_btn.pressed.connect(_on_commit)
 	commit_row.add_child(commit_btn)
 
 	var sync_row := HBoxContainer.new()
 	v.add_child(sync_row)
-	var push_btn := CopernicusTheme.make_secondary_button("Push")
+	var push_btn := UiButton.new().setup("Push", UiButton.Variant.SECONDARY)
 	push_btn.pressed.connect(_on_push)
 	sync_row.add_child(push_btn)
-	var pull_btn := CopernicusTheme.make_secondary_button("Pull")
+	var pull_btn := UiButton.new().setup("Pull", UiButton.Variant.SECONDARY)
 	pull_btn.pressed.connect(_on_pull)
 	sync_row.add_child(pull_btn)
-	var refresh_btn := CopernicusTheme.make_secondary_button("Refresh")
+	var refresh_btn := UiButton.new().setup("Refresh", UiButton.Variant.SECONDARY)
 	refresh_btn.pressed.connect(_refresh)
 	sync_row.add_child(refresh_btn)
 
-	v.add_child(CopernicusTheme.make_separator())
+	v.add_child(UiSeparator.new())
 
-	v.add_child(CopernicusTheme.make_section("History"))
+	v.add_child(UiSection.new().setup("History"))
 	_log_output = TextEdit.new()
 	_log_output.editable = false
 	_log_output.size_flags_vertical = Control.SIZE_EXPAND_FILL

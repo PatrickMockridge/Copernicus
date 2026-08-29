@@ -28,46 +28,37 @@ func _ready() -> void:
 
 
 func _setup_ui() -> void:
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
-	add_child(panel)
+	var win := UiPanel.new().setup("RChain Wallet")
+	win.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(win)
 
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", CopernicusTheme.SPACE_S)
-	panel.add_child(v)
+	var v: VBoxContainer = win.body()
 
-	var header := HBoxContainer.new()
-	v.add_child(header)
-	var title := CopernicusTheme.make_heading("RChain Wallet")
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
-	_status = CopernicusTheme.make_body("")
-	header.add_child(_status)
+	_status = UiLabel.new().setup("", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
+	win.title_actions().add_child(_status)
 
-	v.add_child(CopernicusTheme.make_separator())
+	v.add_child(UiSeparator.new())
 
 	# Identity
-	_address_label = CopernicusTheme.make_body("Address: -")
-	_address_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
+	_address_label = UiLabel.new().setup("Address: -", UiLabel.Kind.BODY, UiLabel.Tone.PRIMARY)
 	_address_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(_address_label)
-	_balance_label = CopernicusTheme.make_body("Balance: -")
+	_balance_label = UiLabel.new().setup("Balance: -", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
 	v.add_child(_balance_label)
 
 	var bal_row := HBoxContainer.new()
 	v.add_child(bal_row)
-	var bal_btn := CopernicusTheme.make_secondary_button("Refresh Balance")
+	var bal_btn := UiButton.new().setup("Refresh Balance", UiButton.Variant.SECONDARY)
 	bal_btn.pressed.connect(_on_refresh_balance)
 	bal_row.add_child(bal_btn)
-	var faucet_btn := CopernicusTheme.make_secondary_button("Faucet")
+	var faucet_btn := UiButton.new().setup("Faucet", UiButton.Variant.SECONDARY)
 	faucet_btn.pressed.connect(_on_faucet)
 	bal_row.add_child(faucet_btn)
 
-	v.add_child(CopernicusTheme.make_separator())
+	v.add_child(UiSeparator.new())
 
 	# Key management
-	v.add_child(CopernicusTheme.make_section("Key management"))
+	v.add_child(UiSection.new().setup("Key management"))
 	_password = LineEdit.new()
 	_password.placeholder_text = "password (min 6 chars)"
 	_password.secret = true
@@ -75,13 +66,13 @@ func _setup_ui() -> void:
 
 	var key_row := HBoxContainer.new()
 	v.add_child(key_row)
-	_create_btn = CopernicusTheme.make_secondary_button("Create")
+	_create_btn = UiButton.new().setup("Create", UiButton.Variant.SECONDARY)
 	_create_btn.pressed.connect(_on_create)
 	key_row.add_child(_create_btn)
-	_unlock_btn = CopernicusTheme.make_primary_button("Unlock")
+	_unlock_btn = UiButton.new().setup("Unlock", UiButton.Variant.PRIMARY)
 	_unlock_btn.pressed.connect(_on_unlock)
 	key_row.add_child(_unlock_btn)
-	_lock_btn = CopernicusTheme.make_secondary_button("Lock")
+	_lock_btn = UiButton.new().setup("Lock", UiButton.Variant.SECONDARY)
 	_lock_btn.pressed.connect(_on_lock)
 	key_row.add_child(_lock_btn)
 
@@ -101,7 +92,7 @@ func _setup_ui() -> void:
 	_priv_input.secret = true
 	_priv_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	adv_row.add_child(_priv_input)
-	_import_btn = CopernicusTheme.make_secondary_button("Import")
+	_import_btn = UiButton.new().setup("Import", UiButton.Variant.SECONDARY)
 	_import_btn.pressed.connect(_on_import)
 	adv_row.add_child(_import_btn)
 
@@ -120,21 +111,20 @@ func _setup_ui() -> void:
 	_mnemonic_input.placeholder_text = "24-word recovery phrase"
 	_mnemonic_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mnem_row.add_child(_mnemonic_input)
-	var mnem_import_btn := CopernicusTheme.make_secondary_button("Import")
+	var mnem_import_btn := UiButton.new().setup("Import", UiButton.Variant.SECONDARY)
 	mnem_import_btn.pressed.connect(_on_import_mnemonic)
 	mnem_row.add_child(mnem_import_btn)
 
 	# Recovery phrase (shown after create)
-	v.add_child(CopernicusTheme.make_section("Recovery phrase"))
-	_mnemonic_label = CopernicusTheme.make_body("")
-	_mnemonic_label.add_theme_color_override("font_color", CopernicusTheme.WARNING)
+	v.add_child(UiSection.new().setup("Recovery phrase"))
+	_mnemonic_label = UiLabel.new().setup("", UiLabel.Kind.BODY, UiLabel.Tone.WARNING)
 	_mnemonic_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(_mnemonic_label)
 
-	v.add_child(CopernicusTheme.make_separator())
+	v.add_child(UiSeparator.new())
 
 	# Transfer
-	v.add_child(CopernicusTheme.make_section("Transfer"))
+	v.add_child(UiSection.new().setup("Transfer"))
 	var tx_row := HBoxContainer.new()
 	v.add_child(tx_row)
 	_to_input = LineEdit.new()
@@ -145,24 +135,24 @@ func _setup_ui() -> void:
 	_amount.min_value = 0
 	_amount.max_value = 1000000000
 	tx_row.add_child(_amount)
-	var send_btn := CopernicusTheme.make_secondary_button("Transfer")
+	var send_btn := UiButton.new().setup("Transfer", UiButton.Variant.SECONDARY)
 	send_btn.pressed.connect(_on_transfer)
 	tx_row.add_child(send_btn)
 
-	v.add_child(CopernicusTheme.make_separator())
+	v.add_child(UiSeparator.new())
 
 	# Deploy / Explore console
-	v.add_child(CopernicusTheme.make_section("Deploy / Explore"))
+	v.add_child(UiSection.new().setup("Deploy / Explore"))
 	_term = TextEdit.new()
 	_term.custom_minimum_size.y = 70
 	_term.placeholder_text = "rholang term"
 	v.add_child(_term)
 	var term_row := HBoxContainer.new()
 	v.add_child(term_row)
-	var deploy_btn := CopernicusTheme.make_secondary_button("Deploy")
+	var deploy_btn := UiButton.new().setup("Deploy", UiButton.Variant.SECONDARY)
 	deploy_btn.pressed.connect(_on_deploy)
 	term_row.add_child(deploy_btn)
-	var explore_btn := CopernicusTheme.make_secondary_button("Explore")
+	var explore_btn := UiButton.new().setup("Explore", UiButton.Variant.SECONDARY)
 	explore_btn.pressed.connect(_on_explore)
 	term_row.add_child(explore_btn)
 

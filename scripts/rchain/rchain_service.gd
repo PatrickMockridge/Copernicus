@@ -7,6 +7,9 @@ var wallet: RChainWallet
 var sdk: RholangSDK
 var bridge: SignalBridge
 
+## Emitted on the main thread for every completed background task.
+signal task_completed(result)
+
 const MAX_THREADS := 16
 
 var _pending: Dictionary = {}  # Thread -> on_done Callable
@@ -55,6 +58,7 @@ func _process(_delta: float) -> void:
 			var on_done: Callable = _pending[thread]
 			_pending.erase(thread)
 			on_done.call(result)
+			task_completed.emit(result)
 	# Drain queued work now that slots may be free.
 	while _pending.size() < MAX_THREADS and not _queue.is_empty():
 		var task: Dictionary = _queue.pop_front()

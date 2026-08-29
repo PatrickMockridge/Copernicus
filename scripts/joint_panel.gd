@@ -18,19 +18,19 @@ var _empty_state: Control
 func _ready() -> void:
 	_layout = VBoxContainer.new()
 	_layout.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_layout.add_theme_constant_override("separation", CopernicusTheme.SPACE_S)
+	_layout.add_theme_constant_override("separation", UiTheme.space("s"))
 	add_child(_layout)
 
 	var header := HBoxContainer.new()
 	_layout.add_child(header)
-	var title := CopernicusTheme.make_heading("Joint Control")
+	var title := UiLabel.new().setup("Joint Control", UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-	var zero_all := CopernicusTheme.make_secondary_button("Zero All")
+	var zero_all := UiButton.new().setup("Zero All", UiButton.Variant.SECONDARY)
 	zero_all.pressed.connect(_on_zero_all)
 	header.add_child(zero_all)
 
-	_layout.add_child(CopernicusTheme.make_separator())
+	_layout.add_child(UiSeparator.new())
 
 	_slider_scroll = ScrollContainer.new()
 	_slider_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -39,15 +39,31 @@ func _ready() -> void:
 
 	_slider_list = VBoxContainer.new()
 	_slider_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_slider_list.add_theme_constant_override("separation", CopernicusTheme.SPACE_XS)
+	_slider_list.add_theme_constant_override("separation", UiTheme.space("xs"))
 	_slider_scroll.add_child(_slider_list)
 
-	_empty_state = CopernicusTheme.make_empty_state("No robot loaded", "Load a robot to control its joints.")
+	_empty_state = _make_empty_state()
 	_slider_list.add_child(_empty_state)
 
 	var viewer = find_viewer()
 	if viewer:
 		set_viewer(viewer)
+
+
+func _make_empty_state() -> Control:
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", UiTheme.space("s"))
+	var t = UiLabel.new().setup("No robot loaded", UiLabel.Kind.HEADING, UiLabel.Tone.MUTED)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(t)
+	var b = UiLabel.new().setup("Load a robot to control its joints.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
+	b.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(b)
+	return vbox
 
 
 func find_viewer() -> Node:
@@ -88,28 +104,19 @@ func _populate_from_viewer() -> void:
 
 
 func _add_joint_slider(joint_name: String, joint_index: int) -> void:
-	var card := PanelContainer.new()
-	CopernicusTheme.style_card(card)
+	var card := UiPanel.new().setup("")
 	_slider_list.add_child(card)
-
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", CopernicusTheme.SPACE_XS)
-	card.add_child(v)
+	var v: VBoxContainer = card.body()
 
 	# Header: name + type + zero.
 	var header := HBoxContainer.new()
 	v.add_child(header)
-	var name_label := Label.new()
-	name_label.text = joint_name
+	var name_label := UiLabel.new().setup(joint_name, UiLabel.Kind.BODY, UiLabel.Tone.PRIMARY)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_PRIMARY)
 	header.add_child(name_label)
 
 	var type: String = _viewer.get_joint_type(joint_index) if _viewer.has_method("get_joint_type") else "revolute"
-	var type_label := Label.new()
-	type_label.text = type
-	type_label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
-	type_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_DISABLED)
+	var type_label := UiLabel.new().setup(type, UiLabel.Kind.SMALL, UiLabel.Tone.MUTED)
 	header.add_child(type_label)
 
 	var zero := Button.new()
@@ -121,7 +128,7 @@ func _add_joint_slider(joint_name: String, joint_index: int) -> void:
 
 	# Slider row: min / slider / value.
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", CopernicusTheme.SPACE_XS)
+	row.add_theme_constant_override("separation", UiTheme.space("xs"))
 	v.add_child(row)
 
 	var limits := {"lower": -180.0, "upper": 180.0}
@@ -130,10 +137,7 @@ func _add_joint_slider(joint_name: String, joint_index: int) -> void:
 	var lower: float = limits["lower"]
 	var upper: float = limits["upper"]
 
-	var min_label := Label.new()
-	min_label.text = _fmt(lower)
-	min_label.add_theme_font_size_override("font_size", CopernicusTheme.FONT_SIZE_SMALL)
-	min_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_DISABLED)
+	var min_label := UiLabel.new().setup(_fmt(lower), UiLabel.Kind.SMALL, UiLabel.Tone.MUTED)
 	row.add_child(min_label)
 
 	var slider := HSlider.new()
@@ -149,11 +153,9 @@ func _add_joint_slider(joint_name: String, joint_index: int) -> void:
 	row.add_child(slider)
 	_sliders[joint_name] = slider
 
-	var value_label := Label.new()
-	value_label.text = _fmt(initial_value)
+	var value_label := UiLabel.new().setup(_fmt(initial_value), UiLabel.Kind.SMALL, UiLabel.Tone.ACCENT)
 	value_label.custom_minimum_size.x = 58
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	value_label.add_theme_color_override("font_color", CopernicusTheme.ACCENT)
 	row.add_child(value_label)
 	_value_labels[joint_name] = value_label
 

@@ -24,3 +24,9 @@ static func get_requirements() -> String:
 
 static func get_module_category() -> String:
 	return ""
+
+
+## Commands this module contributes to the command palette.
+## Returns [{id, label, category, keywords, handler: Callable}]. Default: none.
+static func get_commands() -> Array:
+	return []

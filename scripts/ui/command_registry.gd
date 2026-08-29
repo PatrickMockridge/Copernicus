@@ -64,6 +64,14 @@ func run(id: String) -> bool:
 	return false
 
 
+## Return the best-matching command for free-text input (e.g. "open robot", "toggle grid"), or {}.
+func find(text: String) -> Dictionary:
+	var results := query(text)
+	if results.is_empty():
+		return {}
+	return results[0]
+
+
 func get_all() -> Array:
 	return _commands.duplicate()
 

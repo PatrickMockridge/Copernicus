@@ -52,21 +52,15 @@ func _init_ai_instances() -> void:
 	_rosai.set_ai(_gameai)
 
 func _setup_ui() -> void:
-	var panel = PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	CopernicusTheme.style_panel(panel)
-	add_child(panel)
+	var win = UiPanel.new().setup("Robot AI Assistant")
+	win.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(win)
 
-	_main_vbox = VBoxContainer.new()
-	panel.add_child(_main_vbox)
+	_main_vbox = win.body()
 
 	# ---- Header ----
 	_header = HBoxContainer.new()
 	_main_vbox.add_child(_header)
-
-	var title = CopernicusTheme.make_heading("Robot AI Assistant")
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_header.add_child(title)
 
 	var api_key_label = Label.new()
 	api_key_label.text = "API Key:"
@@ -151,8 +145,8 @@ func _setup_ui() -> void:
 	_code_output = TextEdit.new()
 	_code_output.custom_minimum_size.y = 200
 	_code_output.editable = false
-	if CopernicusTheme.mono_font():
-		_code_output.add_theme_font_override("font", CopernicusTheme.mono_font())
+	if UiTheme.font("mono"):
+		_code_output.add_theme_font_override("font", UiTheme.font("mono"))
 	_main_vbox.add_child(_code_output)
 
 	# ---- Action Buttons ----

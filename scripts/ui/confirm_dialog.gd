@@ -41,7 +41,7 @@ func _build() -> void:
 	dialog.offset_right = 200
 	dialog.offset_bottom = 80
 
-	CopernicusTheme.style_panel(dialog)
+	dialog.add_theme_stylebox_override("panel", UiTheme.style("panel"))
 	add_child(dialog)
 
 	var content = VBoxContainer.new()
@@ -49,8 +49,8 @@ func _build() -> void:
 	dialog.add_child(content)
 
 	# Title + message
-	content.add_child(CopernicusTheme.make_heading(_title))
-	content.add_child(CopernicusTheme.make_body(_message))
+	content.add_child(UiLabel.new().setup(_title, UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY))
+	content.add_child(UiLabel.new().setup(_message, UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
 
 	# Buttons
 	var btn_hbox = HBoxContainer.new()

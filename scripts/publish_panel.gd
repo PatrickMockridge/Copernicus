@@ -51,7 +51,7 @@ func _setup_ui() -> void:
 	_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_panel)
 
-	CopernicusTheme.style_panel(_panel)
+	_panel.add_theme_stylebox_override("panel", UiTheme.style("panel"))
 
 	# Content container
 	_content = VBoxContainer.new()
@@ -63,7 +63,7 @@ func _setup_ui() -> void:
 	_title_bar.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_content.add_child(_title_bar)
 
-	var title = CopernicusTheme.make_heading("Publish Robot to Blockchain")
+	var title = UiLabel.new().setup("Publish Robot to Blockchain", UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title_bar.add_child(title)
 
@@ -73,8 +73,7 @@ func _setup_ui() -> void:
 	_title_bar.add_child(close_btn)
 
 	# Separator
-	var sep1 = HSeparator.new()
-	_content.add_child(sep1)
+	_content.add_child(UiSeparator.new())
 
 	# Name field
 	var name_hbox = HBoxContainer.new()
@@ -106,7 +105,7 @@ func _setup_ui() -> void:
 	_content.add_child(price_hbox)
 
 	var price_label = Label.new()
-	price_label.text = "Price (AR):"
+	price_label.text = "Price (REV):"
 	price_label.custom_minimum_size.x = 80
 	price_hbox.add_child(price_label)
 
@@ -116,13 +115,13 @@ func _setup_ui() -> void:
 	_price_spin.step = 0.1
 	_price_spin.value = 0.0
 	_price_spin.prefix = ""
-	_price_spin.suffix = " AR"
+	_price_spin.suffix = " REV"
 	_price_spin.custom_minimum_size.x = 120
 	price_hbox.add_child(_price_spin)
 
 	var price_hint = Label.new()
 	price_hint.text = " (0 = not for sale)"
-	price_hint.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	price_hint.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	price_hbox.add_child(price_hint)
 	price_hbox.add_child(Control.new())  # Spacer
 
@@ -161,15 +160,10 @@ func _setup_ui() -> void:
 
 	_status_label = Label.new()
 	_status_label.text = "0 files selected"
-	_status_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	_status_label.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	summary_hbox.add_child(_status_label)
 
 	summary_hbox.add_child(Control.new())  # Spacer
-
-	_cost_label = Label.new()
-	_cost_label.text = "Est. cost: ~$0.00"
-	_cost_label.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
-	summary_hbox.add_child(_cost_label)
 
 	# Progress bar
 	_progress_bar = ProgressBar.new()
@@ -216,7 +210,9 @@ func _populate_file_list() -> void:
 	_all_files = _discover_robot_files()
 
 	if _all_files.is_empty():
-		_file_list.add_child(CopernicusTheme.make_empty_state("No files found", "No robot files were discovered in the project."))
+		var empty := UiLabel.new().setup("No files found — no robot files were discovered in the project.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
+		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_file_list.add_child(empty)
 		_update_summary()
 		return
 
@@ -272,9 +268,6 @@ func _update_summary() -> void:
 
 	var size_str = "%.1f KB" % (total_size / 1024.0) if total_size < 1024 * 1024 else "%.1f MB" % (total_size / (1024.0 * 1024.0))
 	_status_label.text = "%d files selected (%s)" % [_selected_files.size(), size_str]
-
-	var est_cost = RobotPublisher.estimate_cost(_selected_files)
-	_cost_label.text = "Est. cost: ~$%.2f" % est_cost
 
 
 func _on_file_toggled(toggled: bool, file_path: String) -> void:
@@ -391,8 +384,8 @@ func _on_publish_failed(error: String) -> void:
 ## ===== Static Helpers =====
 
 static func show_for_robot(robot_name: String = "") -> PublishPanel:
+	# Build the panel but do NOT add it to the tree — the shell hosts it as an
+	# in-tree overlay (no root-level add_child, no separate window).
 	var panel = PublishPanel.new()
-	Engine.get_main_loop().root.add_child(panel)
 	panel.call_deferred("setup", robot_name)
-
 	return panel

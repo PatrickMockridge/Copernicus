@@ -28,16 +28,16 @@ func _build() -> void:
 
 	var bar := PanelContainer.new()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = CopernicusTheme.BG_CARD
+	sb.bg_color = UiTheme.color("panel")
 	sb.border_width_bottom = 1
-	sb.border_color = CopernicusTheme.BORDER_DIM
+	sb.border_color = UiTheme.color("border")
 	bar.add_theme_stylebox_override("panel", sb)
 	v.add_child(bar)
 
 	var bar_h := HBoxContainer.new()
-	bar_h.add_theme_constant_override("separation", CopernicusTheme.SPACE_S)
+	bar_h.add_theme_constant_override("separation", UiTheme.space("s"))
 	bar.add_child(bar_h)
-	var title := CopernicusTheme.make_heading(_title)
+	var title := UiLabel.new().setup(_title, UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar_h.add_child(title)
 	var back := Button.new()

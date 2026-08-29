@@ -30,8 +30,8 @@ var _description: String = ""
 var _creator: String = ""
 var _owner: String = ""
 
-## Pricing (in winston, 1 AR = 1e12 winston)
-var _price: int = 0  # winston
+## Pricing (in drops, 1 REV = 1e8 drops)
+var _price: int = 0  # drops
 var _sale_price: int = 0  # for secondary sales
 
 ## Files
@@ -156,8 +156,8 @@ func get_price() -> int:
 	return _price
 
 
-func get_price_ar() -> float:
-	return float(_price) / 1e12
+func get_price_rev() -> float:
+	return float(_price) / 1e8
 
 
 func get_sale_price() -> int:
@@ -264,7 +264,7 @@ func to_dictionary() -> Dictionary:
 		"creator": _creator,
 		"owner": _owner,
 		"price": _price,
-		"price_ar": get_price_ar(),
+		"price_rev": get_price_rev(),
 		"sale_price": _sale_price,
 		"files": _files,
 		"file_count": _file_count,

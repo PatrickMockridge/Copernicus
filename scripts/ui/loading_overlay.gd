@@ -26,14 +26,14 @@ func _build(message: String) -> void:
 	panel.offset_right = 120
 	panel.offset_bottom = 40
 
-	CopernicusTheme.style_panel(panel)
+	panel.add_theme_stylebox_override("panel", UiTheme.style("panel"))
 	add_child(panel)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)
 	panel.add_child(vbox)
 
-	var label = CopernicusTheme.make_heading(message)
+	var label = UiLabel.new().setup(message, UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(label)
 
@@ -41,7 +41,7 @@ func _build(message: String) -> void:
 	dots.text = "..."
 	dots.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dots.add_theme_font_size_override("font_size", 20)
-	dots.add_theme_color_override("font_color", CopernicusTheme.TEXT_SECONDARY)
+	dots.add_theme_color_override("font_color", UiTheme.color("text_muted"))
 	vbox.add_child(dots)
 
 	# Animate dots

@@ -66,16 +66,16 @@ func _ready() -> void:
 func _setup_ui() -> void:
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(560, 460)
-	CopernicusTheme.style_panel(panel)
+	panel.add_theme_stylebox_override("panel", UiTheme.style("panel"))
 	content().add_child(panel)
 
 	var content = VBoxContainer.new()
 	panel.add_child(content)
 
-	var title_label = CopernicusTheme.make_heading(_get_title())
+	var title_label = UiLabel.new().setup(_get_title(), UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY)
 	content.add_child(title_label)
 
-	content.add_child(CopernicusTheme.make_separator())
+	content.add_child(UiSeparator.new())
 
 	var option_scroll = ScrollContainer.new()
 	option_scroll.custom_minimum_size.y = 220
@@ -90,19 +90,24 @@ func _setup_ui() -> void:
 	_populate_options(_option_list)
 
 	if _option_widgets.is_empty():
-		option_scroll.add_child(CopernicusTheme.make_empty_state("No modules available", "No backends are registered for this category."))
+		option_scroll.add_child(UiLabel.new().setup("No modules available — No backends are registered for this category.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
 
-	content.add_child(CopernicusTheme.make_separator())
+	content.add_child(UiSeparator.new())
 
 	var info_text = _get_info_text()
 	if not info_text.is_empty():
-		var info_label = CopernicusTheme.make_body(info_text)
+		var info_label = UiLabel.new().setup(info_text, UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
 		content.add_child(info_label)
 
-	var btn_row = CopernicusTheme.make_button_row("Cancel", _get_apply_text())
-	content.add_child(btn_row["row"])
-	_cancel_btn = btn_row["cancel"]
-	_apply_btn = btn_row["confirm"]
+	var btn_row := HBoxContainer.new()
+	btn_row.add_theme_constant_override("separation", UiTheme.space("s"))
+	btn_row.size_flags_horizontal = Control.SIZE_SHRINK_END
+	btn_row.add_child(UiSpacer.new().setup(true, false))
+	_cancel_btn = UiButton.new().setup("Cancel", UiButton.Variant.SECONDARY)
+	btn_row.add_child(_cancel_btn)
+	_apply_btn = UiButton.new().setup(_get_apply_text(), UiButton.Variant.PRIMARY)
+	btn_row.add_child(_apply_btn)
+	content.add_child(btn_row)
 	_cancel_btn.pressed.connect(_on_cancel_pressed)
 	_apply_btn.pressed.connect(_on_apply_pressed)
 
@@ -117,7 +122,7 @@ func _add_option(id: String, name: String, description: String, available: bool,
 
 func _create_option_widget(id: String, name: String, description: String, available: bool) -> Control:
 	var option_container = PanelContainer.new()
-	CopernicusTheme.style_card(option_container)
+	option_container.add_theme_stylebox_override("panel", UiTheme.style("card"))
 
 	var hbox = HBoxContainer.new()
 	option_container.add_child(hbox)
@@ -136,10 +141,10 @@ func _create_option_widget(id: String, name: String, description: String, availa
 	var title_label = Label.new()
 	title_label.text = name + (" (Unavailable)" if not available else "")
 	title_label.add_theme_color_override("font_color",
-		CopernicusTheme.TEXT_DISABLED if not available else CopernicusTheme.TEXT_PRIMARY)
+		UiTheme.color("text_faint") if not available else UiTheme.color("text"))
 	vbox.add_child(title_label)
 
-	var desc_label = CopernicusTheme.make_body(description)
+	var desc_label = UiLabel.new().setup(description, UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
 	vbox.add_child(desc_label)
 
 	_option_widgets.append({"id": id, "radio": radio, "available": available})

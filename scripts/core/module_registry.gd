@@ -71,3 +71,14 @@ func get_all_categories() -> Array:
 
 func has_module(category: String, id: String) -> bool:
 	return _modules.has(category) and _modules[category].has(id)
+
+
+## Commands contributed by all registered modules (plugin contribution point).
+func get_contributed_commands() -> Array:
+	var out: Array = []
+	for category in _modules:
+		for id in _modules[category]:
+			var cmds = _modules[category][id].get_commands()
+			if cmds is Array:
+				out.append_array(cmds)
+	return out
