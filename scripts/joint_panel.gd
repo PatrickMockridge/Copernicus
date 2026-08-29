@@ -30,6 +30,10 @@ func _ready() -> void:
 	var zero_all := UiButton.new().setup("Zero All", UiButton.Variant.SECONDARY)
 	zero_all.pressed.connect(_on_zero_all)
 	header.add_child(zero_all)
+	var reach := UiButton.new().setup("Reach", UiButton.Variant.SECONDARY)
+	reach.tooltip_text = "Solve IK to move the end-effector to the target"
+	reach.pressed.connect(_on_reach)
+	header.add_child(reach)
 
 	_layout.add_child(UiSeparator.new())
 
@@ -195,6 +199,11 @@ func _on_zero_all() -> void:
 			_set_joint(idx, 0.0)
 	if not _sliders.is_empty():
 		joints_zeroed.emit()
+
+
+func _on_reach() -> void:
+	if _viewer and _viewer.has_method("solve_ik_to_target"):
+		_viewer.solve_ik_to_target()
 
 
 func _on_slider_changed(value: float, joint_index: int, joint_name: String) -> void:

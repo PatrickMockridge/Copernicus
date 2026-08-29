@@ -8,6 +8,7 @@ extends Node3D
 signal robot_loaded(node: Node3D)
 signal joint_changed(joint_name: String, position: float)
 signal context_menu_requested()
+signal target_reached()
 
 const URDFToGodot = preload("res://scripts/urdf_to_godot.gd")
 
@@ -25,6 +26,12 @@ var _joint_nodes: Array = []
 var _grid_node: MeshInstance3D
 var _axes_node: Node3D
 
+## IK reach target.
+var _target_marker: MeshInstance3D
+var _target_position: Vector3 = Vector3(0.35, 0.5, 0.3)
+var _end_effector: Node3D = null
+var _target_reached_emitted: bool = false
+
 ## Domain randomization
 var _domain_randomizer: RefCounted = null
 var _domain_randomize_enabled: bool = false
@@ -38,6 +45,7 @@ func _ready() -> void:
 	_setup_environment()
 	_setup_grid()
 	_setup_axes()
+	_setup_target_marker()
 	_load_demo_robot()
 
 
@@ -315,12 +323,12 @@ func _create_sensor_mount() -> Node3D:
 # ===== Domain Randomization =====
 
 func _process(delta: float) -> void:
-	if not _domain_randomize_enabled or not _domain_randomizer:
-		return
-	_domain_randomize_timer += delta
-	if _domain_randomize_timer >= _domain_randomize_interval:
-		_domain_randomize_timer = 0.0
-		_domain_randomize_all()
+	if _domain_randomize_enabled and _domain_randomizer:
+		_domain_randomize_timer += delta
+		if _domain_randomize_timer >= _domain_randomize_interval:
+			_domain_randomize_timer = 0.0
+			_domain_randomize_all()
+	_check_target_reached()
 
 
 func enable_domain_randomization(enabled: bool) -> void:
@@ -396,6 +404,17 @@ func _collect_joints() -> void:
 		if node.has_meta("joint_type") or node is PinJoint3D or node is SliderJoint3D:
 			_joint_nodes.append(node)
 
+	_find_end_effector()
+
+
+func _find_end_effector() -> void:
+	_end_effector = null
+	if not _robot_root:
+		return
+	for node in _robot_root.find_children("ee_link", "", true, false):
+		_end_effector = node
+		break
+
 
 # ===== Joint Control =====
 
@@ -460,6 +479,91 @@ func get_robot_root() -> Node3D:
 
 func get_camera() -> Camera3D:
 	return _camera
+
+
+# ===== IK Reach =====
+
+func _setup_target_marker() -> void:
+	_target_marker = MeshInstance3D.new()
+	_target_marker.name = "TargetMarker"
+	var sm := SphereMesh.new()
+	sm.radius = 0.04
+	sm.height = 0.08
+	_target_marker.mesh = sm
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.2, 0.9, 0.5)
+	mat.emission_enabled = true
+	mat.emission = Color(0.1, 0.6, 0.3)
+	mat.emission_energy = 1.0
+	_target_marker.material_override = mat
+	_target_marker.position = _target_position
+	add_child(_target_marker)
+
+
+func set_target_position(pos: Vector3) -> void:
+	_target_position = pos
+	if _target_marker:
+		_target_marker.position = pos
+
+
+func get_target_position() -> Vector3:
+	return _target_position
+
+
+func get_end_effector_position() -> Vector3:
+	if _end_effector and is_instance_valid(_end_effector):
+		return _end_effector.global_position
+	if _robot_root and is_instance_valid(_robot_root):
+		return _robot_root.global_position
+	return Vector3.ZERO
+
+
+## CCD IK: rotate the arm's revolute joints (tip → base) until the end-effector
+## reaches the target. Applies via the existing single-axis joint model.
+func solve_ik_to_target(max_iterations: int = 80) -> void:
+	if _end_effector == null or not is_instance_valid(_end_effector):
+		return
+	var arm_joints := _get_arm_joints()
+	if arm_joints.is_empty():
+		return
+	for _iter in range(max_iterations):
+		var ee := get_end_effector_position()
+		if ee.distance_to(_target_position) < 0.02:
+			break
+		for i in range(arm_joints.size() - 1, -1, -1):
+			var joint: Node3D = arm_joints[i]
+			var axis: Vector3 = joint.get_meta("joint_axis", Vector3(0, 1, 0)).normalized()
+			var world_axis: Vector3 = joint.global_transform.basis * axis
+			var joint_pos: Vector3 = joint.global_position
+			var to_ee := ee - joint_pos
+			var to_target := _target_position - joint_pos
+			var p_ee := to_ee - world_axis * to_ee.dot(world_axis)
+			var p_target := to_target - world_axis * to_target.dot(world_axis)
+			if p_ee.length() < 1e-4 or p_target.length() < 1e-4:
+				continue
+			var angle := p_ee.normalized().signed_angle_to(p_target.normalized(), world_axis)
+			angle = clampf(angle, -PI / 4.0, PI / 4.0)
+			var idx := _joint_nodes.find(joint)
+			if idx >= 0:
+				set_joint_rotation(idx, get_joint_rotation(idx) + rad_to_deg(angle))
+			ee = get_end_effector_position()
+
+
+func _get_arm_joints() -> Array:
+	var out: Array = []
+	for j in _joint_nodes:
+		if j.name.begins_with("gripper_"):
+			continue
+		out.append(j)
+	return out
+
+
+func _check_target_reached() -> void:
+	if _target_reached_emitted or _end_effector == null:
+		return
+	if get_end_effector_position().distance_to(_target_position) < 0.05:
+		_target_reached_emitted = true
+		target_reached.emit()
 
 
 # ===== Camera Controls =====

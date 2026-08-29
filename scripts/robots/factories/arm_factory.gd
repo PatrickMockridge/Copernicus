@@ -41,4 +41,7 @@ static func build() -> Node3D:
 	var gj2 := RobotFactory.joint(parent, "gripper_right", Vector3(0, 0, 1), Vector3(0, 0.04, -0.03), -45.0, 45.0)
 	RobotFactory.box(gj2, "finger", Vector3(0.015, 0.08, 0.02), Vector3(0, 0.04, 0), Color(0.3, 0.3, 0.35))
 
+	# End-effector reference point (gripper tip) — the viewer tracks this for IK reach.
+	RobotFactory.sphere(parent, "ee_link", 0.025, Vector3(0, 0.09, 0), Color(0.95, 0.3, 0.3))
+
 	return root
