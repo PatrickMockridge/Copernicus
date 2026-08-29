@@ -292,6 +292,13 @@ func _clear_listings() -> void:
 		child.queue_free()
 
 
+func _asset_color(type_str: String) -> Color:
+	match type_str:
+		"Part": return UiTheme.color("asset_part")
+		"World": return UiTheme.color("asset_world")
+		_: return UiTheme.color("asset_robot")
+
+
 func _create_listing_card(listing: Listing) -> Control:
 	var container = PanelContainer.new()
 	container.add_theme_stylebox_override("panel", UiTheme.style("card"))
@@ -304,12 +311,7 @@ func _create_listing_card(listing: Listing) -> Control:
 	preview.custom_minimum_size.y = 80
 	var preview_style = StyleBoxFlat.new()
 	var type_str = listing.get_asset_type_string()
-	var type_colors = {
-		"Robot": Color(0.15, 0.35, 0.6, 1),
-		"Part": Color(0.2, 0.5, 0.2, 1),
-		"World": Color(0.5, 0.3, 0.15, 1),
-	}
-	preview_style.bg_color = type_colors.get(type_str, UiTheme.color("panel"))
+	preview_style.bg_color = _asset_color(type_str)
 	preview_style.set_corner_radius_all(4)
 	preview.add_theme_stylebox_override("panel", preview_style)
 	vbox.add_child(preview)
@@ -339,7 +341,7 @@ func _create_listing_card(listing: Listing) -> Control:
 	# Price
 	var price_lbl = Label.new()
 	price_lbl.text = MarketplaceCore.format_price(listing.get_price())
-	price_lbl.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
+	price_lbl.add_theme_color_override("font_color", UiTheme.color("price"))
 	price_lbl.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
 	vbox.add_child(price_lbl)
 
@@ -420,7 +422,7 @@ func _show_detail_panel(listing: Listing) -> void:
 
 	var price_lbl = Label.new()
 	price_lbl.text = "Price: " + MarketplaceCore.format_price(listing.get_price())
-	price_lbl.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
+	price_lbl.add_theme_color_override("font_color", UiTheme.color("price"))
 	vbox.add_child(price_lbl)
 
 	var buy_btn = Button.new()

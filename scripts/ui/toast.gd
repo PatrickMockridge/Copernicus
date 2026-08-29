@@ -6,13 +6,6 @@ extends Control
 
 enum Level { INFO, SUCCESS, WARNING, ERROR }
 
-const BG_COLORS := {
-	Level.INFO: Color(0.15, 0.15, 0.2, 0.95),
-	Level.SUCCESS: Color(0.1, 0.25, 0.1, 0.95),
-	Level.WARNING: Color(0.3, 0.2, 0.05, 0.95),
-	Level.ERROR: Color(0.3, 0.08, 0.08, 0.95),
-}
-
 const ICONS := {
 	Level.INFO: "i",
 	Level.SUCCESS: "+",
@@ -45,6 +38,18 @@ func _border_color(level: Level) -> Color:
 			return UiTheme.color("accent")
 
 
+func _bg_color(level: Level) -> Color:
+	match level:
+		Level.SUCCESS:
+			return UiTheme.color("toast_success")
+		Level.WARNING:
+			return UiTheme.color("toast_warning")
+		Level.ERROR:
+			return UiTheme.color("toast_error")
+		_:
+			return UiTheme.color("toast_info")
+
+
 func _build(message: String, level: Level) -> void:
 	set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	offset_bottom = 0
@@ -57,7 +62,7 @@ func _build(message: String, level: Level) -> void:
 	panel.gui_input.connect(_on_click)
 
 	var style = StyleBoxFlat.new()
-	style.bg_color = BG_COLORS[level]
+	style.bg_color = _bg_color(level)
 	style.set_corner_radius_all(6)
 	style.set_border_width_all(1)
 	style.border_color = _border_color(level)
