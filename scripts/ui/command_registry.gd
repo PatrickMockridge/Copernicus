@@ -22,10 +22,11 @@ func unregister(name: String) -> void:
 			_commands.remove_at(i)
 
 
-## Exact lookup by verb.
+## Lookup by verb (case-insensitive).
 func find_by_name(name: String) -> Dictionary:
+	var q := name.to_lower()
 	for cmd in _commands:
-		if cmd.get("name", "") == name:
+		if str(cmd.get("name", "")).to_lower() == q:
 			return cmd
 	return {}
 

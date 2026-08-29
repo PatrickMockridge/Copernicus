@@ -80,7 +80,7 @@ func _ready() -> void:
 	_wire_scenario_service()
 	_navigate("editor")
 	_check_node_async()
-	_terminal.echo("COPENICUS TERMINAL v1")
+	_terminal.echo("    **** COPENICUS TERMINAL V1 ****")
 	_terminal.echo("READY.")
 
 
@@ -649,7 +649,7 @@ func _cmd(name: String, syntax: String, description: String, category: String, h
 # ---------------------------------------------------------------- CLI handlers
 
 func _on_off(v: Variant) -> Variant:
-	match str(v):
+	match str(v).to_lower():
 		"on", "true", "1": return true
 		"off", "false", "0": return false
 		_: return null
@@ -659,7 +659,7 @@ func _cmd_open(args: Array, out: Callable) -> bool:
 	if args.is_empty():
 		out.call("?SYNTAX ERROR")
 		return false
-	var view: String = str(args[0])
+	var view: String = str(args[0]).to_lower()
 	if _navigation.get_route(view) == null:
 		out.call("?BAD ARGUMENT: " + view)
 		return false
@@ -672,20 +672,20 @@ func _cmd_load(args: Array, out: Callable) -> bool:
 		out.call("?SYNTAX ERROR")
 		return false
 	var target: String = str(args[0])
-	if target.ends_with(".urdf") or target.ends_with(".mjcf"):
+	if target.to_lower().ends_with(".urdf") or target.to_lower().ends_with(".mjcf"):
 		if not FileAccess.file_exists(target):
 			out.call("?FILE NOT FOUND")
 			return false
 		_ensure_panel("editor")
-		if target.ends_with(".mjcf"):
+		if target.to_lower().ends_with(".mjcf"):
 			_workspace.load_mjcf(target)
 		else:
 			_workspace.load_urdf(target)
 		out.call("loaded " + target)
 		return true
 	var lib = get_node_or_null("/root/RobotLibrary")
-	if lib and lib.has_method("build") and lib.build(target) != null:
-		_load_library_robot(target)
+	if lib and lib.has_method("build") and lib.build(target.to_lower()) != null:
+		_load_library_robot(target.to_lower())
 		out.call("loaded " + target)
 		return true
 	out.call("?BAD ARGUMENT: " + target)
@@ -743,7 +743,7 @@ func _cmd_sensors(args: Array, out: Callable) -> bool:
 	if args.is_empty():
 		out.call("?SYNTAX ERROR")
 		return false
-	var sensor: String = str(args[0])
+	var sensor: String = str(args[0]).to_lower()
 	var set_to: Variant = null
 	if args.size() > 1:
 		set_to = _on_off(args[1])
@@ -772,7 +772,7 @@ func _cmd_demo(args: Array, out: Callable) -> bool:
 	if args.is_empty():
 		out.call("?SYNTAX ERROR")
 		return false
-	match str(args[0]):
+	match str(args[0]).to_lower():
 		"physics":
 			_open_demo("res://scenes/physics_demo.tscn", "Physics Demo")
 		"turtle":
@@ -788,7 +788,7 @@ func _cmd_tool(args: Array, out: Callable) -> bool:
 		out.call("?SYNTAX ERROR")
 		return false
 	var scene := ""
-	match str(args[0]):
+	match str(args[0]).to_lower():
 		"ik": scene = "res://scenes/ik_selector.tscn"
 		"physics": scene = "res://scenes/physics_selector.tscn"
 		"nav": scene = "res://scenes/nav_selector.tscn"
