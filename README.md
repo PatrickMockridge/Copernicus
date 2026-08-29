@@ -1,29 +1,12 @@
 # Copernicus — Robot Design Interface
 
-**Copernicus** is an open-source robot design interface built on [Godot 4](https://godotengine.org/).
-It is a **terminal-first, plugin-based IDE for robots**: the **3D robot editor** and the **terminal**
-are the two non-negotiable core surfaces, the **wallet** is the second pinned surface (funds at
-risk), and everything else is an **opt-in plugin**.
+**Copernicus** is a robot design interface built on [Godot 4](https://godotengine.org/). It provides
+a 3D robot editor, a terminal, and backends for physics, reinforcement learning, sensors, ROS 2,
+navigation, inverse kinematics, industrial robots, and on-chain coordination.
 
-Named after Nicolaus Copernicus — who placed the Sun at the centre of the solar system — Copernicus
-places the **open-source community** at the centre of robot development.
+Named after Nicolaus Copernicus.
 
 > **Repository:** [github.com/PatrickMockridge/Copernicus](https://github.com/PatrickMockridge/Copernicus)
-
----
-
-## What it is
-
-- **A neovim-style IDE, not "corporate software".** The editor and terminal are always present; the
-  chrome is minimal; features are plugins you opt into.
-- **Terminal-first.** A Commodore-64-style command line (flat blue screen, uppercase output,
-  blinking block cursor, `?`-prefixed errors) is the primary interface. Every GUI action maps to a
-  terminal command, and plugins expose themselves through it.
-- **Deterministic rendering.** The UI follows a formal component/token model
-  (`docs/spec/06-deterministic-rendering.md`) so the rendered output is explicit — never left to the
-  engine's implicit layout defaults.
-- **Honest WYSIWYG.** One source of truth per piece of state (navigation, toggles, scenario
-  progression); no inert controls, no lying readouts.
 
 ## Quick start
 
@@ -31,59 +14,49 @@ places the **open-source community** at the centre of robot development.
 godot scenes/main.tscn
 ```
 
-You get the **3D editor (top)** and the **terminal (bottom)**, which boots to a `READY.` prompt:
+The main scene opens the 3D editor on top and the terminal at the bottom.
 
-```
-> list          # the command catalog
-> help open     # help for one command
-> open wallet   # open the wallet
-> load arm6     # load the 6-DOF arm
-> demo physics  # drive the differential-drive demo
-```
+## Interface
 
-The terminal is the foundation — see the [user manual](docs/terminal-user-manual.md) for the full
-command reference.
+- **Editor** — a 3D viewer for loading and inspecting robot models (URDF, MJCF, and the built-in
+  robot library).
+- **Terminal** — a Commodore-64-style command line (blue background, uppercase output, block cursor)
+  at the bottom of the window.
+- **Wallet** — a password keystore with BIP-39 mnemonic generation, used for transfers and on-chain
+  operations.
+- **Plugins** — Marketplace, Version Control, Coordination, RaaS, the robot library, and the AI
+  assistant are plugins that can be enabled or disabled from the Plugins view.
 
-## The terminal
+## Terminal commands
 
-A flat C64 screen (dark blue `#000060`, pale-blue text `#c8c8ff`, blinking block cursor). Built-in
-verbs:
+Type `list` for the catalog or `help <command>` for details.
+
+Built-in verbs:
 
 ```
 open · load · back · mode · wireframe · grid · sensors · demo · tool · ros2 · plugins · list · help · clear
 ```
 
-Plugins add their own — coordination (`register`/`publish`/`claim`/`settle`), marketplace
-(`listings`/`search`/`buy`), and VCS (`status`/`log`/`commit`/`push`/`pull`/`clone`). The formal spec
-is [`docs/spec/07-terminal.md`](docs/spec/07-terminal.md); the authoring guide is
-[`docs/terminal-developer-manual.md`](docs/terminal-developer-manual.md).
+Plugin verbs — coordination (`register`, `publish`, `claim`, `settle`), marketplace (`listings`,
+`search`, `buy`), VCS (`status`, `log`, `commit`, `push`, `pull`, `clone`).
 
-## Core surfaces
-
-| Surface | Role |
-|---|---|
-| **Editor** | the 3D viewer — load, inspect, and configure robots |
-| **Terminal** | the command line — the primary interface |
-| **Wallet** | pinned — password keystore, BIP-39 mnemonic, transfers (funds at risk) |
-
-Everything else — Marketplace, Version Control, Coordination, RaaS, the robot library, and the AI
-assistant — is an **opt-in plugin**, reachable from the terminal and the command palette, and
-disable-able from the **Plugins** view (state persisted).
+See [the terminal user manual](docs/terminal-user-manual.md) and
+[specification](docs/spec/07-terminal.md).
 
 ## The Workbench Loop
 
-A Zachtronics-style progression drives the app: a 10-step ladder from **First Light** to **Ship**,
-where each step is an objective with a live checklist shown in the side bar. Completing a step
-advances the ladder; the terminal (`mode`) and the side bar reflect it.
+The application includes a 10-step progression from **First Light** to **Ship**. Each step is an
+objective with a checklist shown in the side bar; completing a step advances to the next.
 
 ## Features
 
 ### Robot design
-- **URDF / MJCF import** into the Godot scene tree.
-- **Robot library** — TurtleBot, Arm6 (6-DOF arm), Quadruped, Gripper, Drone.
-- **In-viewer IK** — CCD/FABRIK solve to a visible target marker.
+- URDF and MJCF import.
+- Built-in robot library: TurtleBot, Arm6 (6-DOF arm), Quadruped, Gripper, Drone.
+- Inverse kinematics (CCD, FABRIK) with a target marker.
 
 ### Physics simulation
+
 | Backend | Speed | Accuracy | Use case |
 |---|---|---|---|
 | Godot Native | Fast | Game-grade | Design iteration |
@@ -91,26 +64,27 @@ advances the ladder; the terminal (`mode`) and the side bar reflect it.
 | PyBullet CUDA | GPU | Research-grade | High-fidelity |
 
 ### Reinforcement learning
-DQN, PPO, and SAC (PyTorch), plus Isaac Gym for GPU multi-robot training.
+
+DQN, PPO, and SAC (PyTorch); Isaac Gym for multi-robot training.
 
 ### Sensors
+
 RTX LIDAR, RTX camera, IMU, and sensor fusion (Kalman).
 
 ### ROS 2
-TCP/UDP bridge + native rclpy; publishes `/robot/odom` `/robot/scan` `/robot/image_raw`
-`/robot/imu`, subscribes `/robot/cmd_vel`.
+
+TCP/UDP bridge and native rclpy. Publishes `/robot/odom`, `/robot/scan`, `/robot/image_raw`,
+`/robot/imu`; subscribes to `/robot/cmd_vel`.
 
 ### Navigation, IK, industrial, Omniverse
+
 A* / Nav2 · CCD / FABRIK / MoveIt · MOTOMAN / ABB / OPC-UA · USD export.
 
 ### Blockchain & coordination
-- **RChain coordination** — capabilities, jobs, and event channels; the marketplace is a
-  coordination primitive.
-- **Robotics-as-a-Service** — RChain-driven actuation with work-metered fees.
-- **Version control** — Git (GitHub/GitLab/any) and Ariadne (Arweave); AO/Arweave asset upload is
-  otherwise dormant.
 
----
+- RChain coordination (capabilities, jobs, channels); the marketplace is a coordination primitive.
+- Robotics-as-a-Service (RChain actuation with work-metered fees).
+- Version control via Git (GitHub/GitLab/any) and Ariadne (Arweave).
 
 ## Architecture
 
@@ -122,7 +96,7 @@ Copernicus
 │   │   ├── cli/               # cli.gd — the terminal command engine
 │   │   ├── navigation/        # route.gd, navigation_model.gd
 │   │   └── components/        # UiPanel, UiLabel, UiConsole, TerminalInput, ...
-│   ├── scenarios/             # the Workbench Loop (scenario.gd, scenario_service.gd, ...)
+│   ├── scenarios/             # scenario.gd, scenario_service.gd, progression_model.gd, ...
 │   ├── robots/                # robot_library.gd, robot_factory.gd, factories/
 │   ├── rchain/                # rchain_service.gd, rchain_wallet.gd, rnode_client.gd, ...
 │   ├── coordination/          # coordination_core.gd, rchain_coordination.gd, mock
@@ -135,29 +109,22 @@ Copernicus
 └── docs/                      # spec/, terminal manuals, feature guides
 ```
 
-### Key subsystems
+### Subsystems
 
-- **`ModuleRegistry` + `CopernicusModule`** — backends self-register via `_static_init()`.
-- **`CommandRegistry` + `Cli`** — the terminal engine: tokenize → dispatch → `?`-errors.
-- **`NavigationModel` + `Route`** — route-based view switching with back + breadcrumb.
-- **`ScenarioService` + `ProgressionModel`** — the Workbench Loop ladder.
-- **`TaskRunner`** — the single async mechanism (no raw threads, no blocking main-thread I/O).
+- `ModuleRegistry` / `CopernicusModule` — backends self-register via `_static_init()`.
+- `CommandRegistry` / `Cli` — the terminal engine (tokenize → dispatch → errors).
+- `NavigationModel` / `Route` — view navigation with back and breadcrumb.
+- `ScenarioService` / `ProgressionModel` — the Workbench Loop ladder.
+- `TaskRunner` — background-task execution (worker threads, results marshalled to the main thread).
+- `UiTheme` — color/font/spacing/stylebox tokens used by the UI components.
 
 ### Plugin system
 
-A plugin contributes a **view** (a `Route`), **commands** (via `CopernicusModule.get_commands()`),
-and/or a **status item**. Nothing opens its own window; plugins are reversible, breadcrumbed, and
-styled by `UiTheme` tokens. The **Plugins** view enables/disables them. See the
+Backends implement `CopernicusModule` and self-register via `_static_init()`. A plugin can
+contribute a view (`Route`), commands (`CopernicusModule.get_commands()`), and/or a status item. The
+Plugins view enables and disables plugins (state persisted to `user://plugins.json`). See the
 [plugin guide](docs/development/plugin-guide.md) and the
 [terminal developer manual](docs/terminal-developer-manual.md).
-
-## Design decisions
-
-- **Terminal-first** — the terminal is the foundation; the GUI dispatches to the same handlers.
-- **Plugin-first** — Editor + Wallet are core; everything else is opt-in.
-- **Deterministic rendering** — `docs/spec/06-deterministic-rendering.md`.
-- **Formal state transitions** — `docs/spec/05-state-transitions.md`.
-- **Honest WYSIWYG** — no inert controls, no lying readouts.
 
 ## Documentation
 
@@ -173,13 +140,16 @@ styled by `UiTheme` tokens. The **Plugins** view enables/disables them. See the
 ## Development
 
 ```bash
-godot --headless --script res://scripts/test_cli.gd        # terminal CLI tests
+godot --headless --script res://scripts/test_cli.gd        # terminal CLI
 godot --headless --script res://scripts/test_navigation.gd # navigation model
 godot --headless --script res://scripts/test_scenarios.gd  # workbench loop
-# ... plus test_state, test_shell, test_ik, test_rchain
+godot --headless --script res://scripts/test_state.gd      # state transitions
+godot --headless --script res://scripts/test_shell.gd      # routes / plugins
+godot --headless --script res://scripts/test_ik.gd         # arm IK
+godot --headless --script res://scripts/test_rchain.gd     # crypto + node (skips without node)
 ```
 
-The RChain crypto layer is a Rust GDExtension (`addons/rchain/gdext`); build it with
+The RChain crypto layer is a Rust GDExtension in `addons/rchain/gdext`; build with
 `bash addons/rchain/build.sh`.
 
 ## Requirements
@@ -195,5 +165,4 @@ The RChain crypto layer is a Rust GDExtension (`addons/rchain/gdext`); build it 
 
 ## License
 
-Copernicus is distributed under [GNU AGPLv3](LICENSE). Open source doesn't mean free for all uses —
-if you distribute derivative works, you must release your source under AGPL as well.
+Copernicus is distributed under [GNU AGPLv3](LICENSE).
