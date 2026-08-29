@@ -12,11 +12,11 @@ func register(cmd: Dictionary) -> void:
 	if not cmd.has("id") or not cmd.has("handler"):
 		push_error("CommandRegistry.register: command needs 'id' and 'handler'")
 		return
-	_unregister(cmd["id"])
+	unregister(cmd["id"])
 	_commands.append(cmd)
 
 
-func _unregister(id: String) -> void:
+func unregister(id: String) -> void:
 	for i in range(_commands.size() - 1, -1, -1):
 		if _commands[i].get("id", "") == id:
 			_commands.remove_at(i)

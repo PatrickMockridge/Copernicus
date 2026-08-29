@@ -19,6 +19,12 @@ func register(route: Route) -> void:
 	_routes[route.id] = route
 
 
+func unregister(id: String) -> void:
+	_routes.erase(id)
+	if current_id == id:
+		current_id = ""
+
+
 func get_route(id: String) -> Route:
 	return _routes.get(id)
 

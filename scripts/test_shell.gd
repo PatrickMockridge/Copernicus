@@ -47,6 +47,11 @@ func _init() -> void:
 	_ok(model.back(), "back works")
 	_ok(model.current_id == "wallet", "back restores prior route")
 
+	# unregister removes a route and blocks navigation.
+	model.unregister("ai")
+	_ok(model.get_route("ai") == null, "unregister removes route")
+	_ok(model.navigate("ai") == false, "navigate to unregistered route fails")
+
 	if _fails == 0:
 		print("ALL PASS")
 		quit(0)

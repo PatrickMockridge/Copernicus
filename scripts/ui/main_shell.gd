@@ -31,6 +31,8 @@ var _panels: Dictionary = {}          # id -> Control (cached editor panels)
 var _factories: Dictionary = {}       # id -> Callable -> Control
 var _sidebar_cache: Dictionary = {}   # id -> Control (cached side-bar content)
 var _open_tabs: Array = []            # route ids, in tab order
+var _plugins: Array = []              # disable-able views
+var _plugin_enabled: Dictionary = {}  # id -> bool
 
 var _activity_bar: UiActivityBar
 var _side_bar: PanelContainer
@@ -67,6 +69,8 @@ func _ready() -> void:
 	_load_persisted()
 	_navigation = NavigationModel.new()
 	_navigation.route_changed.connect(_on_route_changed)
+	_build_plugins()
+	_load_plugin_state()
 	_register_routes()
 	_setup_ui()
 	_register_commands()
@@ -81,13 +85,10 @@ func _ready() -> void:
 func _register_routes() -> void:
 	_reg_route("editor", "Editor", "▦", "design", 0, "view.open", true, _make_workspace, _make_objective_sidebar)
 	_reg_route("wallet", "Wallet", "◈", "publish", 0, "wallet.open", true, _make_wallet)
-	_reg_route("robots", "Robots", "◧", "design", 1, "robots.open", false, _make_gallery)
-	_reg_route("marketplace", "Marketplace", "◫", "publish", 1, "marketplace.open", false, _make_marketplace)
-	_reg_route("coordination", "Coordination", "◍", "publish", 2, "coordination.open", false, _make_coordination)
-	_reg_route("vcs", "Version Control", "⇅", "utility", 0, "vcs.open", false, _make_vcs)
-	_reg_route("raas", "RaaS", "▸", "operate", 0, "raas.open", false, _make_raas)
-	_reg_route("ai", "AI Assistant", "◈", "utility", 1, "ai.open", false, _make_ai)
-	_reg_route("extensions", "Extensions", "◇", "utility", 2, "extensions.open", false, _make_extensions)
+	for p in _plugins:
+		if _is_plugin_enabled(p["id"]):
+			_reg_route(p["id"], p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"])
+	_reg_route("plugins", "Plugins", "◇", "utility", 3, "plugins.open", false, _make_plugins)
 
 
 func _reg_route(id: String, title: String, glyph: String, section: String, order: int, command_id: String, in_activity_bar: bool, factory: Callable, sidebar_factory: Callable = Callable()) -> void:
@@ -148,8 +149,74 @@ func _make_ai() -> Control:
 	return ai
 
 
-func _make_extensions() -> Control:
-	return _build_extensions_panel()
+func _build_plugins() -> void:
+	_plugins = [
+		{"id": "robots", "title": "Robots", "glyph": "◧", "section": "design", "order": 1, "command": "robots.open", "command_label": "Robots: Open Library", "factory": _make_gallery, "description": "Browse and load robot models from the library."},
+		{"id": "marketplace", "title": "Marketplace", "glyph": "◫", "section": "publish", "order": 1, "command": "marketplace.open", "command_label": "Marketplace: Open", "factory": _make_marketplace, "description": "Buy, sell, and list robot designs."},
+		{"id": "coordination", "title": "Coordination", "glyph": "◍", "section": "publish", "order": 2, "command": "coordination.open", "command_label": "Coordination: Open", "factory": _make_coordination, "description": "Register robots and coordinate work on-chain."},
+		{"id": "vcs", "title": "Version Control", "glyph": "⇅", "section": "utility", "order": 0, "command": "vcs.open", "command_label": "Version Control: Open", "factory": _make_vcs, "description": "Git/GitHub/GitLab versioning for designs."},
+		{"id": "raas", "title": "RaaS", "glyph": "▸", "section": "operate", "order": 0, "command": "raas.open", "command_label": "RaaS: Open Demos", "factory": _make_raas, "description": "Robotics-as-a-Service demos."},
+		{"id": "ai", "title": "AI Assistant", "glyph": "◈", "section": "utility", "order": 1, "command": "ai.open", "command_label": "AI Assistant: Open", "factory": _make_ai, "description": "AI code generation and debugging."},
+	]
+
+
+func _load_plugin_state() -> void:
+	for p in _plugins:
+		_plugin_enabled[p["id"]] = true
+	var f := FileAccess.open("user://plugins.json", FileAccess.READ)
+	if f:
+		var parsed = JSON.parse_string(f.get_as_text())
+		if parsed is Dictionary:
+			for id in _plugin_enabled:
+				if parsed.has(id):
+					_plugin_enabled[id] = bool(parsed[id])
+
+
+func _save_plugin_state() -> void:
+	var f := FileAccess.open("user://plugins.json", FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(_plugin_enabled))
+
+
+func _is_plugin_enabled(id: String) -> bool:
+	return _plugin_enabled.get(id, true)
+
+
+func _plugin_by_id(id: String) -> Dictionary:
+	for p in _plugins:
+		if p["id"] == id:
+			return p
+	return {}
+
+
+func _set_plugin_enabled(id: String, enabled: bool) -> void:
+	_plugin_enabled[id] = enabled
+	_save_plugin_state()
+	if enabled:
+		_register_plugin(id)
+	else:
+		_unregister_plugin(id)
+
+
+func _register_plugin(id: String) -> void:
+	var p := _plugin_by_id(id)
+	if p.is_empty():
+		return
+	_reg_route(id, p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"])
+	_reg(p["command"], p["command_label"], "View", _navigate.bind(id))
+
+
+func _unregister_plugin(id: String) -> void:
+	var was_current := _navigation.current_id == id
+	_navigation.unregister(id)
+	var p := _plugin_by_id(id)
+	if not p.is_empty():
+		CommandRegistry.unregister(str(p["command"]))
+	_open_tabs.erase(id)
+	if was_current:
+		_navigate("editor")
+	else:
+		_sync_tabs()
 
 
 func _make_objective_sidebar() -> Control:
@@ -492,11 +559,11 @@ func _update_breadcrumb() -> void:
 
 # ---------------------------------------------------------------- panels
 
-func _build_extensions_panel() -> Control:
-	var win := UiPanel.new().setup("Extensions")
+func _make_plugins() -> Control:
+	var win := UiPanel.new().setup("Plugins")
 	win.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var v: VBoxContainer = win.body()
-	v.add_child(UiLabel.new().setup("Modules contribute commands, views and status items. Registered via ModuleRegistry._static_init.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
+	v.add_child(UiLabel.new().setup("Enable or disable optional plugins. Changes take effect immediately.", UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
 	v.add_child(UiSeparator.new())
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -504,11 +571,32 @@ func _build_extensions_panel() -> Control:
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
+	for p in _plugins:
+		list.add_child(_plugin_row(p))
+	list.add_child(UiSeparator.new())
+	list.add_child(UiSection.new().setup("Backends"))
 	for cat in ModuleRegistry.get_all_categories():
 		list.add_child(UiSection.new().setup(str(cat)))
 		for mod in ModuleRegistry.get_available(cat):
 			list.add_child(_extensions_row(mod))
 	return win
+
+
+func _plugin_row(p: Dictionary) -> Control:
+	var card := UiPanel.new().setup("")
+	var v: VBoxContainer = card.body()
+	var top := HBoxContainer.new()
+	v.add_child(top)
+	var toggle := CheckBox.new()
+	toggle.button_pressed = _is_plugin_enabled(p["id"])
+	toggle.toggled.connect(func(on: bool) -> void: _set_plugin_enabled(p["id"], on))
+	top.add_child(toggle)
+	var title := UiLabel.new().setup(str(p["title"]), UiLabel.Kind.BODY, UiLabel.Tone.PRIMARY)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(title)
+	var desc := UiLabel.new().setup(str(p.get("description", "")), UiLabel.Kind.SMALL, UiLabel.Tone.MUTED)
+	v.add_child(desc)
+	return card
 
 
 func _extensions_row(mod: Dictionary) -> Control:
@@ -527,13 +615,10 @@ func _extensions_row(mod: Dictionary) -> Control:
 func _register_commands() -> void:
 	_reg("view.open", "Editor: Open", "View", func() -> void: _navigate("editor"))
 	_reg("wallet.open", "Wallet: Open", "View", func() -> void: _navigate("wallet"))
-	_reg("robots.open", "Robots: Open Library", "View", func() -> void: _navigate("robots"))
-	_reg("marketplace.open", "Marketplace: Open", "View", func() -> void: _navigate("marketplace"))
-	_reg("coordination.open", "Coordination: Open", "View", func() -> void: _navigate("coordination"))
-	_reg("vcs.open", "Version Control: Open", "View", func() -> void: _navigate("vcs"))
-	_reg("raas.open", "RaaS: Open Demos", "View", func() -> void: _navigate("raas"))
-	_reg("ai.open", "AI Assistant: Open", "View", func() -> void: _navigate("ai"))
-	_reg("extensions.open", "Extensions: List Modules", "View", func() -> void: _navigate("extensions"))
+	for p in _plugins:
+		if _is_plugin_enabled(p["id"]):
+			_reg(p["command"], p["command_label"], "View", _navigate.bind(p["id"]))
+	_reg("plugins.open", "Plugins: Manage", "View", func() -> void: _navigate("plugins"))
 
 	_reg("robot.open", "Open Robot…", "File", func() -> void: _open_file_dialog())
 	_reg("view.reset", "View: Reset", "View", func() -> void: var v := _viewer(); if v: v.reset_view())
