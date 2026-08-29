@@ -252,9 +252,8 @@ func _wire_viewer() -> void:
 		viewer.context_menu_requested.connect(_on_context_menu_requested)
 	if viewer and not viewer.target_reached.is_connected(_on_target_reached):
 		viewer.target_reached.connect(_on_target_reached)
-	var joint_panel = _workspace.get_joint_panel()
-	if joint_panel and not joint_panel.joints_zeroed.is_connected(_on_joints_zeroed):
-		joint_panel.joints_zeroed.connect(_on_joints_zeroed)
+	if viewer and not viewer.joints_zeroed.is_connected(_on_joints_zeroed):
+		viewer.joints_zeroed.connect(_on_joints_zeroed)
 
 
 # ---------------------------------------------------------------- UI build

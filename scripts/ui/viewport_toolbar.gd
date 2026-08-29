@@ -10,6 +10,9 @@ extends PanelContainer
 signal wireframe_clicked()
 signal grid_clicked()
 signal reset_view()
+signal zero_clicked()
+signal reach_clicked()
+signal publish_clicked()
 
 var _buttons: Dictionary = {}
 var _fps_label: UiLabel
@@ -39,6 +42,9 @@ func _build_buttons(h: HBoxContainer) -> void:
 	_add_button(h, "wireframe", "Wire", _on_wireframe_clicked)
 	_add_button(h, "grid", "Grid", _on_grid_clicked)
 	_add_button(h, "reset", "Reset", _on_reset_view)
+	_add_button(h, "zero", "Zero", _on_zero_clicked)
+	_add_button(h, "reach", "Reach", _on_reach_clicked)
+	_add_button(h, "publish", "Publish", _on_publish_clicked)
 
 	_fps_label = UiLabel.new().setup("", UiLabel.Kind.SMALL, UiLabel.Tone.FAINT)
 	_fps_label.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -62,6 +68,18 @@ func _on_grid_clicked() -> void:
 
 func _on_reset_view() -> void:
 	reset_view.emit()
+
+
+func _on_zero_clicked() -> void:
+	zero_clicked.emit()
+
+
+func _on_reach_clicked() -> void:
+	reach_clicked.emit()
+
+
+func _on_publish_clicked() -> void:
+	publish_clicked.emit()
 
 
 func set_wireframe(enabled: bool) -> void:

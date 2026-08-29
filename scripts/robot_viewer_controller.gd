@@ -9,6 +9,7 @@ signal robot_loaded(node: Node3D)
 signal joint_changed(joint_name: String, position: float)
 signal context_menu_requested()
 signal target_reached()
+signal joints_zeroed()
 
 const URDFToGodot = preload("res://scripts/urdf_to_godot.gd")
 
@@ -472,6 +473,14 @@ func get_joint_axis(index: int) -> Vector3:
 	if index < 0 or index >= _joint_nodes.size():
 		return Vector3(0, 1, 0)
 	return _joint_nodes[index].get_meta("joint_axis", Vector3(0, 1, 0))
+
+
+func zero_all_joints() -> void:
+	var count := get_joint_count()
+	for i in range(count):
+		set_joint_rotation(i, 0.0)
+	if count > 0:
+		joints_zeroed.emit()
 
 
 func get_robot_root() -> Node3D:

@@ -10,7 +10,6 @@ signal wireframe_changed(enabled: bool)
 signal grid_changed(enabled: bool)
 
 const RobotViewerController = preload("res://scripts/robot_viewer_controller.gd")
-const JointPanel = preload("res://scripts/joint_panel.gd")
 const PublishPanel = preload("res://scripts/publish_panel.gd")
 const LidarDebug = preload("res://scripts/lidar_debug.gd")
 const CameraDebug = preload("res://scripts/camera_debug.gd")
@@ -19,10 +18,6 @@ const ImuDebug = preload("res://scripts/imu_debug.gd")
 var _viewport_container: SubViewportContainer
 var _sub_viewport: SubViewport
 var _robot_viewer: RobotViewerController
-var _panel_area: VBoxContainer
-var _tab_container: TabContainer
-var _joint_panel: JointPanel
-var _status_label: Label
 var _toolbar: ViewportToolbar
 var _lidar_debug: LidarDebug
 var _camera_debug: CameraDebug
@@ -77,41 +72,12 @@ func _setup_workspace() -> void:
 	_toolbar.wireframe_clicked.connect(func() -> void: set_wireframe(not _robot_viewer.is_show_debug()))
 	_toolbar.grid_clicked.connect(func() -> void: set_grid(not _robot_viewer.is_grid_visible()))
 	_toolbar.reset_view.connect(_robot_viewer.reset_view)
+	_toolbar.zero_clicked.connect(_robot_viewer.zero_all_joints)
+	_toolbar.reach_clicked.connect(_robot_viewer.solve_ik_to_target)
+	_toolbar.publish_clicked.connect(_on_publish_pressed)
 	_viewport_container.add_child(_toolbar)
 	_toolbar.set_wireframe(false)
 	_toolbar.set_grid(true)
-
-	# ---- Panel area (right 30%) ----
-	_panel_area = VBoxContainer.new()
-	_panel_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_panel_area.size_flags_stretch_ratio = 0.3
-	_panel_area.custom_minimum_size.x = 280
-	hbox.add_child(_panel_area)
-
-	_tab_container = TabContainer.new()
-	_tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_panel_area.add_child(_tab_container)
-
-	_joint_panel = JointPanel.new()
-	_joint_panel.set_name("JointPanel")
-	_tab_container.add_child(_joint_panel)
-	_joint_panel.set_viewer(_robot_viewer)
-	_tab_container.set_tab_title(0, "Joints")
-
-	# Status bar
-	var status_bar = HBoxContainer.new()
-	_panel_area.add_child(status_bar)
-
-	_status_label = Label.new()
-	_status_label.text = "Robot: Demo"
-	_status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_status_label.add_theme_font_size_override("font_size", UiTheme.font_size("small"))
-	status_bar.add_child(_status_label)
-
-	var publish_btn = Button.new()
-	publish_btn.text = "Publish"
-	publish_btn.pressed.connect(_on_publish_pressed)
-	status_bar.add_child(publish_btn)
 
 
 func _world_setup() -> void:
@@ -129,8 +95,6 @@ func _world_setup() -> void:
 
 
 func _on_robot_loaded(robot_node: Node3D) -> void:
-	if _status_label:
-		_status_label.text = "Robot: " + robot_node.name
 	if _lidar_debug:
 		_lidar_debug.set_robot(robot_node)
 	if _camera_debug:
@@ -152,7 +116,6 @@ func _on_publish_pressed() -> void:
 func load_urdf(path: String) -> void:
 	if _robot_viewer:
 		_robot_viewer.load_urdf(path)
-		_status_label.text = "Robot: " + path.get_file()
 
 
 func get_robot_viewer() -> RobotViewerController:
@@ -181,10 +144,6 @@ func is_wireframe() -> bool:
 
 func is_grid() -> bool:
 	return _robot_viewer != null and _robot_viewer.is_grid_visible()
-
-
-func get_joint_panel() -> JointPanel:
-	return _joint_panel
 
 
 func set_lidar_visible(visible: bool) -> void:
@@ -237,13 +196,11 @@ func is_imu_visible() -> bool:
 func load_mjcf(path: String) -> void:
 	if _robot_viewer:
 		_robot_viewer.load_mjcf(path)
-		_status_label.text = "Robot: " + path.get_file()
 
 
 func load_robot_node(node: Node3D) -> void:
 	if _robot_viewer:
 		_robot_viewer.load_robot_node(node)
-		_status_label.text = "Robot: " + node.name
 
 
 func _process(_delta: float) -> void:
