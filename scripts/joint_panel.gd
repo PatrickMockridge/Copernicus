@@ -5,6 +5,7 @@ class_name JointPanel
 extends Control
 
 signal joint_value_changed(joint_name: String, value: float)
+signal joints_zeroed
 
 var _viewer: Node
 var _sliders: Dictionary = {}
@@ -192,6 +193,8 @@ func _on_zero_all() -> void:
 				break
 		if idx >= 0:
 			_set_joint(idx, 0.0)
+	if not _sliders.is_empty():
+		joints_zeroed.emit()
 
 
 func _on_slider_changed(value: float, joint_index: int, joint_name: String) -> void:

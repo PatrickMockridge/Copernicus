@@ -90,7 +90,7 @@ func _ctx_check(key: String, label: String, expect: Variant = true) -> Dictionar
 
 ## Context keys that some code actually writes (the "producers"). A check whose
 ## key has no producer would show a permanent false ✗, so it is hidden by the UI.
-const PRODUCED_KEYS := ["robot_loaded", "ros2_connected", "lidar_active", "camera_active", "imu_active", "listing_created", "robot_registered", "work_settled"]
+const PRODUCED_KEYS := ["robot_loaded", "all_joints_zeroed", "ros2_connected", "lidar_active", "camera_active", "imu_active", "listing_created", "robot_registered", "work_settled"]
 
 
 func is_produced(key: String) -> bool:

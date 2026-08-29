@@ -53,6 +53,10 @@ func _fill_verdict() -> void:
 			str(c.get("expected", ""))
 		))
 	_message.setup(ScenarioService.verdict.message, UiLabel.Kind.SMALL, UiLabel.Tone.SUCCESS if ScenarioService.verdict.passed else UiLabel.Tone.MUTED)
+	if ScenarioService.verdict.passed:
+		var next := UiButton.new().setup("Next objective →", UiButton.Variant.PRIMARY)
+		next.pressed.connect(func() -> void: ScenarioService.complete_current())
+		body().add_child(next)
 
 
 func _clear_body() -> void:

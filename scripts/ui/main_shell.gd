@@ -181,6 +181,9 @@ func _wire_viewer() -> void:
 	var viewer = _workspace.get_robot_viewer()
 	if viewer and not viewer.context_menu_requested.is_connected(_on_context_menu_requested):
 		viewer.context_menu_requested.connect(_on_context_menu_requested)
+	var joint_panel = _workspace.get_joint_panel()
+	if joint_panel and not joint_panel.joints_zeroed.is_connected(_on_joints_zeroed):
+		joint_panel.joints_zeroed.connect(_on_joints_zeroed)
 
 
 # ---------------------------------------------------------------- UI build
@@ -922,6 +925,10 @@ func _mark_scenario(key: String, value: Variant) -> void:
 
 func _on_robot_loaded_for_scenario(_node: Node3D) -> void:
 	_mark_scenario("robot_loaded", true)
+
+
+func _on_joints_zeroed() -> void:
+	_mark_scenario("all_joints_zeroed", true)
 
 
 # ---------------------------------------------------------------- persistence
