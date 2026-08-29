@@ -37,9 +37,24 @@ func complete_current() -> void:
 	if active == null:
 		return
 	model.complete(active.id)
+	# "ship" (the meta scenario) passes once every prior scenario is complete.
+	if _all_prior_complete():
+		context["all_stages_complete"] = true
 	var next := model.next_unlocked()
 	if not next.is_empty():
 		activate(next)
+	elif _all_prior_complete():
+		reevaluate()
+
+
+## True when every scenario except the meta "ship" scenario is complete.
+func _all_prior_complete() -> bool:
+	for id in model.get_order():
+		if id == "ship":
+			continue
+		if not model.is_completed(id):
+			return false
+	return true
 
 
 func _build_ladder() -> void:
@@ -90,7 +105,7 @@ func _ctx_check(key: String, label: String, expect: Variant = true) -> Dictionar
 
 ## Context keys that some code actually writes (the "producers"). A check whose
 ## key has no producer would show a permanent false ✗, so it is hidden by the UI.
-const PRODUCED_KEYS := ["robot_loaded", "all_joints_zeroed", "ros2_connected", "lidar_active", "camera_active", "imu_active", "listing_created", "robot_registered", "work_settled"]
+const PRODUCED_KEYS := ["robot_loaded", "all_joints_zeroed", "robot_moved", "ros2_connected", "lidar_active", "camera_active", "imu_active", "listing_created", "robot_registered", "work_settled", "all_stages_complete"]
 
 
 func is_produced(key: String) -> bool:

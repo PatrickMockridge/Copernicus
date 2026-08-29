@@ -24,6 +24,9 @@ var _s_pressed: bool = false
 var _a_pressed: bool = false
 var _d_pressed: bool = false
 
+## Scenario producer: marks "robot_moved" once the robot actually drives.
+var _moved_marked: bool = false
+
 
 func _ready() -> void:
 	_setup_camera()
@@ -184,8 +187,19 @@ func _physics_process(delta: float) -> void:
 			move_dir.x * sin(_robot.rotation.y) + move_dir.z * cos(_robot.rotation.y)
 		)
 		_robot.velocity = world_dir * _move_speed
+		_mark_moved()
 	else:
 		_robot.velocity = Vector3.ZERO
 
 	_robot.move_and_slide()
 	_update_camera()
+
+
+func _mark_moved() -> void:
+	if _moved_marked:
+		return
+	_moved_marked = true
+	var svc = get_node_or_null("/root/ScenarioService")
+	if svc:
+		svc.context["robot_moved"] = true
+		svc.reevaluate()
