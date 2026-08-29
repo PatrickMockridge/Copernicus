@@ -9,6 +9,7 @@ const GameAIResult = preload("res://addons/GameAI/core/result.gd")
 
 # ===== UI References =====
 var _main_vbox: VBoxContainer
+var _work_area: VBoxContainer
 var _header: HBoxContainer
 var _api_key_input: LineEdit
 var _connect_ai_btn: Button
@@ -87,10 +88,14 @@ func _setup_ui() -> void:
 	ros_coder_btn.pressed.connect(_on_open_ros_coder)
 	_header.add_child(ros_coder_btn)
 
+	_work_area = VBoxContainer.new()
+	_work_area.visible = false
+	_main_vbox.add_child(_work_area)
+
 	# ---- Context Panel ----
 	_context_panel = PanelContainer.new()
 	_context_panel.custom_minimum_size.y = 60
-	_main_vbox.add_child(_context_panel)
+	_work_area.add_child(_context_panel)
 
 	var context_scroll = ScrollContainer.new()
 	context_scroll.set_horizontal_scroll_mode(ScrollContainer.SCROLL_MODE_DISABLED)
@@ -105,16 +110,16 @@ func _setup_ui() -> void:
 	# ---- Task Input ----
 	var task_label = Label.new()
 	task_label.text = "Task:"
-	_main_vbox.add_child(task_label)
+	_work_area.add_child(task_label)
 
 	_task_input = TextEdit.new()
 	_task_input.custom_minimum_size.y = 80
 	_task_input.placeholder_text = "e.g., 'Generate obstacle avoidance behavior' or 'Debug: robot drifts left' or 'Explain PID control math'"
-	_main_vbox.add_child(_task_input)
+	_work_area.add_child(_task_input)
 
 	# ---- Generate Controls ----
 	var generate_hbox = HBoxContainer.new()
-	_main_vbox.add_child(generate_hbox)
+	_work_area.add_child(generate_hbox)
 
 	_behavior_select = OptionButton.new()
 	_behavior_select.custom_minimum_size.x = 150
@@ -141,18 +146,18 @@ func _setup_ui() -> void:
 	# ---- Code Output ----
 	_output_label = Label.new()
 	_output_label.text = "Generated Code:"
-	_main_vbox.add_child(_output_label)
+	_work_area.add_child(_output_label)
 
 	_code_output = TextEdit.new()
 	_code_output.custom_minimum_size.y = 200
 	_code_output.editable = false
 	if UiTheme.font("mono"):
 		_code_output.add_theme_font_override("font", UiTheme.font("mono"))
-	_main_vbox.add_child(_code_output)
+	_work_area.add_child(_code_output)
 
 	# ---- Action Buttons ----
 	var action_hbox = HBoxContainer.new()
-	_main_vbox.add_child(action_hbox)
+	_work_area.add_child(action_hbox)
 
 	_copy_btn = Button.new()
 	_copy_btn.text = "Copy Code"
@@ -166,6 +171,8 @@ func _connect_signals() -> void:
 
 func _update_ai_status(configured: bool, message: String) -> void:
 	_api_configured = configured
+	if _work_area:
+		_work_area.visible = configured
 	_status_label.text = message
 	_generate_btn.disabled = not configured
 	_explain_btn.disabled = not configured

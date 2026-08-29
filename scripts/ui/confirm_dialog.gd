@@ -33,29 +33,31 @@ func _build() -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(overlay)
 
-	# Dialog box
-	var dialog = PanelContainer.new()
-	dialog.set_anchors_preset(Control.PRESET_CENTER)
-	dialog.offset_left = -200
-	dialog.offset_top = -80
-	dialog.offset_right = 200
-	dialog.offset_bottom = 80
+	# Centered dialog, sized to content (not a fixed box).
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
 
+	var dialog = PanelContainer.new()
+	dialog.custom_minimum_size = Vector2(360, 0)
 	dialog.add_theme_stylebox_override("panel", UiTheme.style("panel"))
-	add_child(dialog)
+	center.add_child(dialog)
 
 	var content = VBoxContainer.new()
-	content.add_theme_constant_override("separation", 12)
+	content.add_theme_constant_override("separation", UiTheme.space("m"))
 	dialog.add_child(content)
 
 	# Title + message
 	content.add_child(UiLabel.new().setup(_title, UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY))
-	content.add_child(UiLabel.new().setup(_message, UiLabel.Kind.BODY, UiLabel.Tone.MUTED))
+	var msg := UiLabel.new().setup(_message, UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	msg.custom_minimum_size.x = 320
+	content.add_child(msg)
 
 	# Buttons
 	var btn_hbox = HBoxContainer.new()
 	btn_hbox.alignment = BoxContainer.ALIGNMENT_END
-	btn_hbox.add_theme_constant_override("separation", 8)
+	btn_hbox.add_theme_constant_override("separation", UiTheme.space("s"))
 	content.add_child(btn_hbox)
 
 	var cancel_btn = Button.new()

@@ -67,10 +67,16 @@ func _setup_ui() -> void:
 	backend_btn.pressed.connect(_on_backend_pressed)
 	win.title_actions().add_child(backend_btn)
 
-	# registry
-	v.add_child(UiSection.new().setup("Register robot"))
+	var tabs := TabContainer.new()
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(tabs)
+
+	# Registry
+	var reg := _tab_page()
+	tabs.add_child(reg)
+	tabs.set_tab_title(0, "Registry")
 	var reg_row := HBoxContainer.new()
-	v.add_child(reg_row)
+	reg.add_child(reg_row)
 	_name_input = LineEdit.new()
 	_name_input.placeholder_text = "robot name"
 	_name_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -78,16 +84,16 @@ func _setup_ui() -> void:
 	var reg_btn := UiButton.new().setup("Register", UiButton.Variant.SECONDARY)
 	reg_btn.pressed.connect(_on_register)
 	reg_row.add_child(reg_btn)
-	var list_btn := UiButton.new().setup("List Robots", UiButton.Variant.SECONDARY)
+	var list_btn := UiButton.new().setup("List", UiButton.Variant.SECONDARY)
 	list_btn.pressed.connect(_on_list)
 	reg_row.add_child(list_btn)
 
-	v.add_child(UiSeparator.new())
-
-	# capability transfer
-	v.add_child(UiSection.new().setup("Capability transfer"))
+	# Capabilities
+	var cap := _tab_page()
+	tabs.add_child(cap)
+	tabs.set_tab_title(1, "Capabilities")
 	var cap_row := HBoxContainer.new()
-	v.add_child(cap_row)
+	cap.add_child(cap_row)
 	_robot_input = LineEdit.new()
 	_robot_input.placeholder_text = "robot"
 	_robot_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -103,12 +109,12 @@ func _setup_ui() -> void:
 	transfer_btn.pressed.connect(_on_transfer)
 	cap_row.add_child(transfer_btn)
 
-	v.add_child(UiSeparator.new())
-
-	# jobs
-	v.add_child(UiSection.new().setup("Job"))
+	# Jobs
+	var jobs := _tab_page()
+	tabs.add_child(jobs)
+	tabs.set_tab_title(2, "Jobs")
 	var job_row := HBoxContainer.new()
-	v.add_child(job_row)
+	jobs.add_child(job_row)
 	_job_input = LineEdit.new()
 	_job_input.placeholder_text = "job id"
 	_job_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -120,12 +126,12 @@ func _setup_ui() -> void:
 	claim_btn.pressed.connect(_on_claim_job)
 	job_row.add_child(claim_btn)
 
-	v.add_child(UiSeparator.new())
-
-	# channels
-	v.add_child(UiSection.new().setup("Channel"))
+	# Channels
+	var chans := _tab_page()
+	tabs.add_child(chans)
+	tabs.set_tab_title(3, "Channels")
 	var ch_row := HBoxContainer.new()
-	v.add_child(ch_row)
+	chans.add_child(ch_row)
 	_channel_input = LineEdit.new()
 	_channel_input.placeholder_text = "channel name"
 	_channel_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -138,12 +144,18 @@ func _setup_ui() -> void:
 	ch_row.add_child(emit_btn)
 
 	_registry_output = TextEdit.new()
-	_registry_output.custom_minimum_size.y = 160
+	_registry_output.custom_minimum_size.y = 140
 	_registry_output.editable = false
 	v.add_child(_registry_output)
 
 	_status = UiLabel.new().setup("", UiLabel.Kind.BODY, UiLabel.Tone.MUTED)
 	v.add_child(_status)
+
+
+func _tab_page() -> VBoxContainer:
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", UiTheme.space("s"))
+	return page
 
 
 func _on_backend_pressed() -> void:

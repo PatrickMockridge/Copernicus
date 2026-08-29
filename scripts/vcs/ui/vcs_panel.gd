@@ -35,9 +35,16 @@ func _setup_ui() -> void:
 
 	v.add_child(UiSeparator.new())
 
-	v.add_child(UiSection.new().setup("Remote"))
+	var tabs := TabContainer.new()
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(tabs)
+
+	# Remote
+	var remote := _page()
+	tabs.add_child(remote)
+	tabs.set_tab_title(0, "Remote")
 	var remote_row := HBoxContainer.new()
-	v.add_child(remote_row)
+	remote.add_child(remote_row)
 	_remote_input = LineEdit.new()
 	_remote_input.placeholder_text = "git URL or Ariadne repo id"
 	_remote_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -49,11 +56,12 @@ func _setup_ui() -> void:
 	clone_btn.pressed.connect(_on_clone)
 	remote_row.add_child(clone_btn)
 
-	v.add_child(UiSeparator.new())
-
-	v.add_child(UiSection.new().setup("Commit"))
+	# Commit
+	var commit := _page()
+	tabs.add_child(commit)
+	tabs.set_tab_title(1, "Commit")
 	var commit_row := HBoxContainer.new()
-	v.add_child(commit_row)
+	commit.add_child(commit_row)
 	_message_input = LineEdit.new()
 	_message_input.placeholder_text = "commit message"
 	_message_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -61,9 +69,8 @@ func _setup_ui() -> void:
 	var commit_btn := UiButton.new().setup("Commit", UiButton.Variant.PRIMARY)
 	commit_btn.pressed.connect(_on_commit)
 	commit_row.add_child(commit_btn)
-
 	var sync_row := HBoxContainer.new()
-	v.add_child(sync_row)
+	commit.add_child(sync_row)
 	var push_btn := UiButton.new().setup("Push", UiButton.Variant.SECONDARY)
 	push_btn.pressed.connect(_on_push)
 	sync_row.add_child(push_btn)
@@ -74,13 +81,20 @@ func _setup_ui() -> void:
 	refresh_btn.pressed.connect(_refresh)
 	sync_row.add_child(refresh_btn)
 
-	v.add_child(UiSeparator.new())
-
-	v.add_child(UiSection.new().setup("History"))
+	# History
+	var history := _page()
+	tabs.add_child(history)
+	tabs.set_tab_title(2, "History")
 	_log_output = TextEdit.new()
 	_log_output.editable = false
 	_log_output.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	v.add_child(_log_output)
+	history.add_child(_log_output)
+
+
+func _page() -> VBoxContainer:
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", UiTheme.space("s"))
+	return page
 
 
 func _on_backend_pressed() -> void:

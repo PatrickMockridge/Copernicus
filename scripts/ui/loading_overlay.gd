@@ -19,21 +19,22 @@ func _build(message: String) -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(bg)
 
-	var panel = PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.offset_left = -120
-	panel.offset_top = -40
-	panel.offset_right = 120
-	panel.offset_bottom = 40
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
 
+	var panel = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(240, 0)
 	panel.add_theme_stylebox_override("panel", UiTheme.style("panel"))
-	add_child(panel)
+	center.add_child(panel)
 
 	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", UiTheme.space("s"))
 	panel.add_child(vbox)
 
-	var label = UiLabel.new().setup(message, UiLabel.Kind.HEADING, UiLabel.Tone.PRIMARY)
+	var label = UiLabel.new().setup(message, UiLabel.Kind.BODY, UiLabel.Tone.PRIMARY)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.custom_minimum_size.x = 220
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(label)
 
