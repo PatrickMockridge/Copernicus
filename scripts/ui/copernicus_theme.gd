@@ -111,6 +111,21 @@ func _build_control_styles() -> void:
 	_theme.set_color("font_selected_color", "TabContainer", TEXT_PRIMARY)
 	_theme.set_color("font_unselected_color", "TabContainer", TEXT_SECONDARY)
 
+	# Panel default — so un-styled PanelContainers match the dark theme.
+	_theme.set_stylebox("panel", "Panel", _theme.get_stylebox("panel_background", "Panel"))
+
+	# ScrollContainer / TabContainer content areas — transparent so the parent bg shows through.
+	_theme.set_stylebox("panel", "ScrollContainer", _flat(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0))
+	_theme.set_stylebox("panel", "TabContainer", _flat(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0))
+
+	# SpinBox
+	_theme.set_stylebox("updown", "SpinBox", _flat(Color(0.13, 0.13, 0.16), BORDER_DIM, RADIUS_SM))
+	_theme.set_color("font_color", "SpinBox", TEXT_PRIMARY)
+
+	# ProgressBar
+	_theme.set_stylebox("background", "ProgressBar", _flat(Color(0.08, 0.08, 0.10), BORDER_DIM, RADIUS_SM))
+	_theme.set_stylebox("fill", "ProgressBar", _flat(ACCENT, ACCENT, RADIUS_SM))
+
 
 func _flat(bg: Color, border: Color, radius: int) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()

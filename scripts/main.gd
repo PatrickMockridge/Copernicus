@@ -52,9 +52,13 @@ func _init_ai_instances() -> void:
 	_rosai.set_ai(_gameai)
 
 func _setup_ui() -> void:
+	var panel = PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	CopernicusTheme.style_panel(panel)
+	add_child(panel)
+
 	_main_vbox = VBoxContainer.new()
-	_main_vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(_main_vbox)
+	panel.add_child(_main_vbox)
 
 	# ---- Header ----
 	_header = HBoxContainer.new()

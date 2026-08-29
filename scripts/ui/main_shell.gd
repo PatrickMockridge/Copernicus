@@ -23,6 +23,11 @@ func _ready() -> void:
 
 
 func _setup_ui() -> void:
+	var bg = ColorRect.new()
+	bg.color = CopernicusTheme.BG_DARK
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(bg)
+
 	var root = HBoxContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_theme_constant_override("separation", 0)
