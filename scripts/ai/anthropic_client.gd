@@ -16,7 +16,7 @@ var _max_tokens: int = 8192
 
 func _init() -> void:
 	_http = GameAIHttpClient.new()
-	_http.set_timeout(120.0)
+	_http.set_timeout(60.0)
 
 
 func configure(api_key: String, base_url: String, model: String) -> void:
@@ -29,6 +29,25 @@ func configure(api_key: String, base_url: String, model: String) -> void:
 
 func set_max_tokens(n: int) -> void:
 	_max_tokens = n
+
+
+## Cheap connection/health check: a minimal /v1/messages round-trip that
+## exercises the key + endpoint + model. Returns {ok, error, model}.
+func test_connection() -> Dictionary:
+	if _api_key.is_empty():
+		return {"ok": false, "error": "No API key configured"}
+	var body := {
+		"model": _model,
+		"max_tokens": 1,
+		"messages": [{"role": "user", "content": [{"type": "text", "text": "ping"}]}],
+	}
+	var res := _http.post(_endpoint(), _headers(), JSON.stringify(body))
+	if res.is_err():
+		return {"ok": false, "error": _err_msg(res.err_value())}
+	var parsed := _parse(str(res.ok_value()))
+	if not parsed.get("ok", false):
+		return parsed
+	return {"ok": true, "error": "", "model": _model}
 
 
 ## Send one Messages API turn. `messages` are already in Anthropic block format
@@ -48,20 +67,34 @@ func send(messages: Array, tools: Array, system: String) -> Dictionary:
 	if not tools.is_empty():
 		body["tools"] = tools
 
-	var headers := [
+	var res := _http.post(_endpoint(), _headers(), JSON.stringify(body))
+	if res.is_err():
+		return {"ok": false, "error": _err_msg(res.err_value())}
+	return _parse(str(res.ok_value()))
+
+
+func _err_msg(e) -> String:
+	var msg := ""
+	if e is Dictionary:
+		msg = str(e.get("message", ""))
+	else:
+		msg = str(e)
+	if msg.strip_edges().is_empty():
+		msg = "request failed"
+	return msg
+
+
+func _endpoint() -> String:
+	return _base_url + "/v1/messages"
+
+
+func _headers() -> Array:
+	return [
 		"x-api-key: " + _api_key,
 		"Authorization: Bearer " + _api_key,
 		"anthropic-version: 2023-06-01",
 		"content-type: application/json",
 	]
-	var endpoint := _base_url + "/v1/messages"
-
-	var res = _http.post(endpoint, headers, JSON.stringify(body))
-	if res.is_err():
-		var e = res.err_value()
-		var msg = e.get("message", str(e)) if e is Dictionary else str(e)
-		return {"ok": false, "error": msg}
-	return _parse(str(res.ok_value()))
 
 
 func _parse(response_text: String) -> Dictionary:

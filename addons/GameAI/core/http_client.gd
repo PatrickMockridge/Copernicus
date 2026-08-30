@@ -23,7 +23,8 @@ func post(url: String, headers: Array, body: String) -> GameAIResult:
 		f.close()
 
 	# Use curl with an argument array (no shell), so headers/url can't inject commands.
-	var args := PackedStringArray(["-s", "--max-time", str(int(_timeout)), "-X", "POST"])
+	# -sS = silent progress but show errors (so failures are loud, not empty).
+	var args := PackedStringArray(["-sS", "--max-time", str(int(_timeout)), "-X", "POST"])
 	for h in headers:
 		args.append("-H")
 		args.append(str(h))
@@ -36,10 +37,15 @@ func post(url: String, headers: Array, body: String) -> GameAIResult:
 
 	DirAccess.remove_absolute(body_file)
 
-	var result = output[0].get_string_from_utf8() if output.size() > 0 else ""
+	var result := ""
+	for chunk in output:
+		result += chunk.get_string_from_utf8()
 
 	if exit_code != 0:
-		return GameAIResult.new(false, null, {"code": exit_code, "message": result})
+		var msg := result.strip_edges()
+		if msg.is_empty():
+			msg = "curl exit %d" % exit_code
+		return GameAIResult.new(false, null, {"code": exit_code, "message": msg})
 
 	return GameAIResult.new(true, result)
 

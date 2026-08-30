@@ -22,8 +22,10 @@ godot scenes/main.tscn
 | `ANTHROPIC_MODEL` | no | `claude-sonnet-4-6` | Model id (must support tool use). |
 | `AI_WORKSPACE` | no | `~/robot_workspace` | Directory the assistant codes in — **your** project, not Copernicus. |
 
-The assistant connects automatically on launch. If the key is missing it shows
-"Not connected — set ANTHROPIC_API_KEY in .env".
+On launch the panel **tests** the connection (a real round-trip to the endpoint, not just a key
+presence check) and shows "Connected (model)" or a loud "Connection failed: …". If it can't connect,
+enter your key in the panel and press **Connect** — a successful manual key is saved to
+`user://ai_config.json` so it survives relaunch.
 
 ## 2. Open / close
 
