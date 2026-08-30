@@ -146,6 +146,8 @@ godot --headless --script res://scripts/test_scenarios.gd  # workbench loop
 godot --headless --script res://scripts/test_state.gd      # state transitions
 godot --headless --script res://scripts/test_shell.gd      # routes / plugins
 godot --headless --script res://scripts/test_ik.gd         # arm IK
+godot --headless --script res://scripts/test_shortcuts.gd  # viewport shortcuts
+godot --headless --script res://scripts/test_mesh.gd       # mesh translation (STL/OBJ/DAE)
 godot --headless --script res://scripts/test_rchain.gd     # crypto + node (skips without node)
 ```
 

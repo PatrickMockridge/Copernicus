@@ -8,12 +8,21 @@ signal robot_loaded(node: Node3D)
 signal publish_requested(robot_name: String)
 signal wireframe_changed(enabled: bool)
 signal grid_changed(enabled: bool)
+## Shell-level requests originating from the viewport context menu or shortcuts.
+signal viewport_action(id: String)
 
 const RobotViewerController = preload("res://scripts/robot_viewer_controller.gd")
 const PublishPanel = preload("res://scripts/publish_panel.gd")
 const LidarDebug = preload("res://scripts/lidar_debug.gd")
 const CameraDebug = preload("res://scripts/camera_debug.gd")
 const ImuDebug = preload("res://scripts/imu_debug.gd")
+
+## Context-menu item ids (viewport-owned).
+enum CtxMenu {
+	MODE_SELECT, MODE_TRANSLATE, MODE_ROTATE,
+	RESET_VIEW, LOAD_ROBOT, WIREFRAME, GRID, RENDER,
+	LIDAR, CAMERA, IMU, DOMAIN,
+}
 
 var _viewport_container: SubViewportContainer
 var _sub_viewport: SubViewport
@@ -22,10 +31,13 @@ var _toolbar: ViewportToolbar
 var _lidar_debug: LidarDebug
 var _camera_debug: CameraDebug
 var _imu_debug: ImuDebug
+var _context_menu: PopupMenu
+var _menu_checked: Dictionary = {}   # shell-pushed action id -> checked (lidar/camera/imu/domain)
 
 
 func _ready() -> void:
 	_setup_workspace()
+	_setup_context_menu()
 
 
 func _setup_workspace() -> void:
@@ -49,6 +61,7 @@ func _setup_workspace() -> void:
 	_robot_viewer = RobotViewerController.new()
 	_robot_viewer.set_name("RobotViewer")
 	_robot_viewer.robot_loaded.connect(_on_robot_loaded)
+	_robot_viewer.context_menu_requested.connect(_on_context_menu_requested)
 	_sub_viewport.add_child(_robot_viewer)
 
 	# ---- Sensor debug (hidden by default; toggled via View menu) ----
@@ -111,6 +124,97 @@ func _on_publish_pressed() -> void:
 	if _robot_viewer and _robot_viewer.get_robot_root():
 		robot_name = _robot_viewer.get_robot_root().name
 	publish_requested.emit(robot_name)
+
+
+# ---------------------------------------------------------------- context menu
+
+func _setup_context_menu() -> void:
+	_context_menu = PopupMenu.new()
+	_context_menu.add_check_item("Select", CtxMenu.MODE_SELECT)
+	_context_menu.add_check_item("Translate", CtxMenu.MODE_TRANSLATE)
+	_context_menu.add_check_item("Rotate", CtxMenu.MODE_ROTATE)
+	_context_menu.add_separator()
+	_context_menu.add_item("Reset View", CtxMenu.RESET_VIEW)
+	_context_menu.add_item("Load Robot…", CtxMenu.LOAD_ROBOT)
+	_context_menu.add_separator()
+	_context_menu.add_check_item("Wireframe", CtxMenu.WIREFRAME)
+	_context_menu.add_check_item("Grid", CtxMenu.GRID)
+	_context_menu.add_check_item("Render: Meshes", CtxMenu.RENDER)
+	_context_menu.add_separator()
+	_context_menu.add_check_item("Lidar", CtxMenu.LIDAR)
+	_context_menu.add_check_item("Camera Frustum", CtxMenu.CAMERA)
+	_context_menu.add_check_item("IMU Axes", CtxMenu.IMU)
+	_context_menu.add_check_item("Domain Randomization", CtxMenu.DOMAIN)
+	_context_menu.id_pressed.connect(_on_context_menu_id_pressed)
+	add_child(_context_menu)
+
+
+func _on_context_menu_requested() -> void:
+	_sync_context_menu()
+	var pos := DisplayServer.mouse_get_position()
+	_context_menu.popup(Rect2i(Vector2i(pos), Vector2i.ZERO))
+
+
+func _sync_context_menu() -> void:
+	var m := _robot_viewer.get_mode()
+	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.MODE_SELECT), m == RobotViewerController.Mode.SELECT)
+	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.MODE_TRANSLATE), m == RobotViewerController.Mode.TRANSLATE)
+	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.MODE_ROTATE), m == RobotViewerController.Mode.ROTATE)
+	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.RENDER), _robot_viewer.get_render_proper_meshes())
+	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.WIREFRAME), is_wireframe())
+	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.GRID), is_grid())
+	for id in _menu_checked:
+		_set_menu_item_checked(id, _menu_checked[id])
+
+
+func _on_context_menu_id_pressed(id: int) -> void:
+	match id:
+		CtxMenu.MODE_SELECT:
+			_robot_viewer.set_mode(RobotViewerController.Mode.SELECT)
+		CtxMenu.MODE_TRANSLATE:
+			_robot_viewer.set_mode(RobotViewerController.Mode.TRANSLATE)
+		CtxMenu.MODE_ROTATE:
+			_robot_viewer.set_mode(RobotViewerController.Mode.ROTATE)
+		CtxMenu.RESET_VIEW:
+			_robot_viewer.reset_view()
+		CtxMenu.LOAD_ROBOT:
+			viewport_action.emit("load_robot")
+		CtxMenu.WIREFRAME:
+			viewport_action.emit("wireframe")
+		CtxMenu.GRID:
+			viewport_action.emit("grid")
+		CtxMenu.RENDER:
+			_robot_viewer.set_render_proper_meshes(not _robot_viewer.get_render_proper_meshes())
+		CtxMenu.LIDAR:
+			viewport_action.emit("lidar")
+		CtxMenu.CAMERA:
+			viewport_action.emit("camera")
+		CtxMenu.IMU:
+			viewport_action.emit("imu")
+		CtxMenu.DOMAIN:
+			viewport_action.emit("domain")
+
+
+## The shell pushes sensor/domain state here so the viewport menu can show it.
+func set_menu_checked(id: String, checked: bool) -> void:
+	_menu_checked[id] = checked
+	if _context_menu:
+		_set_menu_item_checked(id, checked)
+
+
+func _set_menu_item_checked(id: String, checked: bool) -> void:
+	var item_id := -1
+	match id:
+		"wireframe": item_id = CtxMenu.WIREFRAME
+		"grid": item_id = CtxMenu.GRID
+		"lidar": item_id = CtxMenu.LIDAR
+		"camera": item_id = CtxMenu.CAMERA
+		"imu": item_id = CtxMenu.IMU
+		"domain": item_id = CtxMenu.DOMAIN
+	if item_id >= 0:
+		var idx := _context_menu.get_item_index(item_id)
+		if idx >= 0:
+			_context_menu.set_item_checked(idx, checked)
 
 
 func load_urdf(path: String) -> void:

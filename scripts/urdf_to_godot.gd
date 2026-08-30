@@ -4,8 +4,12 @@
 
 class_name URDFToGodot
 
-# Parse URDF and return a Godot Node3D scene tree
-static func parse(urdf_path: String) -> Node3D:
+const MeshTranslator = preload("res://scripts/mesh/mesh_translator.gd")
+
+# Parse URDF and return a Godot Node3D scene tree.
+# When render_proper_meshes is true, visual meshes that native load() cannot
+# read (STL/OBJ/DAE) are translated instead of falling back to primitives.
+static func parse(urdf_path: String, render_proper_meshes: bool = false) -> Node3D:
 	if not FileAccess.file_exists(urdf_path):
 		push_error("URDFToGodot: File not found: " + urdf_path)
 		return null
@@ -136,10 +140,10 @@ static func parse(urdf_path: String) -> Node3D:
 					current_element = ""
 
 	# Build Godot scene tree
-	return _build_scene_tree(link_data, joint_data)
+	return _build_scene_tree(link_data, joint_data, render_proper_meshes)
 
 
-static func _build_scene_tree(link_data: Dictionary, joint_data: Array) -> Node3D:
+static func _build_scene_tree(link_data: Dictionary, joint_data: Array, render_proper_meshes: bool = false) -> Node3D:
 	var root = Node3D.new()
 	root.set_name("Robot")
 	root.set_meta("urdf_loaded", true)
@@ -164,7 +168,7 @@ static func _build_scene_tree(link_data: Dictionary, joint_data: Array) -> Node3
 	# Build links first
 	for link_name in link_data:
 		var data = link_data[link_name]
-		var link_node = _create_link_node(link_name, data)
+		var link_node = _create_link_node(link_name, data, render_proper_meshes)
 		link_nodes[link_name] = link_node
 
 	# Add root link to robot
@@ -194,7 +198,7 @@ static func _build_scene_tree(link_data: Dictionary, joint_data: Array) -> Node3
 	return root
 
 
-static func _create_link_node(link_name: String, data: Dictionary) -> Node3D:
+static func _create_link_node(link_name: String, data: Dictionary, render_proper_meshes: bool = false) -> Node3D:
 	var node = Node3D.new()
 	node.set_name(link_name)
 	node.set_meta("mass", data.get("mass", 1.0))
@@ -214,7 +218,7 @@ static func _create_link_node(link_name: String, data: Dictionary) -> Node3D:
 	# Create visual mesh
 	var visual_mesh: Mesh = null
 	if not data["visual_mesh_path"].is_empty():
-		visual_mesh = _load_mesh(data["visual_mesh_path"])
+		visual_mesh = _load_mesh(data["visual_mesh_path"], render_proper_meshes)
 	if visual_mesh == null:
 		# Fallback to a primitive mesh built from the collision geometry.
 		visual_mesh = _create_visual_mesh(data)
@@ -347,7 +351,7 @@ static func _create_visual_mesh(data: Dictionary) -> Mesh:
 			return box
 
 
-static func _load_mesh(mesh_path: String) -> Mesh:
+static func _load_mesh(mesh_path: String, render_proper_meshes: bool = false) -> Mesh:
 	if mesh_path.is_empty() or not FileAccess.file_exists(mesh_path):
 		return null
 
@@ -365,6 +369,10 @@ static func _load_mesh(mesh_path: String) -> Mesh:
 			var mesh_instance = instance.find_child("Mesh*", false, false)
 			if mesh_instance and mesh_instance is MeshInstance3D:
 				return mesh_instance.mesh
+
+	# Fall back to the mesh translator for STL/OBJ/DAE when requested.
+	if render_proper_meshes:
+		return MeshTranslator.translate(mesh_path)
 	return null
 
 

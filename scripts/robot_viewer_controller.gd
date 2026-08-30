@@ -10,8 +10,12 @@ signal joint_changed(joint_name: String, position: float)
 signal context_menu_requested()
 signal target_reached()
 signal joints_zeroed()
+signal selection_changed(node: Node3D)
 
 const URDFToGodot = preload("res://scripts/urdf_to_godot.gd")
+const ViewportGizmo = preload("res://scripts/viewport/gizmo.gd")
+
+enum Mode { SELECT, TRANSLATE, ROTATE }
 
 var _robot_root: Node3D
 var _camera: Camera3D
@@ -19,7 +23,7 @@ var _cam_pivot: Node3D
 var _cam_distance: float = 3.0
 var _cam_yaw: float = 0.0
 var _cam_pitch: float = 30.0
-var _cam_pan: Vector2 = Vector2.ZERO
+var _cam_pan: Vector3 = Vector3.ZERO
 var _right_pressed: bool = false
 var _right_drag_distance: float = 0.0
 var _show_debug: bool = false
@@ -32,6 +36,20 @@ var _target_marker: MeshInstance3D
 var _target_position: Vector3 = Vector3(0.35, 0.5, 0.3)
 var _end_effector: Node3D = null
 var _target_reached_emitted: bool = false
+
+## Selection
+var _selected: Node3D = null
+var _orig_materials: Dictionary = {}  # MeshInstance3D -> original material_override
+
+## Modes / manipulation
+var _mode: int = Mode.SELECT
+var _gizmo: ViewportGizmo
+var _left_dragging: bool = false
+
+## Render modes: when true, imported URDF/MJCF meshes are translated (STL/OBJ/DAE)
+## instead of falling back to primitive shapes.
+var render_proper_meshes: bool = false
+var _current_urdf_path: String = ""
 
 ## Domain randomization
 var _domain_randomizer: RefCounted = null
@@ -47,6 +65,7 @@ func _ready() -> void:
 	_setup_grid()
 	_setup_axes()
 	_setup_target_marker()
+	_setup_gizmo()
 	_load_demo_robot()
 
 
@@ -69,7 +88,7 @@ func _update_camera_transform() -> void:
 	var x = _cam_distance * cos(rad_pitch) * sin(rad_yaw)
 	var y = _cam_distance * sin(rad_pitch)
 	var z = _cam_distance * cos(rad_pitch) * cos(rad_yaw)
-	_cam_pivot.position = Vector3(_cam_pan.x, _cam_pan.y, 0.0)
+	_cam_pivot.position = _cam_pan
 	_camera.position = Vector3(x, y, z)
 	if _camera.is_inside_tree():
 		_camera.look_at(_cam_pivot.global_position, Vector3.UP)
@@ -330,6 +349,7 @@ func _process(delta: float) -> void:
 			_domain_randomize_timer = 0.0
 			_domain_randomize_all()
 	_check_target_reached()
+	_update_keyboard_pan(delta)
 
 
 func enable_domain_randomization(enabled: bool) -> void:
@@ -357,7 +377,8 @@ func load_urdf(urdf_path: String) -> bool:
 	if _robot_root and is_instance_valid(_robot_root):
 		_robot_root.queue_free()
 
-	_robot_root = URDFToGodot.parse(urdf_path)
+	_current_urdf_path = urdf_path
+	_robot_root = URDFToGodot.parse(urdf_path, render_proper_meshes)
 	if not _robot_root:
 		push_error("RobotViewer: Failed to load URDF: " + urdf_path)
 		return false
@@ -374,6 +395,8 @@ func load_mjcf(mjcf_path: String) -> bool:
 	if _robot_root and is_instance_valid(_robot_root):
 		_robot_root.queue_free()
 
+	_current_urdf_path = ""
+
 	_robot_root = MJCFToGodot.parse(mjcf_path)
 	if not _robot_root:
 		push_error("RobotViewer: Failed to load MJCF: " + mjcf_path)
@@ -389,6 +412,7 @@ func load_mjcf(mjcf_path: String) -> bool:
 func load_robot_node(node: Node3D) -> void:
 	if _robot_root and is_instance_valid(_robot_root):
 		_robot_root.queue_free()
+	_current_urdf_path = ""
 	_robot_root = node
 	add_child(_robot_root)
 	_collect_joints()
@@ -485,6 +509,111 @@ func zero_all_joints() -> void:
 
 func get_robot_root() -> Node3D:
 	return _robot_root
+
+
+# ===== Selection =====
+
+## Raycast from the camera through `mouse_pos`; returns the link node hit, or null.
+func _pick_node(mouse_pos: Vector2) -> Node3D:
+	if not _robot_root:
+		return null
+	var from := _camera.project_ray_origin(mouse_pos)
+	var dir := _camera.project_ray_normal(mouse_pos)
+	var best: Node3D = null
+	var best_dist := INF
+	for mi in _robot_root.find_children("*", "MeshInstance3D", true, false):
+		var world_aabb: AABB = mi.global_transform * mi.get_aabb()
+		var hit = world_aabb.intersects_ray(from, dir)
+		if hit != null:
+			var d: float = from.distance_to(hit)
+			if d < best_dist:
+				best_dist = d
+				best = mi.get_parent() as Node3D
+	return best
+
+
+func select_node(node: Node3D) -> void:
+	_clear_selection()
+	_selected = node
+	if _selected:
+		for mi in _selected.find_children("*", "MeshInstance3D", true, false):
+			_orig_materials[mi] = mi.material_override
+			mi.material_override = _highlight_material()
+		if _gizmo:
+			_gizmo.move_to(_selected.global_position)
+			_gizmo.set_mode(_mode)
+			_gizmo.visible = true
+	selection_changed.emit(_selected)
+
+
+func clear_selection() -> void:
+	_clear_selection()
+	selection_changed.emit(null)
+
+
+func _clear_selection() -> void:
+	for mi in _orig_materials:
+		if is_instance_valid(mi):
+			mi.material_override = _orig_materials[mi]
+	_orig_materials.clear()
+	_selected = null
+	if _gizmo:
+		_gizmo.visible = false
+
+
+func get_selected() -> Node3D:
+	return _selected
+
+
+func _highlight_material() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(1.0, 0.75, 0.2)
+	m.emission_enabled = true
+	m.emission = Color(1.0, 0.5, 0.0)
+	m.emission_energy = 0.6
+	return m
+
+
+func _setup_gizmo() -> void:
+	_gizmo = ViewportGizmo.new()
+	_gizmo.set_name("ViewportGizmo")
+	add_child(_gizmo)
+
+
+func set_mode(mode: int) -> void:
+	_mode = mode
+	if _gizmo:
+		_gizmo.set_mode(mode)
+
+
+func get_mode() -> int:
+	return _mode
+
+
+func set_render_proper_meshes(enabled: bool) -> void:
+	if render_proper_meshes == enabled:
+		return
+	render_proper_meshes = enabled
+	if not _current_urdf_path.is_empty():
+		load_urdf(_current_urdf_path)
+
+
+func get_render_proper_meshes() -> bool:
+	return render_proper_meshes
+
+
+## Drag the selected node in translate/rotate mode from a screen-space mouse delta.
+func _manipulate(relative: Vector2) -> void:
+	if _selected == null or not is_instance_valid(_selected):
+		return
+	match _mode:
+		Mode.TRANSLATE:
+			var right := _horizontal_forward().cross(Vector3.UP).normalized()
+			var fwd := _horizontal_forward()
+			var speed := _cam_distance * 0.002
+			_selected.global_position += (right * relative.x + fwd * -relative.y) * speed
+		Mode.ROTATE:
+			_selected.rotate_y(-relative.x * 0.01)
 
 
 func get_camera() -> Camera3D:
@@ -606,6 +735,32 @@ func pan_camera(delta_x: float, delta_y: float) -> void:
 	_update_camera_transform()
 
 
+## Horizontal (XZ) direction the camera is looking.
+func _horizontal_forward() -> Vector3:
+	var f := -Vector3(_camera.position.x, 0.0, _camera.position.z)
+	if f.length() < 0.001:
+		return Vector3(0, 0, -1)
+	return f.normalized()
+
+
+## WASD / arrow-key panning, active while the pointer is over the viewport.
+func _update_keyboard_pan(delta: float) -> void:
+	if not _is_mouse_over_viewport():
+		return
+	var fwd := _horizontal_forward()
+	var right := fwd.cross(Vector3.UP).normalized()
+	var move := Vector3.ZERO
+	if Input.is_key_pressed(KEY_W): move += fwd
+	if Input.is_key_pressed(KEY_S): move -= fwd
+	if Input.is_key_pressed(KEY_D): move += right
+	if Input.is_key_pressed(KEY_A): move -= right
+	if Input.is_key_pressed(KEY_UP): move += Vector3.UP
+	if Input.is_key_pressed(KEY_DOWN): move -= Vector3.UP
+	if move != Vector3.ZERO:
+		_cam_pan += move.normalized() * _cam_distance * 0.8 * delta
+		_update_camera_transform()
+
+
 # ===== Input Handling =====
 
 func _input(event: InputEvent) -> void:
@@ -626,11 +781,21 @@ func _input(event: InputEvent) -> void:
 				if _right_pressed and _right_drag_distance < 5.0:
 					context_menu_requested.emit()
 				_right_pressed = false
+		elif mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			if mouse_event.pressed:
+				if _mode == Mode.SELECT:
+					select_node(_pick_node(get_viewport().get_mouse_position()))
+				else:
+					_left_dragging = true
+			else:
+				_left_dragging = false
 	elif event is InputEventMouseMotion:
 		var motion = event as InputEventMouseMotion
 		if _right_pressed:
 			_right_drag_distance += motion.relative.length()
-		if motion.button_mask & MOUSE_BUTTON_MASK_RIGHT:
+		if _left_dragging:
+			_manipulate(motion.relative)
+		elif motion.button_mask & MOUSE_BUTTON_MASK_RIGHT:
 			if Input.is_key_pressed(KEY_SHIFT) or motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
 				pan_camera(-motion.relative.x * 0.005, motion.relative.y * 0.005)
 			else:
@@ -687,5 +852,5 @@ func reset_view() -> void:
 	_cam_yaw = 0.0
 	_cam_pitch = 30.0
 	_cam_distance = 3.0
-	_cam_pan = Vector2.ZERO
+	_cam_pan = Vector3.ZERO
 	_update_camera_transform()

@@ -15,6 +15,7 @@ const RobotGallery = preload("res://scripts/robots/ui/robot_gallery.gd")
 const RaasLauncher = preload("res://scripts/rchain/ui/raas_launcher.gd")
 const DemoHost = preload("res://scripts/ui/demo_host.gd")
 const VcsPanel = preload("res://scripts/vcs/ui/vcs_panel.gd")
+const ShortcutManager = preload("res://scripts/viewport/shortcut_manager.gd")
 
 enum MenuId {
 	FILE_OPEN, FILE_RECENT, FILE_MANUAL, FILE_EXIT,
@@ -54,10 +55,10 @@ var _back_btn: UiButton
 
 var _file_dialog: FileDialog
 var _recent_menu: PopupMenu
-var _context_menu: PopupMenu
 var _view_menu: PopupMenu
 var _sensors_menu: PopupMenu
 var _command_palette: CommandPalette
+var _shortcuts: ShortcutManager
 
 var _last_dir: String = ""
 var _recent_robots: Array = []
@@ -74,6 +75,8 @@ func _ready() -> void:
 	_load_plugin_state()
 	_register_routes()
 	_setup_ui()
+	_shortcuts = ShortcutManager.new()
+	_shortcuts.load_from("user://shortcuts.json")
 	_cli = Cli.new(CommandRegistry)
 	_register_commands()
 	_setup_ros2()
@@ -111,6 +114,7 @@ func _make_workspace() -> Control:
 	_workspace.robot_loaded.connect(_on_robot_loaded_for_scenario)
 	_workspace.wireframe_changed.connect(_on_wireframe_changed)
 	_workspace.grid_changed.connect(_on_grid_changed)
+	_workspace.viewport_action.connect(_on_viewport_action)
 	return _workspace
 
 
@@ -248,8 +252,6 @@ func _ensure_panel(id: String) -> Control:
 
 func _wire_viewer() -> void:
 	var viewer = _workspace.get_robot_viewer()
-	if viewer and not viewer.context_menu_requested.is_connected(_on_context_menu_requested):
-		viewer.context_menu_requested.connect(_on_context_menu_requested)
 	if viewer and not viewer.target_reached.is_connected(_on_target_reached):
 		viewer.target_reached.connect(_on_target_reached)
 	if viewer and not viewer.joints_zeroed.is_connected(_on_joints_zeroed):
@@ -283,7 +285,6 @@ func _setup_ui() -> void:
 	root.add_child(_build_status_bar())
 
 	_setup_file_dialog()
-	_setup_context_menu()
 
 
 func _build_activity_bar() -> Control:
@@ -471,22 +472,6 @@ func _setup_file_dialog() -> void:
 	_file_dialog.current_dir = _default_open_dir()
 	_file_dialog.file_selected.connect(_on_file_selected)
 	add_child(_file_dialog)
-
-
-func _setup_context_menu() -> void:
-	_context_menu = PopupMenu.new()
-	_context_menu.add_item("Load Robot…", MenuId.FILE_OPEN)
-	_context_menu.add_separator()
-	_context_menu.add_item("Reset View", MenuId.VIEW_RESET)
-	_context_menu.add_check_item("Wireframe", MenuId.VIEW_WIREFRAME)
-	_context_menu.add_check_item("Grid", MenuId.VIEW_GRID)
-	_context_menu.set_item_checked(_context_menu.get_item_index(MenuId.VIEW_GRID), true)
-	_context_menu.add_check_item("Lidar", MenuId.SENSOR_LIDAR)
-	_context_menu.add_check_item("Camera Frustum", MenuId.SENSOR_CAMERA)
-	_context_menu.add_check_item("IMU Axes", MenuId.SENSOR_IMU)
-	_context_menu.add_check_item("Domain Randomization", MenuId.VIEW_DOMAIN)
-	_context_menu.id_pressed.connect(_on_menu_pressed)
-	add_child(_context_menu)
 
 
 # ---------------------------------------------------------------- navigation
@@ -917,19 +902,38 @@ func _toggle_imu() -> void:
 	if _workspace:
 		_set_imu(not _workspace.is_imu_visible())
 
+
+## Shell-level actions requested by the viewport context menu / shortcuts.
+func _on_viewport_action(id: String) -> void:
+	match id:
+		"load_robot":
+			_open_file_dialog()
+		"wireframe":
+			_toggle_wireframe()
+		"grid":
+			_toggle_grid()
+		"lidar":
+			_toggle_lidar()
+		"camera":
+			_toggle_camera()
+		"imu":
+			_toggle_imu()
+		"domain":
+			_toggle_domain()
+
 func _set_domain(enabled: bool) -> void:
 	if not _workspace:
 		return
 	_workspace.set_domain_randomization(enabled)
 	_set_menu_checked(_view_menu, MenuId.VIEW_DOMAIN, enabled)
-	_set_menu_checked(_context_menu, MenuId.VIEW_DOMAIN, enabled)
+	_workspace.set_menu_checked("domain", enabled)
 
 func _set_lidar(visible: bool) -> void:
 	if not _workspace:
 		return
 	_workspace.set_lidar_visible(visible)
 	_set_menu_checked(_sensors_menu, MenuId.SENSOR_LIDAR, visible)
-	_set_menu_checked(_context_menu, MenuId.SENSOR_LIDAR, visible)
+	_workspace.set_menu_checked("lidar", visible)
 	_mark_scenario("lidar_active", visible)
 
 func _set_camera(visible: bool) -> void:
@@ -937,7 +941,7 @@ func _set_camera(visible: bool) -> void:
 		return
 	_workspace.set_camera_visible(visible)
 	_set_menu_checked(_sensors_menu, MenuId.SENSOR_CAMERA, visible)
-	_set_menu_checked(_context_menu, MenuId.SENSOR_CAMERA, visible)
+	_workspace.set_menu_checked("camera", visible)
 	_mark_scenario("camera_active", visible)
 
 func _set_imu(visible: bool) -> void:
@@ -945,7 +949,7 @@ func _set_imu(visible: bool) -> void:
 		return
 	_workspace.set_imu_visible(visible)
 	_set_menu_checked(_sensors_menu, MenuId.SENSOR_IMU, visible)
-	_set_menu_checked(_context_menu, MenuId.SENSOR_IMU, visible)
+	_workspace.set_menu_checked("imu", visible)
 	_mark_scenario("imu_active", visible)
 
 func _toggle_terminal() -> void:
@@ -962,12 +966,10 @@ func _set_terminal_visible(visible: bool) -> void:
 
 func _on_wireframe_changed(enabled: bool) -> void:
 	_set_menu_checked(_view_menu, MenuId.VIEW_WIREFRAME, enabled)
-	_set_menu_checked(_context_menu, MenuId.VIEW_WIREFRAME, enabled)
 
 
 func _on_grid_changed(enabled: bool) -> void:
 	_set_menu_checked(_view_menu, MenuId.VIEW_GRID, enabled)
-	_set_menu_checked(_context_menu, MenuId.VIEW_GRID, enabled)
 
 
 func _set_menu_checked(menu: PopupMenu, id: int, checked: bool) -> void:
@@ -1087,15 +1089,13 @@ func _on_terminal_submit(text: String) -> void:
 	_cli.execute(line, _terminal.echo)
 
 
-# ---------------------------------------------------------------- context menu / input / status
-
-func _on_context_menu_requested() -> void:
-	var pos := DisplayServer.mouse_get_position()
-	_context_menu.popup(Rect2i(Vector2i(pos), Vector2i.ZERO))
-
+# ---------------------------------------------------------------- input / status
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if _shortcuts and _dispatch_shortcut(_shortcuts.match_event(event)):
+			get_viewport().set_input_as_handled()
+			return
 		if event.keycode == KEY_QUOTELEFT:
 			_open_palette()
 			get_viewport().set_input_as_handled()
@@ -1105,6 +1105,29 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.ctrl_pressed and not event.shift_pressed and event.keycode == KEY_K:
 			_open_palette()
 			get_viewport().set_input_as_handled()
+
+
+## Dispatch a viewport shortcut action. Returns true if handled.
+func _dispatch_shortcut(action: String) -> bool:
+	if action.is_empty():
+		return false
+	var v := _viewer()
+	match action:
+		"mode_select":
+			if v: v.set_mode(RobotViewerController.Mode.SELECT)
+		"mode_translate":
+			if v: v.set_mode(RobotViewerController.Mode.TRANSLATE)
+		"mode_rotate":
+			if v: v.set_mode(RobotViewerController.Mode.ROTATE)
+		"toggle_render":
+			if v: v.set_render_proper_meshes(not v.get_render_proper_meshes())
+		"toggle_grid":
+			_toggle_grid()
+		"toggle_wireframe":
+			_toggle_wireframe()
+		_:
+			return false
+	return true
 
 
 func _open_palette() -> void:
