@@ -3,26 +3,12 @@
 **Copernicus** is an open-source **operating system for robotics**, built on
 [Godot 4](https://godotengine.org/). A small **kernel** sits in the middle; **apps** (plugins) run on
 it; **robots** plug in through ROS 2 and swappable backends; and a **blockchain + RaaS** layer takes a
-design from simulation into a real-world robot.
+design from simulation into a real-world robot. It is free, open, and runs anywhere — no single company
+owns your robot or your workflow.
 
 > **Repository:** [github.com/PatrickMockridge/Copernicus](https://github.com/PatrickMockridge/Copernicus)
 
----
-
-## The Promethean principle
-
-Robotics is the fire of our time — and today it is locked up. Industrial simulation and the tooling
-around it live behind a handful of vendors: licences, cloud accounts, proprietary formats, and a
-workflow you don't own.
-
-Copernicus is Promethean: it takes that fire and hands it to everyone. It is free and open, built on
-Godot, runs anywhere, is forkable, and no single company owns your robot or your process.
-
-The name is deliberate. Nicolaus Copernicus moved the centre of the cosmos from the Earth to the Sun —
-and the model didn't break, it got simpler. Copernicus moves the centre of robotics from the
-corporation to the **community**. When you put the right thing at the centre, the rest lines up.
-
-## The centre of gravity: the kernel
+## The kernel
 
 The whole design follows one rule: **there is a small, fixed kernel, and everything else plugs into it.**
 
@@ -44,7 +30,7 @@ Around the kernel:
   RL, industrial, Omniverse — selected with a verb, never baked in.
 
 And there is one **command layer**: everything is a **verb** in the terminal, and the GUI just types the
-words. One centre, no hidden second system.
+words.
 
 The formal specification is the anchor for all of it — see
 [`docs/spec/00-kernel.md`](docs/spec/00-kernel.md).
