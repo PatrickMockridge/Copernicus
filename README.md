@@ -1,14 +1,53 @@
-# Copernicus — Robot Design Interface
+# Copernicus — an operating system for robotics
 
-**Copernicus** is an **operating system for robotics**, built on [Godot 4](https://godotengine.org/):
-a small **kernel** in the middle, **apps** (plugins) that run on it, and **robots** that plug in through
-ROS 2 and swappable robotics backends — with a blockchain + RaaS layer that takes a design from
-simulation into a real-world robot.
-
-Named after Nicolaus Copernicus, because it **centres** robotics development — open source, no
-corporate lock-in, everything in one place.
+**Copernicus** is an open-source **operating system for robotics**, built on
+[Godot 4](https://godotengine.org/). A small **kernel** sits in the middle; **apps** (plugins) run on
+it; **robots** plug in through ROS 2 and swappable backends; and a **blockchain + RaaS** layer takes a
+design from simulation into a real-world robot.
 
 > **Repository:** [github.com/PatrickMockridge/Copernicus](https://github.com/PatrickMockridge/Copernicus)
+
+---
+
+## The Promethean principle
+
+Robotics is the fire of our time — and today it is locked up. Industrial simulation and the tooling
+around it live behind a handful of vendors: licences, cloud accounts, proprietary formats, and a
+workflow you don't own.
+
+Copernicus is Promethean: it takes that fire and hands it to everyone. It is free and open, built on
+Godot, runs anywhere, is forkable, and no single company owns your robot or your process.
+
+The name is deliberate. Nicolaus Copernicus moved the centre of the cosmos from the Earth to the Sun —
+and the model didn't break, it got simpler. Copernicus moves the centre of robotics from the
+corporation to the **community**. When you put the right thing at the centre, the rest lines up.
+
+## The centre of gravity: the kernel
+
+The whole design follows one rule: **there is a small, fixed kernel, and everything else plugs into it.**
+
+The kernel is the five things you can't do robotics without:
+
+| Kernel component | Its job |
+|---|---|
+| **Viewport** | the display — see the robot |
+| **Terminal** | the shell — command it, and read what happened |
+| **Screen schema** | the windowing — rail · journal · stage · assistant · log |
+| **AI assistant** | the agent — code for you |
+| **Wallet + RaaS** | identity and money — who you are, and how a design earns |
+
+Around the kernel:
+
+- **Apps** are plugins — the robot library, Marketplace, Coordination, Version Control, RaaS. Opt-in,
+  disable-able, never hard-wired.
+- **Robots** plug in through **ROS 2** and swappable **backends** — physics, IK, sensors, navigation,
+  RL, industrial, Omniverse — selected with a verb, never baked in.
+
+And there is one **command layer**: everything is a **verb** in the terminal, and the GUI just types the
+words. One centre, no hidden second system.
+
+The formal specification is the anchor for all of it — see
+[`docs/spec/00-kernel.md`](docs/spec/00-kernel.md).
 
 ## Quick start
 
@@ -18,42 +57,7 @@ godot scenes/main.tscn
 
 The main scene opens the 3D editor on top and the terminal at the bottom.
 
-## Interface
-
-- **Editor** — a 3D viewer for loading and inspecting robot models (URDF, MJCF, and the built-in
-  robot library).
-- **Terminal** — a Commodore-64-style command line (blue background, uppercase output, block cursor)
-  at the bottom of the window.
-- **Wallet** — a password keystore with BIP-39 mnemonic generation, used for transfers and on-chain
-  operations.
-- **Plugins** — Marketplace, Version Control, Coordination, RaaS, the robot library, and the AI
-  assistant are plugins that can be enabled or disabled from the Plugins view.
-
-## Terminal commands
-
-Type `list` for the catalog or `help <command>` for details.
-
-Built-in verbs:
-
-```
-open · load · back · mode · wireframe · grid · sensors · demo · tool · ros2 · plugins · list · help · clear
-```
-
-Plugin verbs — coordination (`register`, `publish`, `claim`, `settle`), marketplace (`listings`,
-`search`, `buy`), VCS (`status`, `log`, `commit`, `push`, `pull`, `clone`).
-
-See [the terminal user manual](docs/terminal-user-manual.md) and
-[specification](docs/spec/07-terminal.md).
-
-## The Workbench Loop
-
-The application includes a 10-step progression from **First Light** to **Ship**. Each step is an
-objective with a checklist shown in the side bar; completing a step advances to the next.
-
 ## The structure
-
-Copernicus is a kernel with apps and robots around it (see
-[`docs/spec/00-kernel.md`](docs/spec/00-kernel.md)).
 
 ### Kernel (always present)
 
@@ -92,6 +96,27 @@ subscribes to `/robot/cmd_vel`.
 RChain coordination and the marketplace, with **robotics-as-a-service**: register a robot, publish a
 job, claim it, and settle a work-metered fee — the path from a design in simulation to a robot earning
 in the real world.
+
+## Terminal commands
+
+Type `list` for the catalog or `help <command>` for details.
+
+Built-in verbs:
+
+```
+open · load · back · mode · wireframe · grid · sensors · demo · tool · ros2 · plugins · list · help · clear
+```
+
+Plugin verbs — coordination (`register`, `publish`, `claim`, `settle`), marketplace (`listings`,
+`search`, `buy`), VCS (`status`, `log`, `commit`, `push`, `pull`, `clone`).
+
+See [the terminal user manual](docs/terminal-user-manual.md) and
+[specification](docs/spec/07-terminal.md).
+
+## The Workbench Loop
+
+The application includes a 10-step progression from **First Light** to **Ship**. Each step is an
+objective with a checklist shown in the side bar; completing a step advances to the next.
 
 ## Architecture
 
@@ -135,14 +160,12 @@ Plugins view enables and disables plugins (state persisted to `user://plugins.js
 
 ## Documentation
 
-- **Specification** — `docs/spec/01–07`: Godot model, inventory, signal backbone, components, state
-  transitions, deterministic rendering, terminal.
-- **Terminal** — [user manual](docs/terminal-user-manual.md),
-  [developer manual](docs/terminal-developer-manual.md).
-- **Getting started** — [quick start](docs/quick-start.md), [guide](docs/01-getting-started.md).
-- **Concepts / architecture** — [concepts](docs/02-concepts.md), [architecture](docs/03-architecture.md).
-- **Feature guides** — robots, physics, sensors, RL, navigation, industrial, ROS 2, marketplace,
-  RChain.
+- **Specification** — `docs/spec/00–13`: the kernel, and the terminal, viewport, screen schema, AI
+  assistant, wallet + RaaS, plugins, and the backend interface.
+- **Manuals** — [interface](docs/interface-user-manual.md), [terminal](docs/terminal-user-manual.md),
+  [viewport](docs/viewport-user-manual.md), [AI assistant](docs/ai-assistant-user-manual.md).
+- **Case studies** — [the arm](docs/case-study-robot-arm.md) and [the TurtleBot](docs/case-study-turtlebot.md).
+- **Feature guides** — robots, physics, sensors, RL, navigation, industrial, ROS 2, marketplace, RChain.
 
 ## Development
 
