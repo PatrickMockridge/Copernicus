@@ -133,8 +133,7 @@ Copernicus/
 │   ├── turtle_demo.tscn
 │   ├── robot_viewer.tscn
 │   ├── physics_demo.tscn
-│   ├── main.tscn                   # AI code generation
-│   ├── joint_control_panel.tscn
+│   ├── main.tscn                   # main shell
 │   ├── gpu/
 │   │   ├── gpu_backend_selector.tscn
 │   │   └── ui/

@@ -111,13 +111,10 @@ The importer creates:
 
 ### Interactive Joint Control
 
-Use the joint panel to manipulate joints:
-
-```bash
-godot scenes/joint_control_panel.tscn
-```
-
-Select a joint and use the slider to move it.
+Load a robot (`load arm6`) and manipulate joints from the viewport: the toolbar **Zero** button returns
+all joints to 0°, and **Reach** runs inverse kinematics. Joints are also accessible programmatically via
+`RobotViewerController` (`set_joint_rotation`, `zero_all_joints`). See the [features](features.md) and
+[Arm6 case study](case-study-robot-arm.md).
 
 ---
 
@@ -181,7 +178,6 @@ Select "PyTorch Q-Learning" as the backend.
 - `turtle_demo.tscn` — Navigation
 - `robot_viewer.tscn` — URDF inspection
 - `physics_demo.tscn` — Vehicle dynamics
-- `joint_control_panel.tscn` — Joint manipulation
 
 ### Read the Core Concepts
 - [Core Concepts](02-concepts.md) — Understand robots, physics, sensors

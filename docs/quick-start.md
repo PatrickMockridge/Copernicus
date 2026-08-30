@@ -68,13 +68,14 @@ AI-powered code generation panel with:
 - ROS topic explanations
 - Issue debugging
 
-### 5. Joint Control Panel
+### 5. Joint Control
 
 ```bash
-godot scenes/joint_control_panel.tscn
+godot scenes/main.tscn
 ```
 
-Interactive joint sliders for robot configuration.
+Load a robot (`load arm6`) and manipulate joints with the viewport toolbar **Zero**/**Reach** buttons.
+See the [features](features.md) and [Arm6 case study](case-study-robot-arm.md).
 
 ---
 
