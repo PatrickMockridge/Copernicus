@@ -926,14 +926,12 @@ func _set_domain(enabled: bool) -> void:
 		return
 	_workspace.set_domain_randomization(enabled)
 	_set_menu_checked(_view_menu, MenuId.VIEW_DOMAIN, enabled)
-	_workspace.set_menu_checked("domain", enabled)
 
 func _set_lidar(visible: bool) -> void:
 	if not _workspace:
 		return
 	_workspace.set_lidar_visible(visible)
 	_set_menu_checked(_sensors_menu, MenuId.SENSOR_LIDAR, visible)
-	_workspace.set_menu_checked("lidar", visible)
 	_mark_scenario("lidar_active", visible)
 
 func _set_camera(visible: bool) -> void:
@@ -941,7 +939,6 @@ func _set_camera(visible: bool) -> void:
 		return
 	_workspace.set_camera_visible(visible)
 	_set_menu_checked(_sensors_menu, MenuId.SENSOR_CAMERA, visible)
-	_workspace.set_menu_checked("camera", visible)
 	_mark_scenario("camera_active", visible)
 
 func _set_imu(visible: bool) -> void:
@@ -949,7 +946,6 @@ func _set_imu(visible: bool) -> void:
 		return
 	_workspace.set_imu_visible(visible)
 	_set_menu_checked(_sensors_menu, MenuId.SENSOR_IMU, visible)
-	_workspace.set_menu_checked("imu", visible)
 	_mark_scenario("imu_active", visible)
 
 func _toggle_terminal() -> void:

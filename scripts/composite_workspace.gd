@@ -31,8 +31,9 @@ var _toolbar: ViewportToolbar
 var _lidar_debug: LidarDebug
 var _camera_debug: CameraDebug
 var _imu_debug: ImuDebug
-var _context_menu: PopupMenu
-var _menu_checked: Dictionary = {}   # shell-pushed action id -> checked (lidar/camera/imu/domain)
+var _context_menu: PanelContainer
+var _menu_widgets: Dictionary = {}   # CtxMenu id -> CheckBox (checkable items)
+var _syncing_menu := false
 
 
 func _ready() -> void:
@@ -62,6 +63,7 @@ func _setup_workspace() -> void:
 	_robot_viewer.set_name("RobotViewer")
 	_robot_viewer.robot_loaded.connect(_on_robot_loaded)
 	_robot_viewer.context_menu_requested.connect(_on_context_menu_requested)
+	_robot_viewer.viewport_left_clicked.connect(_on_viewport_left_clicked)
 	_sub_viewport.add_child(_robot_viewer)
 
 	# ---- Sensor debug (hidden by default; toggled via View menu) ----
@@ -129,45 +131,143 @@ func _on_publish_pressed() -> void:
 # ---------------------------------------------------------------- context menu
 
 func _setup_context_menu() -> void:
-	_context_menu = PopupMenu.new()
-	_context_menu.add_check_item("Select", CtxMenu.MODE_SELECT)
-	_context_menu.add_check_item("Translate", CtxMenu.MODE_TRANSLATE)
-	_context_menu.add_check_item("Rotate", CtxMenu.MODE_ROTATE)
-	_context_menu.add_separator()
-	_context_menu.add_item("Reset View", CtxMenu.RESET_VIEW)
-	_context_menu.add_item("Load Robot…", CtxMenu.LOAD_ROBOT)
-	_context_menu.add_separator()
-	_context_menu.add_check_item("Wireframe", CtxMenu.WIREFRAME)
-	_context_menu.add_check_item("Grid", CtxMenu.GRID)
-	_context_menu.add_check_item("Render: Meshes", CtxMenu.RENDER)
-	_context_menu.add_separator()
-	_context_menu.add_check_item("Lidar", CtxMenu.LIDAR)
-	_context_menu.add_check_item("Camera Frustum", CtxMenu.CAMERA)
-	_context_menu.add_check_item("IMU Axes", CtxMenu.IMU)
-	_context_menu.add_check_item("Domain Randomization", CtxMenu.DOMAIN)
-	_context_menu.id_pressed.connect(_on_context_menu_id_pressed)
+	_context_menu = PanelContainer.new()
+	_context_menu.visible = false
+	_context_menu.z_index = 100
+	_context_menu.add_theme_constant_override("separation", 4)
+
+	var vbox := VBoxContainer.new()
+	_context_menu.add_child(vbox)
+
+	# Title bar with a top-right close button.
+	var title := HBoxContainer.new()
+	var title_label := Label.new()
+	title_label.text = "Viewport"
+	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_child(title_label)
+	var close_btn := Button.new()
+	close_btn.text = "✕"
+	close_btn.flat = true
+	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn.pressed.connect(_hide_context_menu)
+	title.add_child(close_btn)
+	vbox.add_child(title)
+	vbox.add_child(HSeparator.new())
+
+	# Modes — a radio group keeps exactly one selected.
+	var mode_group := ButtonGroup.new()
+	_add_check_item(vbox, "Select", CtxMenu.MODE_SELECT, mode_group)
+	_add_check_item(vbox, "Translate", CtxMenu.MODE_TRANSLATE, mode_group)
+	_add_check_item(vbox, "Rotate", CtxMenu.MODE_ROTATE, mode_group)
+	vbox.add_child(HSeparator.new())
+
+	_add_action_item(vbox, "Reset View", CtxMenu.RESET_VIEW)
+	_add_action_item(vbox, "Load Robot…", CtxMenu.LOAD_ROBOT)
+	vbox.add_child(HSeparator.new())
+
+	_add_check_item(vbox, "Wireframe", CtxMenu.WIREFRAME)
+	_add_check_item(vbox, "Grid", CtxMenu.GRID)
+	_add_check_item(vbox, "Render: Meshes", CtxMenu.RENDER)
+	vbox.add_child(HSeparator.new())
+
+	_add_check_item(vbox, "Lidar", CtxMenu.LIDAR)
+	_add_check_item(vbox, "Camera Frustum", CtxMenu.CAMERA)
+	_add_check_item(vbox, "IMU Axes", CtxMenu.IMU)
+	_add_check_item(vbox, "Domain Randomization", CtxMenu.DOMAIN)
+
 	add_child(_context_menu)
 
 
+func _add_check_item(parent: Control, label: String, id: int, group: ButtonGroup = null) -> void:
+	var cb := CheckBox.new()
+	cb.text = label
+	cb.focus_mode = Control.FOCUS_NONE
+	if group:
+		cb.button_group = group
+	cb.toggled.connect(_on_menu_toggled.bind(id))
+	_menu_widgets[id] = cb
+	parent.add_child(cb)
+
+
+func _add_action_item(parent: Control, label: String, id: int) -> void:
+	var btn := Button.new()
+	btn.text = label
+	btn.flat = true
+	btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.pressed.connect(_on_menu_action.bind(id))
+	parent.add_child(btn)
+
+
 func _on_context_menu_requested() -> void:
+	if _context_menu.visible:
+		_context_menu.hide()
+		return
 	_sync_context_menu()
-	var pos := DisplayServer.mouse_get_position()
-	_context_menu.popup(Rect2i(Vector2i(pos), Vector2i.ZERO))
+	_context_menu.reset_size()
+	var pos := get_global_mouse_position()
+	var vs := get_viewport_rect().size
+	var ms := _context_menu.size
+	pos.x = clampf(pos.x, 4.0, maxf(4.0, vs.x - ms.x - 4.0))
+	pos.y = clampf(pos.y, 4.0, maxf(4.0, vs.y - ms.y - 4.0))
+	_context_menu.global_position = pos
+	_context_menu.show()
+
+
+func _hide_context_menu() -> void:
+	_context_menu.hide()
+
+
+func _on_viewport_left_clicked() -> void:
+	if _context_menu and _context_menu.visible:
+		_context_menu.hide()
 
 
 func _sync_context_menu() -> void:
+	_sync_mode_checks()
+	_set_widget_pressed(CtxMenu.RENDER, _robot_viewer.get_render_proper_meshes())
+	_set_widget_pressed(CtxMenu.WIREFRAME, is_wireframe())
+	_set_widget_pressed(CtxMenu.GRID, is_grid())
+	_set_widget_pressed(CtxMenu.LIDAR, is_lidar_visible())
+	_set_widget_pressed(CtxMenu.CAMERA, is_camera_visible())
+	_set_widget_pressed(CtxMenu.IMU, is_imu_visible())
+	_set_widget_pressed(CtxMenu.DOMAIN, is_domain_randomization_enabled())
+
+
+func _sync_mode_checks() -> void:
 	var m := _robot_viewer.get_mode()
-	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.MODE_SELECT), m == RobotViewerController.Mode.SELECT)
-	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.MODE_TRANSLATE), m == RobotViewerController.Mode.TRANSLATE)
-	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.MODE_ROTATE), m == RobotViewerController.Mode.ROTATE)
-	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.RENDER), _robot_viewer.get_render_proper_meshes())
-	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.WIREFRAME), is_wireframe())
-	_context_menu.set_item_checked(_context_menu.get_item_index(CtxMenu.GRID), is_grid())
-	for id in _menu_checked:
-		_set_menu_item_checked(id, _menu_checked[id])
+	_set_widget_pressed(CtxMenu.MODE_SELECT, m == RobotViewerController.Mode.SELECT)
+	_set_widget_pressed(CtxMenu.MODE_TRANSLATE, m == RobotViewerController.Mode.TRANSLATE)
+	_set_widget_pressed(CtxMenu.MODE_ROTATE, m == RobotViewerController.Mode.ROTATE)
 
 
-func _on_context_menu_id_pressed(id: int) -> void:
+func _set_widget_pressed(id: int, pressed: bool) -> void:
+	if not _menu_widgets.has(id):
+		return
+	_syncing_menu = true
+	(_menu_widgets[id] as CheckBox).button_pressed = pressed
+	_syncing_menu = false
+
+
+func _on_menu_toggled(pressed: bool, id: int) -> void:
+	if _syncing_menu:
+		return
+	# Modes are a radio group; only act on the newly-selected one.
+	if id in [CtxMenu.MODE_SELECT, CtxMenu.MODE_TRANSLATE, CtxMenu.MODE_ROTATE]:
+		if pressed:
+			_handle_menu_id(id)
+		return
+	_handle_menu_id(id)
+
+
+func _on_menu_action(id: int) -> void:
+	_handle_menu_id(id)
+	# One-shot actions dismiss the menu; checkboxes keep it open.
+	if id in [CtxMenu.RESET_VIEW, CtxMenu.LOAD_ROBOT]:
+		_context_menu.hide()
+
+
+func _handle_menu_id(id: int) -> void:
 	match id:
 		CtxMenu.MODE_SELECT:
 			_robot_viewer.set_mode(RobotViewerController.Mode.SELECT)
@@ -193,28 +293,6 @@ func _on_context_menu_id_pressed(id: int) -> void:
 			viewport_action.emit("imu")
 		CtxMenu.DOMAIN:
 			viewport_action.emit("domain")
-
-
-## The shell pushes sensor/domain state here so the viewport menu can show it.
-func set_menu_checked(id: String, checked: bool) -> void:
-	_menu_checked[id] = checked
-	if _context_menu:
-		_set_menu_item_checked(id, checked)
-
-
-func _set_menu_item_checked(id: String, checked: bool) -> void:
-	var item_id := -1
-	match id:
-		"wireframe": item_id = CtxMenu.WIREFRAME
-		"grid": item_id = CtxMenu.GRID
-		"lidar": item_id = CtxMenu.LIDAR
-		"camera": item_id = CtxMenu.CAMERA
-		"imu": item_id = CtxMenu.IMU
-		"domain": item_id = CtxMenu.DOMAIN
-	if item_id >= 0:
-		var idx := _context_menu.get_item_index(item_id)
-		if idx >= 0:
-			_context_menu.set_item_checked(idx, checked)
 
 
 func load_urdf(path: String) -> void:

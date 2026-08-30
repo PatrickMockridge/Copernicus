@@ -8,6 +8,7 @@ extends Node3D
 signal robot_loaded(node: Node3D)
 signal joint_changed(joint_name: String, position: float)
 signal context_menu_requested()
+signal viewport_left_clicked()
 signal target_reached()
 signal joints_zeroed()
 signal selection_changed(node: Node3D)
@@ -783,6 +784,7 @@ func _input(event: InputEvent) -> void:
 				_right_pressed = false
 		elif mouse_event.button_index == MOUSE_BUTTON_LEFT:
 			if mouse_event.pressed:
+				viewport_left_clicked.emit()
 				if _mode == Mode.SELECT:
 					select_node(_pick_node(get_viewport().get_mouse_position()))
 				else:
