@@ -34,6 +34,12 @@ func get_provider_base_url(provider: String) -> String:
 	return ""
 
 
+func get_provider_model(provider: String, fallback: String = "") -> String:
+	if _providers.has(provider):
+		return _providers[provider].get("model", fallback)
+	return fallback
+
+
 func has_provider(provider: String) -> bool:
 	return _providers.has(provider) and _providers[provider].has("api_key")
 
@@ -62,9 +68,9 @@ const PROVIDER_INFO: Dictionary = {
 	"anthropic": {
 		"name": "Anthropic Claude",
 		"models": [
-			"claude-3-5-sonnet-20241022",
-			"claude-3-opus-20240229",
-			"claude-3-haiku-20240307"
+			"claude-sonnet-4-6",
+			"claude-opus-4-6",
+			"claude-haiku-4-5-20251001"
 		],
 		"endpoint": "https://api.anthropic.com/v1/messages",
 		"supports_streaming": true,

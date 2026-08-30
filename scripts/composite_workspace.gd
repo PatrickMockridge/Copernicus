@@ -10,6 +10,8 @@ signal wireframe_changed(enabled: bool)
 signal grid_changed(enabled: bool)
 ## Shell-level requests originating from the viewport context menu or shortcuts.
 signal viewport_action(id: String)
+## Request to toggle the AI assistant panel.
+signal ai_toggle_requested()
 
 const RobotViewerController = preload("res://scripts/robot_viewer_controller.gd")
 const PublishPanel = preload("res://scripts/publish_panel.gd")
@@ -93,6 +95,26 @@ func _setup_workspace() -> void:
 	_viewport_container.add_child(_toolbar)
 	_toolbar.set_wireframe(false)
 	_toolbar.set_grid(true)
+
+	# ---- AI toggle (top-right of the viewport) ----
+	_setup_ai_toggle(_viewport_container)
+
+
+func _setup_ai_toggle(parent: Control) -> void:
+	var toggle := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = UiTheme.color("viewport_overlay")
+	style.content_margin_left = UiTheme.space("s")
+	style.content_margin_right = UiTheme.space("s")
+	style.content_margin_top = UiTheme.space("xs")
+	style.content_margin_bottom = UiTheme.space("xs")
+	toggle.add_theme_stylebox_override("panel", style)
+	var btn := UiButton.new().setup("AI", UiButton.Variant.GHOST)
+	btn.pressed.connect(func() -> void: ai_toggle_requested.emit())
+	toggle.add_child(btn)
+	parent.add_child(toggle)
+	# Pin to the top-right corner (the SubViewportContainer ignores size_flags).
+	toggle.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, 8)
 
 
 func _world_setup() -> void:

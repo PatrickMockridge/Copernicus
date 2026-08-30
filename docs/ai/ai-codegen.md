@@ -1,24 +1,28 @@
 # AI Code Agent
 
-Generate GDScript robot behaviors using AI (Claude via Minimax).
+Generate GDScript robot behaviors using AI (Anthropic-compatible API — Claude by default).
+
+See [the AI assistant user manual](../ai-assistant-user-manual.md) for the panel, setup, and
+configuration.
 
 ## Setup
 
 ### 1. Create `.env` file
 
-Copy `.env.example` to `.env` and add your API key:
+From the repository root, copy `.env.example` to `.env` and add your key:
 
 ```bash
+cd /home/patrick/Godot/Godot_4_Robotic_Design_Interface
 cp .env.example .env
 ```
 
 Edit `.env`:
 ```
-ANTHROPIC_API_KEY=your_minimax_api_key_here
-ANTHROPIC_BASE_URL=https://api.minimax.io/anthropic
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-The API key works with Claude Code in VS Code - use the same one here.
+Optionally set `ANTHROPIC_BASE_URL` and `ANTHROPIC_MODEL` to point at any Anthropic-compatible
+endpoint (Deepseek, Minimax, …). Defaults are `https://api.anthropic.com` and `claude-sonnet-4-6`.
 
 ### 2. Run Godot
 
@@ -26,7 +30,7 @@ The API key works with Claude Code in VS Code - use the same one here.
 godot scenes/main.tscn
 ```
 
-The AI panel connects automatically using the key from `.env`.
+The AI panel connects automatically on launch using the key from `.env`.
 
 ## Usage
 
@@ -119,10 +123,14 @@ For SSH deploy, create `~/.ros_workspace/config/robot_config.json`:
 
 ## Supported Providers
 
-| Provider | Endpoint | Model |
-|----------|----------|-------|
-| Minimax (default) | `https://api.minimax.io/anthropic` | MiniMax-M2.7 |
-| Anthropic (direct) | `https://api.anthropic.com/v1/messages` | claude-3-5-sonnet |
+The assistant speaks the Anthropic Messages API (`/v1/messages`), so any Anthropic-compatible endpoint
+works — set `ANTHROPIC_BASE_URL` + `ANTHROPIC_MODEL` in `.env`.
+
+| Provider | `ANTHROPIC_BASE_URL` | Model (example) |
+|----------|----------------------|-----------------|
+| Anthropic Claude (default) | *(unset — `https://api.anthropic.com`)* | `claude-sonnet-4-6` |
+| Minimax (Anthropic-compatible) | `https://api.minimax.io/anthropic` | `MiniMax-M2.7` |
+| Deepseek (Anthropic-compatible) | provider's base URL | provider's model id |
 
 ## Files
 

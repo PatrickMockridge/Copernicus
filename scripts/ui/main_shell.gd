@@ -19,7 +19,7 @@ const ShortcutManager = preload("res://scripts/viewport/shortcut_manager.gd")
 
 enum MenuId {
 	FILE_OPEN, FILE_RECENT, FILE_MANUAL, FILE_EXIT,
-	VIEW_RESET, VIEW_WIREFRAME, VIEW_GRID, VIEW_DOMAIN, VIEW_TERMINAL,
+	VIEW_RESET, VIEW_WIREFRAME, VIEW_GRID, VIEW_DOMAIN, VIEW_TERMINAL, VIEW_AI,
 	SENSOR_LIDAR, SENSOR_CAMERA, SENSOR_IMU,
 	TOOL_IK, TOOL_PHYSICS, TOOL_NAV, TOOL_GPU, TOOL_OMNI, TOOL_INDUSTRIAL, TOOL_ROS2,
 	TOOL_PHYSICS_DEMO, TOOL_TURTLE_DEMO,
@@ -41,6 +41,8 @@ var _side_bar: PanelContainer
 var _side_title: Label
 var _side_content: VBoxContainer
 var _side_current: Control = null
+var _right_panel: PanelContainer
+var _right_content: Control
 var _tab_bar: TabBar
 var _editor_host: Control
 var _workbench: VSplitContainer
@@ -115,6 +117,7 @@ func _make_workspace() -> Control:
 	_workspace.wireframe_changed.connect(_on_wireframe_changed)
 	_workspace.grid_changed.connect(_on_grid_changed)
 	_workspace.viewport_action.connect(_on_viewport_action)
+	_workspace.ai_toggle_requested.connect(_toggle_ai_panel)
 	return _workspace
 
 
@@ -242,8 +245,12 @@ func _ensure_panel(id: String) -> Control:
 	if panel == null:
 		return null
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_editor_host.add_child(panel)
-	panel.visible = false
+	if id == "ai":
+		_right_content.add_child(panel)
+		panel.visible = true  # visibility is governed by _right_panel
+	else:
+		_editor_host.add_child(panel)
+		panel.visible = false
 	_panels[id] = panel
 	if id == "editor":
 		_wire_viewer()
@@ -281,6 +288,7 @@ func _setup_ui() -> void:
 	body.add_child(_build_activity_bar())
 	body.add_child(_build_side_bar())
 	body.add_child(_build_center())
+	body.add_child(_build_right_panel())
 
 	root.add_child(_build_status_bar())
 
@@ -332,6 +340,39 @@ func _build_side_bar() -> Control:
 	margin.add_child(_side_content)
 
 	return _side_bar
+
+
+func _build_right_panel() -> Control:
+	_right_panel = PanelContainer.new()
+	_right_panel.custom_minimum_size.x = 520
+	_right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_right_panel.clip_contents = true
+	_right_panel.visible = false
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = UiTheme.color("panel")
+	sb.border_width_left = 1
+	sb.border_color = UiTheme.color("border")
+	_right_panel.add_theme_stylebox_override("panel", sb)
+
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 0)
+	_right_panel.add_child(v)
+
+	var tb := UiTitleBar.new().setup("AI Assistant")
+	v.add_child(tb)
+	var close_btn := Button.new()
+	close_btn.text = "✕"
+	close_btn.flat = true
+	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn.pressed.connect(func() -> void: _right_panel.hide())
+	tb.actions().add_child(close_btn)
+
+	_right_content = Control.new()
+	_right_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_right_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(_right_content)
+
+	return _right_panel
 
 
 func _build_center() -> Control:
@@ -454,6 +495,8 @@ func _setup_menu_bar(root: VBoxContainer) -> void:
 	tools_menu.add_separator()
 	tools_menu.add_item("Physics Demo", MenuId.TOOL_PHYSICS_DEMO)
 	tools_menu.add_item("Turtle Demo", MenuId.TOOL_TURTLE_DEMO)
+	tools_menu.add_separator()
+	tools_menu.add_item("AI Assistant", MenuId.VIEW_AI)
 	tools_menu.id_pressed.connect(_on_menu_pressed)
 	menu_bar.add_child(tools_menu)
 
@@ -490,7 +533,7 @@ func _on_route_changed(_from: String, to: String) -> void:
 	if route == null:
 		return
 	_ensure_panel(to)
-	if not _open_tabs.has(to):
+	if to != "ai" and not _open_tabs.has(to):
 		_open_tabs.append(to)
 	_sync_tabs()
 	_show_panel(to)
@@ -501,8 +544,13 @@ func _on_route_changed(_from: String, to: String) -> void:
 
 
 func _show_panel(id: String) -> void:
+	if id == "ai":
+		_right_panel.visible = true
+		return
+	_right_panel.visible = false
 	for key in _panels:
-		_panels[key].visible = (key == id)
+		if key != "ai":
+			_panels[key].visible = (key == id)
 
 
 func _sync_tabs() -> void:
@@ -645,11 +693,19 @@ func _cmd_open(args: Array, out: Callable) -> bool:
 		out.call("?SYNTAX ERROR")
 		return false
 	var view: String = str(args[0]).to_lower()
+	if view == "ai":
+		_toggle_ai_panel()
+		return true
 	if _navigation.get_route(view) == null:
 		out.call("?BAD ARGUMENT: " + view)
 		return false
 	_navigate(view)
 	return true
+
+
+func _toggle_ai_panel() -> void:
+	_ensure_panel("ai")
+	_right_panel.visible = not _right_panel.visible
 
 
 func _cmd_load(args: Array, out: Callable) -> bool:
@@ -847,6 +903,8 @@ func _on_menu_pressed(id: int) -> void:
 				_set_domain(not _workspace.is_domain_randomization_enabled())
 		MenuId.VIEW_TERMINAL:
 			_toggle_terminal()
+		MenuId.VIEW_AI:
+			_toggle_ai_panel()
 		MenuId.SENSOR_LIDAR:
 			if _workspace:
 				_set_lidar(not _workspace.is_lidar_visible())

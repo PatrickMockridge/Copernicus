@@ -86,13 +86,15 @@ func _anthropic_chat(messages: Array, params: Dictionary) -> GameAIResult:
 	if api_key == "":
 		return GameAIResult.new(false, null, {"code": -2, "message": "Anthropic API key not configured"})
 
-	# Use custom base_url if set, otherwise default to Minimax endpoint
+	# Use a custom base_url if set (any Anthropic-compatible endpoint), else real Claude.
 	var base_url = _config.get_provider_base_url("anthropic")
 	if base_url.is_empty():
-		base_url = "https://api.minimax.io/anthropic"
+		base_url = "https://api.anthropic.com"
 	var endpoint = base_url + "/v1/messages"
 
+	# x-api-key is the Anthropic standard; Authorization: Bearer covers compatible proxies.
 	var headers = [
+		"x-api-key: " + api_key,
 		"Authorization: Bearer " + api_key,
 		"anthropic-version: 2023-06-01",
 		"content-type: application/json"
@@ -100,7 +102,7 @@ func _anthropic_chat(messages: Array, params: Dictionary) -> GameAIResult:
 
 	var body = {
 		"messages": _filter_anthropic_messages(messages),
-		"model": params.get("model", "MiniMax-M2.7"),
+		"model": params.get("model", _config.get_provider_model("anthropic", "claude-sonnet-4-6")),
 		"max_tokens": params.get("max_tokens", 1024)
 	}
 
