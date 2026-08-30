@@ -23,12 +23,10 @@ func _init() -> void:
 
 
 ## The directory the agent codes in — a user workspace, never the Copernicus
-## source tree. Configure with AI_WORKSPACE in .env; defaults to ~/robot_workspace.
+## source tree. From Settings (workspace) → .env AI_WORKSPACE → ~/robot_workspace.
 func _workspace_path() -> String:
-	var ws := EnvService.get_var("AI_WORKSPACE")
-	if ws.is_empty():
-		ws = OS.get_environment("HOME") + "/robot_workspace"
-	elif ws.begins_with("~/"):
+	var ws := str(SettingsStore.resolve_ai()["workspace"])
+	if ws.begins_with("~/"):
 		ws = OS.get_environment("HOME") + ws.substr(1)
 	if not DirAccess.dir_exists_absolute(ws):
 		DirAccess.make_dir_recursive_absolute(ws)
@@ -36,17 +34,14 @@ func _workspace_path() -> String:
 
 
 func is_configured() -> bool:
-	return not EnvService.get_anthropic_key().is_empty()
+	return not str(SettingsStore.resolve_ai()["api_key"]).is_empty()
 
 
 ## Run the agent. `history` is prior {role, content} messages in block format.
 ## Returns {ok, error, text, events:[{kind, ...}]}.
 func run(task: String, history: Array) -> Dictionary:
-	_client.configure(
-		EnvService.get_anthropic_key(),
-		EnvService.get_var("ANTHROPIC_BASE_URL"),
-		EnvService.get_var("ANTHROPIC_MODEL")
-	)
+	var ai := SettingsStore.resolve_ai()
+	_client.configure(ai["api_key"], ai["base_url"], ai["model"])
 
 	var events: Array = []
 	var messages: Array = []

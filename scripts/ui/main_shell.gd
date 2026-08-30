@@ -15,10 +15,11 @@ const RobotGallery = preload("res://scripts/robots/ui/robot_gallery.gd")
 const RaasLauncher = preload("res://scripts/rchain/ui/raas_launcher.gd")
 const DemoHost = preload("res://scripts/ui/demo_host.gd")
 const VcsPanel = preload("res://scripts/vcs/ui/vcs_panel.gd")
+const SettingsPanel = preload("res://scripts/ui/settings_panel.gd")
 const ShortcutManager = preload("res://scripts/viewport/shortcut_manager.gd")
 
 enum MenuId {
-	FILE_OPEN, FILE_RECENT, FILE_MANUAL, FILE_EXIT,
+	FILE_OPEN, FILE_RECENT, FILE_MANUAL, FILE_SETTINGS, FILE_EXIT,
 	VIEW_RESET, VIEW_WIREFRAME, VIEW_GRID, VIEW_DOMAIN, VIEW_TERMINAL, VIEW_AI,
 	SENSOR_LIDAR, SENSOR_CAMERA, SENSOR_IMU,
 	TOOL_IK, TOOL_PHYSICS, TOOL_NAV, TOOL_GPU, TOOL_OMNI, TOOL_INDUSTRIAL, TOOL_ROS2,
@@ -99,6 +100,7 @@ func _register_routes() -> void:
 			_reg_route(p["id"], p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"], Callable(), p.get("in_rail", false))
 	_reg_route("plugins", "Plugins", "◇", "utility", 3, "plugins.open", false, _make_plugins)
 	_reg_route("manual", "Manual", "▤", "utility", 4, "manual.open", false, _make_manual)
+	_reg_route("settings", "Settings", "⚙", "utility", 2, "settings.open", false, _make_settings, Callable(), true)
 
 
 func _reg_route(id: String, title: String, glyph: String, section: String, order: int, command_id: String, in_activity_bar: bool, factory: Callable, sidebar_factory: Callable = Callable(), in_rail: bool = false) -> void:
@@ -159,7 +161,23 @@ func _make_ai() -> Control:
 	var ai = AiAssistantPanel.new()
 	if _workspace:
 		ai.set_viewer(_workspace.get_robot_viewer())
+	ai.open_settings.connect(_open_settings)
 	return ai
+
+
+func _make_settings() -> Control:
+	var s = SettingsPanel.new()
+	s.saved.connect(_on_settings_saved)
+	return s
+
+
+func _open_settings() -> void:
+	_navigate("settings")
+
+
+func _on_settings_saved() -> void:
+	if _panels.has("ai") and is_instance_valid(_panels["ai"]):
+		_panels["ai"].refresh_connection()
 
 
 func _build_plugins() -> void:
@@ -452,6 +470,7 @@ func _setup_menu_bar(root: VBoxContainer) -> void:
 	file_menu.add_submenu_item("Open Recent", "Open Recent")
 	file_menu.add_separator()
 	file_menu.add_item("Manual…", MenuId.FILE_MANUAL)
+	file_menu.add_item("Settings…", MenuId.FILE_SETTINGS)
 	file_menu.add_separator()
 	file_menu.add_item("Exit", MenuId.FILE_EXIT)
 	file_menu.id_pressed.connect(_on_menu_pressed)
@@ -888,6 +907,8 @@ func _on_menu_pressed(id: int) -> void:
 			_open_file_dialog()
 		MenuId.FILE_MANUAL:
 			_navigate("manual")
+		MenuId.FILE_SETTINGS:
+			_navigate("settings")
 		MenuId.FILE_EXIT:
 			get_tree().quit()
 		MenuId.VIEW_RESET:
