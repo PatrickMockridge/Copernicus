@@ -35,6 +35,38 @@ Complex, entangled dependencies are the primary source of:
 
 ---
 
+## Design direction: a dungeon-scroller interface
+
+The interaction model is deliberate and opinionated. Copernicus's window is laid out like a classic
+**dungeon-scroller / turn-based RPG** — not its theme, its *structure*:
+
+- one **persistent "world" view** (the 3D editor) you never lose sight of,
+- a **scrolling "event log"** (the terminal) that always records what happened,
+- a **left "command rail"** (the toolbar) of verbs/screens,
+- **self-contained sub-screens** (plugins) you open and come back from.
+
+This is specified in `docs/spec/09-screen-schema.md` and explained for users in
+`docs/interface-user-manual.md`.
+
+Why this shape, over a "corporate dashboard" of floating panels:
+
+1. **It's a 40-year-tested convention.** Dungeon-scrollers (Ultima, Wizardry, The Bard's Tale, Dungeon
+   Master) converged on *one view + one log + one verb rail* because it answers "where am I, what just
+   happened, what can I do next" without the user hunting through windows. That ergonomics transfers
+   directly.
+2. **It matches a robot-design loop.** Designing a robot is turn-based: *look at the robot → issue a
+   command → read the result → repeat*. A persistent 3D view plus an event log plus a verb rail is
+   exactly that loop.
+3. **It pairs with the Commodore verb grammar.** The terminal is verb-first (`open`, `load`,
+   `wireframe`, `grid`, `sensors`, `tool`, …). A rail of screens is the *same verbs* rendered as
+   buttons; the GUI is a layer over the terminal, never a second, divergent command system.
+
+The result is a single, learnable mental model: **watch the stage, talk to the log, switch screens from
+the rail.** New surfaces are *screens* that plug into this schema rather than new windows competing for
+attention.
+
+---
+
 ## What This Means in Practice
 
 ### Good: Clear Plugin Boundaries

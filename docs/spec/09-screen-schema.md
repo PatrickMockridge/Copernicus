@@ -10,6 +10,16 @@ The structure deliberately mirrors a classic dungeon-scroller / turn-based RPG �
 self-contained sub-screens you switch to, all driven by verb commands. In Copernicus these are the 3D
 editor, the C64 terminal, the left toolbar, the plugins, and the `open <id>` verbs.
 
+## Design rationale
+
+This layout is a 40-year-tested genre convention (Ultima, Wizardry, The Bard's Tale, Dungeon Master)
+chosen for three reasons: it keeps the user oriented ("where am I, what just happened, what can I do
+next") without floating windows; it matches the robot-design loop, which is inherently turn-based —
+*look at the robot → issue a verb → read the log → repeat*; and it pairs with the Commodore verb
+grammar, where the rail is the same verbs rendered as buttons (the GUI is a layer over the terminal,
+never a second command system). The full developer rationale is in `design-philosophy.md`; the
+user-facing explanation is in `interface-user-manual.md`.
+
 ## 1. Fixed layout
 
 The shell body is, left to right, then top to bottom:
