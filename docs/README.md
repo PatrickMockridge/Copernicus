@@ -1,187 +1,56 @@
 # Copernicus Documentation
 
-> *"In the middle of difficulty lies opportunity."* — Albert Einstein
+Copernicus is an **operating system for robotics** — a small kernel in the middle, apps (plugins) that
+run on it, and robots that plug in through ROS 2 and the swappable robotics backends, with a blockchain
++ RaaS layer that takes a design from simulation into the real world.
 
-Welcome to **Copernicus**, an open-source robot design interface built on [Godot 4](https://godotengine.org/).
-
----
-
-## Getting Started
-
-### [Quick Start Guide](quick-start.md)
-Run your first demo with the TurtleBot simulation.
-
-### [Design Philosophy](design-philosophy.md)
-Pareto efficiency, composability first, and dependency management principles.
-
-### [Getting Started Guide](01-getting-started.md)
-Detailed setup: Godot installation, Python dependencies, ROS 2.
-
-### [Core Concepts](02-concepts.md)
-Understand robots, physics engines, sensors, control systems, and RL.
-
-### [Architecture](03-architecture.md)
-System design, module relationships, and data flow.
+The **formal specification** is the centre of gravity. Everything below hangs off it.
 
 ---
 
-## Feature Guides
+## The kernel
 
-### [URDF Import](robots/urdf-import.md)
-Load robot models from URDF files into Godot.
+- [`spec/00-kernel.md`](spec/00-kernel.md) — the kernel and its three layers (kernel / plugins /
+  backends), and the mission.
 
-### [Robot Control](robots/control.md)
-Joint control, differential drive, PID controllers, trajectory execution.
+The kernel's five components:
 
-### [Physics Backends](physics/backends.md)
-Godot Native vs PyBullet vs PyBullet CUDA comparison.
+- [`spec/07-terminal.md`](spec/07-terminal.md) — the terminal (the shell and the log).
+- [`spec/08-viewport.md`](spec/08-viewport.md) — the 3D viewport.
+- [`spec/09-screen-schema.md`](spec/09-screen-schema.md) — the windowing (the screen schema).
+- [`spec/10-ai-assistant.md`](spec/10-ai-assistant.md) — the agentic AI assistant.
+- [`spec/11-wallet-raas.md`](spec/11-wallet-raas.md) — the wallet and robotics-as-a-service.
 
-### [Sensors Overview](sensors/overview.md)
-LIDAR, camera, IMU, GPS, contact sensor simulation.
+Supporting specs: `01` Godot model · `02` inventory · `03` signal backbone · `04` components ·
+`05` state transitions · `06` deterministic rendering.
 
-### [Sensor Noise Models](sensors/noise-models.md)
-Realistic sensor modeling: range noise, lens distortion, IMU drift.
+## Operating the machine
 
-### [Reinforcement Learning](rl/overview.md)
-DQN, PPO, and SAC algorithms for robot skill acquisition.
+- [User manual](interface-user-manual.md) — the readable form of the kernel spec.
+- [Terminal manual](terminal-user-manual.md) — every verb.
+- [Viewport manual](viewport-user-manual.md) — camera, selection, modes, shortcuts.
+- [AI assistant manual](ai-assistant-user-manual.md).
+- [Feature index](features.md) — one line per feature, grouped by layer.
+- [Case studies](case-study-robot-arm.md) — the arm and the TurtleBot, end to end.
 
-### [DQN](rl/dqn.md)
-Deep Q-Network for discrete action spaces.
+## Plugging in robots
 
-### [PPO and SAC](rl/ppo-sac.md)
-Policy gradient methods for continuous control.
+- [`spec/13-backend-interface.md`](spec/13-backend-interface.md) — how backends plug into the kernel.
+- [`spec/12-plugins.md`](spec/12-plugins.md) — how UI apps mount on the kernel.
+- [Physics backends](physics/backends.md) · [Sensors](sensors/overview.md) · [Navigation](navigation/planners.md)
+  · [IK solvers](navigation/ik-solvers.md) · [Reinforcement learning](rl/overview.md) ·
+  [Industrial robots](industrial/overview.md) · [Omniverse / USD](omni/overview.md) ·
+  [ROS 2 bridge](ros2/bridge.md) · [ROS2 native](ros2_native/overview.md).
+- [URDF import](robots/urdf-import.md) · [Robot control](robots/control.md).
 
-### [Navigation Planners](navigation/planners.md)
-A* Grid and Nav2 for robot navigation.
+## The economic layer
 
-### [IK Solvers](navigation/ik-solvers.md)
-CCD, FABRIK, and MoveIt for inverse kinematics.
+- [Wallet + RaaS](spec/11-wallet-raas.md) · [RChain coordination](rchain/design.md) ·
+  [Marketplace](blockchain/marketplace.md).
 
----
+## Development
 
-## Reference
-
-### [ROS 2 Bridge](ros2/bridge.md)
-TCP/UDP bridge setup for sensor streaming and control.
-
-### [AI Code Generation](ai/ai-codegen.md)
-AI behavior generation + ROS Coder IDE.
-
-### [Marketplace](blockchain/marketplace.md)
-Trade robot designs via AO Hyperobjects.
-
-### [RChain Coordination](rchain/design.md)
-On-chain coordination: capabilities, jobs, and event channels via RChain/RNode.
-
-### [Industrial Robot Plugin](industrial/overview.md)
-Connect to MOTOMAN, ABB, UR, FANUC industrial robots.
-
-### [Omniverse Integration](omni/overview.md)
-USD pipeline, digital twin sync with Omniverse Kit.
-
-### [ROS2 Native](ros2_native/overview.md)
-Native rclpy integration, Isaac ROS messages, DDS transport.
-
----
-
-## Directory Structure
-
-```
-docs/
-├── 01-getting-started.md    # Setup and first demo
-├── 02-concepts.md           # Core concepts
-├── 03-architecture.md       # System design
-├── design-philosophy.md     # Pareto efficiency, modularity
-├── quick-start.md           # Quick start guide
-├── simulation.md            # Simulation overview
-├── testing.md               # Testing guide
-├── license.md               # AGPLv3 license
-├── robots/                   # Robot-related docs
-│   ├── urdf-import.md       # URDF loading
-│   └── control.md           # Joint control, PID
-├── physics/                  # Physics docs
-│   └── backends.md          # Backend comparison
-├── sensors/                  # Sensor docs
-│   ├── overview.md          # LIDAR, camera, IMU
-│   └── noise-models.md      # Realistic noise
-├── rl/                       # Reinforcement learning
-│   ├── overview.md          # RL introduction
-│   ├── dqn.md               # DQN algorithm
-│   ├── ppo-sac.md           # PPO and SAC
-│   └── isaac-gym.md         # Isaac Gym RL tasks
-├── navigation/               # Navigation docs
-│   ├── planners.md          # A*, Nav2
-│   └── ik-solvers.md        # CCD, FABRIK, MoveIt
-├── ros2/                     # ROS 2 integration
-│   └── bridge.md            # TCP/UDP bridge
-├── ros2_native/              # Native rclpy integration
-│   └── overview.md          # RclNode, DDS, Isaac ROS
-├── industrial/               # Industrial robot plugins
-│   └── overview.md          # MOTOMAN, ABB, OPC-UA
-├── omni/                     # Omniverse integration
-│   └── overview.md          # USD pipeline, digital twin
-├── blockchain/               # Marketplace docs
-│   ├── blockchain.md        # ARIADNE storage
-│   └── marketplace.md       # AO Hyperobjects trading
-├── rchain/                   # RChain coordination docs
-│   ├── design.md            # Design intent + architecture
-│   ├── protocol.md          # RNode HTTP + signing
-│   ├── wallet-spec.md       # Wallet & crypto spec
-│   ├── sdk-spec.md          # GDScript SDK spec
-│   ├── coordination-model.md # Coordination model
-│   └── rholang-contracts.md  # Contract specs
-├── ai/                       # AI code generation
-│   └── ai-codegen.md        # AI behavior + ROS Coder
-├── gpu/                      # GPU sensors
-│   └── rtx_sensors.md       # RTX LIDAR, camera, fusion
-└── development/              # Developer guides
-    ├── plugin-guide.md      # Build your own backend
-    ├── contributing.md      # Contribution guidelines
-    └── code-patterns.md     # Coding conventions
-```
-
----
-
-## Quick Commands
-
-```bash
-# Run demos
-godot scenes/turtle_demo.tscn      # Navigation (no ROS 2)
-godot scenes/robot_viewer.tscn      # URDF visualization
-godot scenes/physics_demo.tscn     # Vehicle dynamics
-godot scenes/composite_workspace.tscn  # Unified workspace (viewer + joint panel + toolbar)
-
-# GPU learning
-godot scenes/gpu/gpu_backend_selector.tscn
-
-# Selection panels
-godot scenes/physics_selector.tscn
-godot scenes/nav_selector.tscn
-godot scenes/ik_selector.tscn
-godot scenes/industrial_selector.tscn
-
-# RChain coordination
-tools/rchain_devnet.sh up        # Boot a local RNode (requires Docker)
-godot --headless --script res://scripts/test_rchain.gd  # End-to-end test
-```
-
----
-
-## Core Principles
-
-### Godot-Native
-Copernicus uses Godot's built-in capabilities: 3D rendering, physics (Jolt),
-scene tree management, and UI system.
-
-### Modular by Design
-Every component is swappable: physics backends, navigation planners,
-IK solvers, and RL algorithms.
-
-### Clear Scope
-Copernicus is a fast 3D editor for robot visualization and design.
-For research-grade simulation, use Isaac Sim or Gazebo.
-Copernicus exports to those simulators.
-
----
-
-**Ready to start?** Read the [Quick Start Guide](quick-start.md) or jump to [Core Concepts](02-concepts.md).
+- [Design philosophy](design-philosophy.md) · [Architecture](03-architecture.md) ·
+  [Concepts](02-concepts.md) · [Getting started](01-getting-started.md) · [Quick start](quick-start.md).
+- [Plugin guide](development/plugin-guide.md) · [Terminal developer manual](terminal-developer-manual.md) ·
+  [Testing](testing.md).

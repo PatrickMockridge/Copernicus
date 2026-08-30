@@ -1,10 +1,12 @@
 # Copernicus — Robot Design Interface
 
-**Copernicus** is a robot design interface built on [Godot 4](https://godotengine.org/). It provides
-a 3D robot editor, a terminal, and backends for physics, reinforcement learning, sensors, ROS 2,
-navigation, inverse kinematics, industrial robots, and on-chain coordination.
+**Copernicus** is an **operating system for robotics**, built on [Godot 4](https://godotengine.org/):
+a small **kernel** in the middle, **apps** (plugins) that run on it, and **robots** that plug in through
+ROS 2 and swappable robotics backends — with a blockchain + RaaS layer that takes a design from
+simulation into a real-world robot.
 
-Named after Nicolaus Copernicus.
+Named after Nicolaus Copernicus, because it **centres** robotics development — open source, no
+corporate lock-in, everything in one place.
 
 > **Repository:** [github.com/PatrickMockridge/Copernicus](https://github.com/PatrickMockridge/Copernicus)
 
@@ -48,43 +50,48 @@ See [the terminal user manual](docs/terminal-user-manual.md) and
 The application includes a 10-step progression from **First Light** to **Ship**. Each step is an
 objective with a checklist shown in the side bar; completing a step advances to the next.
 
-## Features
+## The structure
 
-### Robot design
-- URDF and MJCF import.
-- Built-in robot library: TurtleBot, Arm6 (6-DOF arm), Quadruped, Gripper, Drone.
-- Inverse kinematics (CCD, FABRIK) with a target marker.
+Copernicus is a kernel with apps and robots around it (see
+[`docs/spec/00-kernel.md`](docs/spec/00-kernel.md)).
 
-### Physics simulation
+### Kernel (always present)
 
-| Backend | Speed | Accuracy | Use case |
-|---|---|---|---|
-| Godot Native | Fast | Game-grade | Design iteration |
-| PyBullet | Medium | Research-grade | Manipulation |
-| PyBullet CUDA | GPU | Research-grade | High-fidelity |
+- **Viewport** — the 3D robot editor (load, inspect, select, move).
+- **Terminal** — the verb-first command line and the log.
+- **Screen schema** — the windowing (rail · journal · stage · assistant · log · status).
+- **AI assistant** — an agentic Claude assistant that edits a workspace.
+- **Wallet + RaaS** — on-chain identity, funds, and robotics-as-a-service.
 
-### Reinforcement learning
+### Apps (plugins)
 
-DQN, PPO, and SAC (PyTorch); Isaac Gym for multi-robot training.
+The robot library, Marketplace, Coordination, Version Control, and RaaS — opt-in surfaces that mount
+on the kernel. URDF and MJCF import, and the built-in robots (TurtleBot, Arm6, Quadruped, Gripper,
+Drone).
 
-### Sensors
+### Robots (backends, plugged in via ROS 2)
 
-RTX LIDAR, RTX camera, IMU, and sensor fusion (Kalman).
+Swappable robotics capability, selected with `tool <x>`:
 
-### ROS 2
+| Backend | `tool` |
+|---|---|
+| Inverse kinematics (CCD, FABRIK, MoveIt) | `ik` |
+| Physics (Godot, PyBullet, CUDA) | `physics` |
+| Sensors (LIDAR, camera, IMU, fusion) | — |
+| Navigation (A*, Nav2) | `nav` |
+| Reinforcement learning (DQN, PPO, SAC) | `gpu` |
+| Industrial robots (MOTOMAN, OPC-UA) | `industrial` |
+| Omniverse / USD | `omni` |
+| ROS 2 bridge | `ros2` |
 
-TCP/UDP bridge and native rclpy. Publishes `/robot/odom`, `/robot/scan`, `/robot/image_raw`,
-`/robot/imu`; subscribes to `/robot/cmd_vel`.
+The ROS 2 bridge publishes `/robot/odom`, `/robot/scan`, `/robot/image_raw`, `/robot/imu` and
+subscribes to `/robot/cmd_vel`.
 
-### Navigation, IK, industrial, Omniverse
+### The economic layer
 
-A* / Nav2 · CCD / FABRIK / MoveIt · MOTOMAN / ABB / OPC-UA · USD export.
-
-### Blockchain & coordination
-
-- RChain coordination (capabilities, jobs, channels); the marketplace is a coordination primitive.
-- Robotics-as-a-Service (RChain actuation with work-metered fees).
-- Version control via Git (GitHub/GitLab/any) and Ariadne (Arweave).
+RChain coordination and the marketplace, with **robotics-as-a-service**: register a robot, publish a
+job, claim it, and settle a work-metered fee — the path from a design in simulation to a robot earning
+in the real world.
 
 ## Architecture
 
