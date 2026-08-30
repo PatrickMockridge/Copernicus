@@ -1,0 +1,7 @@
+[book]
+title = "Copernicus"
+language = "en"
+src = "docs"
+
+[build]
+build-dir = "book"
