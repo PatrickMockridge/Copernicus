@@ -7,8 +7,8 @@ selection, modes, the right-click menu, shortcuts, and the render toggle.
 
 | Action | Control |
 |---|---|
-| Orbit | right-click + drag |
-| Pan | `W` `A` `S` `D` or the arrow keys, or middle-drag / Shift+right-drag |
+| Orbit | left-click + drag (Select mode) |
+| Pan | `W` `A` `S` `D` or the arrow keys, or middle-drag |
 | Zoom | mouse wheel |
 | Reset view | `Ctrl`-menu or the toolbar **Reset** button |
 

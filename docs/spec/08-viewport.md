@@ -11,9 +11,9 @@ simple Godot shapes and translated meshes.
 
 ## 1. Camera
 
-- **Orbit** — right-drag.
+- **Orbit** — left-drag (in Select mode, on empty space).
 - **Pan** — `W`/`A`/`S`/`D` or the arrow keys (in the camera's forward/right/up plane), and
-  middle-drag or Shift-right-drag.
+  middle-drag.
 - **Zoom** — mouse wheel.
 
 The camera is an orbit target (`_cam_yaw`/`_cam_pitch`/`_cam_distance`) plus a pan offset
@@ -46,10 +46,12 @@ menu check-items and the shortcut both reflect/set it.
 
 ## 4. Context menu
 
-Right-click opens a **viewport-owned** `PopupMenu`:
+Right-click opens a **viewport-owned** floating menu (a title bar with a close `✕` button, then a list
+of items):
 
-- Mode check-items — Select / Translate / Rotate.
-- Actions — Reset view, Load robot, Wireframe, Grid, Render (Simple/Meshes), sensors.
+- Mode checkboxes — Select / Translate / Rotate (radio group).
+- Actions — Reset view, Load robot.
+- Toggles — Wireframe, Grid, Render (Simple/Meshes), sensors.
 
 Viewport-internal items (modes, render toggle) are handled locally; shell-level actions (load robot,
 sensors, …) are emitted as `viewport_action(id)`.

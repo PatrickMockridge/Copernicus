@@ -27,6 +27,8 @@ var _cam_pitch: float = 30.0
 var _cam_pan: Vector3 = Vector3.ZERO
 var _right_pressed: bool = false
 var _right_drag_distance: float = 0.0
+var _left_pressed: bool = false
+var _left_drag_distance: float = 0.0
 var _show_debug: bool = false
 var _joint_nodes: Array = []
 var _grid_node: MeshInstance3D
@@ -785,23 +787,26 @@ func _input(event: InputEvent) -> void:
 		elif mouse_event.button_index == MOUSE_BUTTON_LEFT:
 			if mouse_event.pressed:
 				viewport_left_clicked.emit()
-				if _mode == Mode.SELECT:
-					select_node(_pick_node(get_viewport().get_mouse_position()))
-				else:
+				_left_pressed = true
+				_left_drag_distance = 0.0
+				if _mode != Mode.SELECT:
 					_left_dragging = true
 			else:
-				_left_dragging = false
+				_left_pressed = false
+				if _left_dragging:
+					_left_dragging = false
+				elif _mode == Mode.SELECT and _left_drag_distance < 5.0:
+					select_node(_pick_node(get_viewport().get_mouse_position()))
 	elif event is InputEventMouseMotion:
 		var motion = event as InputEventMouseMotion
 		if _right_pressed:
 			_right_drag_distance += motion.relative.length()
+		if _left_pressed:
+			_left_drag_distance += motion.relative.length()
 		if _left_dragging:
 			_manipulate(motion.relative)
-		elif motion.button_mask & MOUSE_BUTTON_MASK_RIGHT:
-			if Input.is_key_pressed(KEY_SHIFT) or motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
-				pan_camera(-motion.relative.x * 0.005, motion.relative.y * 0.005)
-			else:
-				orbit_camera(-motion.relative.x * 0.3, -motion.relative.y * 0.3)
+		elif _left_pressed and _mode == Mode.SELECT:
+			orbit_camera(-motion.relative.x * 0.3, -motion.relative.y * 0.3)
 		elif motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
 			pan_camera(-motion.relative.x * 0.005, motion.relative.y * 0.005)
 
