@@ -96,15 +96,16 @@ func _register_routes() -> void:
 	_reg_route("wallet", "Wallet", "◈", "publish", 0, "wallet.open", true, _make_wallet)
 	for p in _plugins:
 		if _is_plugin_enabled(p["id"]):
-			_reg_route(p["id"], p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"])
+			_reg_route(p["id"], p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"], Callable(), p.get("in_rail", false))
 	_reg_route("plugins", "Plugins", "◇", "utility", 3, "plugins.open", false, _make_plugins)
 	_reg_route("manual", "Manual", "▤", "utility", 4, "manual.open", false, _make_manual)
 
 
-func _reg_route(id: String, title: String, glyph: String, section: String, order: int, command_id: String, in_activity_bar: bool, factory: Callable, sidebar_factory: Callable = Callable()) -> void:
+func _reg_route(id: String, title: String, glyph: String, section: String, order: int, command_id: String, in_activity_bar: bool, factory: Callable, sidebar_factory: Callable = Callable(), in_rail: bool = false) -> void:
 	_factories[id] = factory
 	var r := Route.make(id, title, glyph, section, order, command_id, func() -> Control: return _ensure_panel(id), in_activity_bar)
 	r.sidebar_factory = sidebar_factory
+	r.in_rail = in_rail
 	_navigation.register(r)
 
 
@@ -163,11 +164,11 @@ func _make_ai() -> Control:
 
 func _build_plugins() -> void:
 	_plugins = [
-		{"id": "robots", "title": "Robots", "glyph": "◧", "section": "design", "order": 1, "command": "robots.open", "command_label": "Robots: Open Library", "factory": _make_gallery, "description": "Browse and load robot models from the library."},
-		{"id": "marketplace", "title": "Marketplace", "glyph": "◫", "section": "publish", "order": 1, "command": "marketplace.open", "command_label": "Marketplace: Open", "factory": _make_marketplace, "description": "Buy, sell, and list robot designs."},
-		{"id": "coordination", "title": "Coordination", "glyph": "◍", "section": "publish", "order": 2, "command": "coordination.open", "command_label": "Coordination: Open", "factory": _make_coordination, "description": "Register robots and coordinate work on-chain."},
-		{"id": "vcs", "title": "Version Control", "glyph": "⇅", "section": "utility", "order": 0, "command": "vcs.open", "command_label": "Version Control: Open", "factory": _make_vcs, "description": "Git/GitHub/GitLab versioning for designs."},
-		{"id": "raas", "title": "RaaS", "glyph": "▸", "section": "operate", "order": 0, "command": "raas.open", "command_label": "RaaS: Open Demos", "factory": _make_raas, "description": "Robotics-as-a-Service demos."},
+		{"id": "robots", "title": "Robots", "glyph": "◧", "section": "design", "order": 1, "command": "robots.open", "command_label": "Robots: Open Library", "factory": _make_gallery, "description": "Browse and load robot models from the library.", "in_rail": true},
+		{"id": "marketplace", "title": "Marketplace", "glyph": "◫", "section": "publish", "order": 1, "command": "marketplace.open", "command_label": "Marketplace: Open", "factory": _make_marketplace, "description": "Buy, sell, and list robot designs.", "in_rail": true},
+		{"id": "coordination", "title": "Coordination", "glyph": "◍", "section": "publish", "order": 2, "command": "coordination.open", "command_label": "Coordination: Open", "factory": _make_coordination, "description": "Register robots and coordinate work on-chain.", "in_rail": true},
+		{"id": "vcs", "title": "Version Control", "glyph": "⇅", "section": "utility", "order": 0, "command": "vcs.open", "command_label": "Version Control: Open", "factory": _make_vcs, "description": "Git/GitHub/GitLab versioning for designs.", "in_rail": true},
+		{"id": "raas", "title": "RaaS", "glyph": "▸", "section": "operate", "order": 0, "command": "raas.open", "command_label": "RaaS: Open Demos", "factory": _make_raas, "description": "Robotics-as-a-Service demos.", "in_rail": true},
 		{"id": "ai", "title": "AI Assistant", "glyph": "◈", "section": "utility", "order": 1, "command": "ai.open", "command_label": "AI Assistant: Open", "factory": _make_ai, "description": "AI code generation and debugging."},
 	]
 
@@ -214,7 +215,7 @@ func _register_plugin(id: String) -> void:
 	var p := _plugin_by_id(id)
 	if p.is_empty():
 		return
-	_reg_route(id, p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"])
+	_reg_route(id, p["title"], p["glyph"], p["section"], p["order"], p["command"], false, p["factory"], Callable(), p.get("in_rail", false))
 
 
 func _unregister_plugin(id: String) -> void:
@@ -300,8 +301,8 @@ func _build_activity_bar() -> Control:
 	_activity_bar.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var entries: Array = []
 	for r in _navigation.ordered_routes():
-		if r.in_activity_bar:
-			entries.append({"id": r.id, "glyph": r.glyph, "title": r.title})
+		if r.in_activity_bar or r.in_rail:
+			entries.append({"id": r.id, "glyph": r.glyph, "title": r.title, "section": r.section})
 	_activity_bar.setup(entries)
 	_activity_bar.activity_selected.connect(_navigate)
 	return _activity_bar

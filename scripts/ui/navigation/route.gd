@@ -12,7 +12,8 @@ var order: int = 0
 var command_id: String = ""        # binds to a CommandRegistry command
 var factory: Callable              # -> Control (builds the view)
 var sidebar_factory: Callable      # -> Control (optional side-bar content)
-var in_activity_bar: bool = true
+var in_activity_bar: bool = true   # pinned to the top of the screen rail
+var in_rail: bool = false          # appears in the screen rail (a plugin screen)
 
 
 static func make(

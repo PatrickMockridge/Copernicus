@@ -21,7 +21,13 @@ func setup(entries: Array) -> UiActivityBar:
 	v.add_theme_constant_override("separation", UiTheme.space("xs"))
 	add_child(v)
 
+	var last_section := ""
 	for e in entries:
+		var section: String = str(e.get("section", ""))
+		if not section.is_empty() and section != last_section:
+			if not last_section.is_empty():
+				v.add_child(UiSeparator.new())
+			last_section = section
 		var id: String = e["id"]
 		var glyph: String = e["glyph"]
 		var title: String = e["title"]
