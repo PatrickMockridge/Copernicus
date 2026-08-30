@@ -29,7 +29,6 @@ func _get_category() -> String:
 
 func _populate_options(container: VBoxContainer) -> void:
 	super._populate_options(container)
-	_add_option("GazeboBackend", "Gazebo (Coming Soon)", "Connect to ROS2/Gazebo for industry-standard simulation.", false, container)
 
 
 func _on_apply_pressed() -> void:
