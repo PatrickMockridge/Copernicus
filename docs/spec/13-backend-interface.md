@@ -45,7 +45,7 @@ resolve to the same `ModuleRegistry.create` path; a selector lists only `is_avai
 | physics | Godot (Jolt), PyBullet, PyBullet-CUDA | `scripts/physics/` |
 | ik | analytical CCD/FABRIK, MoveIt | `scripts/ik/` |
 | nav | A*, Nav2 | `scripts/nav/` |
-| gpu/RL | PyTorch DQN/PPO/SAC, Isaac Gym | `scripts/gpu/backends/` |
+| gpu/RL | PyTorch DQN/PPO/SAC, Isaac Gym (experimental) | `scripts/gpu/backends/` |
 | industrial | Mock, MOTOMAN, OPC-UA | `addons/industrial/` |
 | ros2 | TCP/UDP bridge, native rclpy | `addons/godot_ros2/`, `addons/ros2_native/` |
 | omni | USD import/export/validate, Kit sync | `addons/omni/` |

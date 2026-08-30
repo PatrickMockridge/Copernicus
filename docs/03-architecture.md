@@ -7,39 +7,32 @@ and how data flows through the system.
 
 ## System Overview
 
+Copernicus is an operating system for robotics (see [`spec/00-kernel.md`](spec/00-kernel.md)):
+
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        Copernicus                                │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│   ┌─────────────────────────────────────────────────────────┐    │
-│   │                    Godot Engine (4.4+)                 │    │
-│   │                                                          │    │
-│   │   ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐ │    │
-│   │   │  3D Scene    │ │   Physics    │ │      UI         │ │    │
-│   │   │  (Mesh,      │ │   (Jolt,     │ │   (Control,     │ │    │
-│   │   │   Lighting)  │ │   Vehicle)   │ │   Sliders)      │ │    │
-│   │   └──────────────┘ └──────────────┘ └──────────────────┘ │    │
-│   └─────────────────────────────────────────────────────────┘    │
-│                              │                                    │
-│   ┌──────────────────────────┼────────────────────────────────┐   │
-│   │                    Core Modules                           │   │
-│   │                          ▼                               │   │
-│   │   ┌─────────────────────────────────────────────────────┐│   │
-│   │   │  URDF Import │ Physics │ Sensors │ Control │ Nav  ││   │
-│   │   └─────────────────────────────────────────────────────┘│   │
-│   └──────────────────────────┼────────────────────────────────┘   │
-│                              │                                    │
-│   ┌──────────────────────────┼────────────────────────────────┐   │
-│   │               Optional Integrations                      │   │
-│   │                          ▼                               │   │
-│   │   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐ │   │
-│   │   │ godot_   │ │   GPU    │ │  AO     │ │   GameAI    │ │   │
-│   │   │ ros2     │ │  Backend │ │Hyperobj │ │  (AI Code)  │ │   │
-│   │   └──────────┘ └──────────┘ └──────────┘ └──────────────┘ │   │
-│   └──────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────┘
+           Apps (plugins)              Robots (backends, via ROS 2)
+   ┌───────────────────────┐    ┌──────────────────────────────────┐
+   │ robots, marketplace,  │    │ physics, IK, sensors, nav, RL,   │
+   │ coordination, vcs     │    │ industrial, Omniverse, ROS 2     │
+   └──────────┬────────────┘    └───────────────┬──────────────────┘
+              │                                 │
+              └──────────────┬──────────────────┘
+                             ▼
+                ┌─────────────────────────┐
+                │          Kernel          │
+                │  viewport · terminal    │
+                │  screen schema          │
+                │  AI assistant           │
+                │  wallet + RaaS          │
+                └────────────┬────────────┘
+                             ▼
+                       Godot Engine
 ```
+
+- **Kernel** — the fixed core (viewport, terminal, screen schema, AI assistant, wallet + RaaS).
+- **Apps (plugins)** — opt-in UI surfaces (spec 12).
+- **Robots (backends)** — swappable capability behind `tool <x>`, via `ModuleRegistry` (spec 13).
+- **Economic layer** — blockchain + RaaS (spec 11).
 
 ---
 
@@ -59,16 +52,10 @@ Every component is swappable:
 - IK Solvers: CCD/FABRIK ↔ MoveIt (ROS 2)
 - RL: DQN ↔ PPO ↔ SAC
 
-### 3. Clear Scope
-Copernicus is NOT:
-- A physics research simulator (use Isaac Sim/Gazebo)
-- A motion planner (use Nav2)
-- An IK research solver (use MoveIt)
-
-Copernicus IS:
-- A fast 3D editor for visualizing robots
-- A ROS 2 data source for sensor streaming
-- A design tool that exports to full simulators
+### 3. Kernel + backends
+The kernel is the fixed core; physics, motion planning, and IK are **backends** selected with `tool <x>`
+— not hard-wired, and not separate products Copernicus exports to. See
+[`spec/13-backend-interface.md`](spec/13-backend-interface.md).
 
 ---
 
@@ -83,7 +70,7 @@ Copernicus/
 │   │
 │   ├── ui/                          # Shared UI components
 │   │   ├── base_selector.gd          # Reusable selector (extended by domain selectors)
-│   │   ├── copernicus_theme.gd       # Color system + factory methods
+│   │   ├── ui_theme.gd              # design tokens + style()
 │   │   ├── toast.gd                  # Non-blocking notifications
 │   │   ├── confirm_dialog.gd          # Modal confirmation
 │   │   └── loading_overlay.gd         # Full-screen spinner
@@ -168,11 +155,7 @@ Copernicus/
 │   │
 │   ├── gpu_sensors/               # GPU-accelerated sensors (RTX LIDAR, path tracing)
 │   │
-│   ├── hyperobject/              # AO Hyperobjects SDK
-│   │   ├── sdk/
-│   │   │   ├── hyperobjects.gd
-│   │   │   ├── storage.gd
-│   │   │   └── network.gd
+│   ├── hyperobject/              # dormant (AO/Arweave)
 │   │   └── marketplace/
 │   │
 │   ├── industrial/                 # Industrial robot backends (self-contained)
@@ -268,8 +251,7 @@ PhysicsSelector (extends BaseSelector, ~30 lines)
 ModuleRegistry.get_available("physics")
     │
     ├── GodotPhysicsBackend (available) ─→ Godot's Jolt engine
-    ├── PyBulletBackend   (conditional) ─→ Bullet via Python subprocess
-    └── GazeboBackend     (unavailable) ─→ hardcoded placeholder
+    └── PyBulletBackend   (conditional) ─→ Bullet via Python subprocess
 ```
 
 ### RL Training Flow
@@ -340,9 +322,9 @@ ROS 2 receives /robot/scan
 
 ---
 
-## Plugin Integration System
+## Backend Interface (spec 13)
 
-Copernicus uses a zero-touch plugin architecture. Backends self-register; selectors auto-populate.
+Backends (not plugins — those are UI apps, spec 12) self-register; selectors auto-populate.
 
 ### Three-Part Architecture
 
@@ -375,7 +357,7 @@ Autoload singleton. Backends self-register in `_static_init()`:
 
 ```gdscript
 static func _static_init():
-    ModuleRegistry.register("physics", "GazeboBackend", preload("res://scripts/physics/gazebo_backend.gd"))
+    ModuleRegistry.register("physics", "PyBulletBackend", preload("res://scripts/physics/pybullet_backend.gd"))
 ```
 
 That's it. The backend appears in the physics selector automatically.

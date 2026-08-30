@@ -34,9 +34,9 @@ There is **one** task runner. Today there are two (`RChainService.run_async` cal
 - never blocks the main thread.
 
 All long work (RNode HTTP, AI chat, `OS.execute`, Python requests) goes through `TaskRunner`. No
-`HTTPRequest`/`OS.execute`/blocking read runs on the main thread. The AI assistant (`GameAI`/`ROSAI`)
-and ROS Coder are migrated so their result signals fire *after* the work completes on a worker thread,
-not after a blocking call on the UI thread.
+`HTTPRequest`/`OS.execute`/blocking read runs on the main thread. The AI assistant (`scripts/ai/`) runs
+its agent loop on a worker thread and marshals results back to the main thread, so its events fire
+*after* the work completes, not after a blocking call on the UI thread.
 
 ## Rule C — The domain-signal rule
 
@@ -61,9 +61,9 @@ test.
 | `GPUBackend` | `backend_ready/error`, `training_step`, `episode_complete`, `inference_complete`, `raycast_complete` | learning panel |
 | `PythonBridge` | `bridge_ready`, `bridge_error`, `output_received` | gpu backends |
 | `TaskRunner` | `task_completed` | any async caller |
-| `ScenarioService` | `verdict_changed`, `scenario_changed` | `UiBrief`, `UiStageRail` |
+| `ScenarioService` | `verdict_changed`, `scenario_changed` | `UiBrief` |
 | `NavigationModel` | `route_changed` | `MainShell` (renders current route) |
-| `RobotViewerController` | `robot_loaded`, `joint_changed`, `context_menu_requested` | workspace, joint panel, `ScenarioService` (validates "first light", "set the pose") |
+| `RobotViewerController` | `robot_loaded`, `joint_changed`, `selection_changed`, `target_reached`, `joints_zeroed`, `viewport_action` | workspace, `ScenarioService` (validates "first light", "set the pose") |
 | Sensors (`LidarDebug` etc.) | `scan_completed` | test mode / `ScenarioService` ("see what it sees") |
 
 ## Consequence

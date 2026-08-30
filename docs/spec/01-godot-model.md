@@ -17,10 +17,10 @@ Every element of the application — a panel, a button, a robot, a sensor, a dem
 - There are **no separate windows**. `change_scene_to_file` is forbidden. A "feature" is either a
   *view* (a `Control` in the tree, reachable through the navigation model) or a *command* (a
   `CommandRegistry` entry). Overlays (selectors, confirm dialogs, detail views) are in-tree `Control`s
-  with a dimmed backdrop — **one** `UiModal`, never an OS window or a scene swap.
+  with a dimmed backdrop — **one** `ModalLayer`, never an OS window or a scene swap.
 
 **Falsifiable:** `grep -r "change_scene_to_file" scripts/` returns nothing; a full-screen `Panel` may
-only be added under the shell's editor host or as a `UiModal`, never to `root` directly.
+only be added under the shell's editor host or as a `ModalLayer`, never to `root` directly.
 
 ## Rule 2 — Signals are the only event mechanism
 

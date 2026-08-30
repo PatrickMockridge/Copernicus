@@ -2,6 +2,12 @@
 
 This document explains the fundamental concepts behind Copernicus's design.
 
+These concepts sit in a **kernel** (viewport, terminal, screen schema, AI assistant, wallet + RaaS) with
+**apps** (plugins) and **robotics backends** around it — see [`spec/00-kernel.md`](spec/00-kernel.md).
+The robot scene tree and joint control are **kernel** concepts; physics, sensors, navigation, IK, and RL
+are **backends**, selected with `tool <x>` and reached through `ModuleRegistry`, never instantiated
+directly.
+
 ---
 
 ## 1. What is a Robot?

@@ -1,6 +1,10 @@
-# Copernicus Plugin Developer Guide
+# Copernicus Backend Developer Guide
 
-How to add a new backend module to Copernicus so it appears in the UI selector automatically.
+How to add a new **robotics backend** (physics, IK, sensors, nav, RL, industrial, Omniverse, ROS 2) so
+it appears in the `tool <x>` selector automatically. This is the **backend** layer (spec 13) — not the
+**plugin** layer (opt-in UI apps, spec 12). To add a UI app/screen, see
+[`spec/12-plugins.md`](../spec/12-plugins.md).
+
 No registration forms, no wiring up selectors, no touching 4 files. Write one class and you're done.
 
 ---
@@ -33,37 +37,35 @@ Every domain also has an **abstract base class** (e.g. `PhysicsBackend`, `IKSolv
 
 ## Creating a New Backend (Step by Step)
 
-Let's add a Gazebo physics backend. We'll create one file and register it.
+Let's add an example physics backend (we'll call it `PyBulletBackend`). We'll create one file and register it.
 
 ### Step 1: Create the backend class
 
-`scripts/physics/gazebo_backend.gd`:
+`scripts/physics/pybullet_backend.gd`:
 
 ```gdscript
-# gazebo_backend.gd
-# Physics backend using Gazebo via ROS2
+# pybullet_backend.gd
+# Physics backend using PyBullet via Python subprocess
 
-class_name GazeboBackend
+class_name PyBulletBackend
 extends PhysicsBackend
 
 ## ===== Module Identity (static contract) =====
 
 static func get_module_name() -> String:
-    return "Gazebo (ROS2)"
+    return "PyBullet"
 
 static func get_module_description() -> String:
-    return "Industry-standard Gazebo physics via ROS2 bridge. High fidelity."
+    return "Bullet Physics via Python/PyBullet. Research-grade accuracy for robotics simulation."
 
 static func is_available() -> bool:
-    # Check if gazebo ros2 package exists
+    # Check if python3 with pybullet is available
     var output = []
-    var result = OS.execute("ros2", ["pkg", "list"], output, true)
-    if result == 0 and output.size() > 0:
-        return "gazebo_ros" in output[0]
-    return false
+    var ret = OS.execute("python3", ["-c", "import pybullet; print('ok')"], output, false)
+    return ret == 0 and output.size() > 0 and output[0].strip_edges() == "ok"
 
 static func get_requirements() -> String:
-    return "sudo apt install ros-{DISTRO}-gazebo-ros-pkgs ros-{DISTRO}-gazebo-ros2-control"
+    return "Requires: pip install pybullet"
 
 static func get_module_category() -> String:
     return "physics"
@@ -71,27 +73,25 @@ static func get_module_category() -> String:
 ## ===== Self-Registration =====
 
 static func _static_init():
-    ModuleRegistry.register("physics", "GazeboBackend", preload("res://scripts/physics/gazebo_backend.gd"))
+    ModuleRegistry.register("physics", "PyBulletBackend", preload("res://scripts/physics/pybullet_backend.gd"))
 
 ## ===== Instance =====
 
-var _ros_node: Node
+var _bridge: PythonBridge
 var _is_simulating: bool = false
 
 func initialize(config: Dictionary) -> bool:
-    # Set up ROS2 communication
-    var topic = config.get("topic", "/gazebo/link_states")
-    # ... setup code ...
+    if not is_available():
+        backend_error.emit("PyBullet not available. Install with: pip install pybullet")
+        backend_initialized.emit(false)
+        return false
+    _bridge = PythonBridge.new()
     backend_initialized.emit(true)
     return true
 
 func step_simulation(delta: float) -> void:
-    # Publish/subscribe to Gazebo
+    # Step the PyBullet subprocess
     pass
-
-func get_body_state(body_name: String) -> Dictionary:
-    # Query Gazebo for link state
-    return {}
 
 func shutdown() -> void:
     _is_simulating = false
@@ -103,7 +103,7 @@ func shutdown() -> void:
 
 ### Step 3: Open the physics selector
 
-GazeboBackend appears automatically. Available first (green), or unavailable (greyed out with requirements message).
+PyBulletBackend appears automatically. Available first (green), or unavailable (greyed out with requirements message).
 
 Done. No other files touched.
 
@@ -211,41 +211,26 @@ That's ~20 lines. The BaseSelector handles all UI construction, option populatio
 | `_populate_options(container)` | Auto-fills from registry | When you need hardcoded items too |
 | `_on_option_selected(id)` | No-op | When you need side effects on selection |
 
-### Adding hardcoded options alongside registry items
+### Adding options
 
 Override `_populate_options()` and call `super`:
 
 ```gdscript
 func _populate_options(container: VBoxContainer) -> void:
-    _add_option("coming_soon", "Coming Soon Backend", "Not yet available.", false)
     super._populate_options(container)
 ```
 
-Hardcoded items appear before registry items by default. Call `super` first to reverse that.
+`super` lists the registered backends. Don't add hardcoded "coming soon" or placeholder entries —
+selectors should list only real, registered backends (spec 13).
 
 ---
 
 ## UI Utilities
 
-Copernicus provides several reusable UI components. All are in `scripts/ui/`.
-
-### CopernicusTheme (autoload)
-
-Access globally as `CopernicusTheme`. Provides:
-
-**Colors:**
-- `TEXT_PRIMARY`, `TEXT_SECONDARY`, `TEXT_DISABLED`
-- `BG_DARK`, `BG_CARD`, `BORDER_DIM`, `BORDER_CARD`
-- `ACCENT`, `SUCCESS`, `WARNING`, `ERROR`
-
-**Factory methods:**
-- `make_title(text)` → Label (font_size 22, primary color)
-- `make_heading(text)` → Label (font_size 18, primary color)
-- `make_body(text)` → Label (font_size 14, secondary color, word wrap)
-- `make_separator()` → HSeparator
-- `make_button_row(cancel_text, confirm_text)` → HBoxContainer with Cancel/Apply buttons
-- `style_panel(panel)` → applies dark panel StyleBox
-- `style_card(panel)` → applies card StyleBox with border
+Copernicus provides several reusable UI components, all in `scripts/ui/components/`. Design tokens come
+from the `UiTheme` autoload (`scripts/ui/ui_theme.gd`) — read `UiTheme.color("accent")`,
+`UiTheme.space("m")`, `UiTheme.font_size("body")`, `UiTheme.style("panel")`. There are **no** `make_*`
+node factories; compose `UiPanel`, `UiLabel`, `UiButton`, `UiSection`, `UiScrollList`, etc.
 
 ### Toast
 
@@ -332,22 +317,22 @@ The `BaseSelector` base class emits `option_selected(id: String)` and `cancelled
 
 ---
 
-## Complete Walkthrough: GazeboBackend End to End
+## Complete Walkthrough: PyBulletBackend End to End
 
-1. **Create the file**: `scripts/physics/gazebo_backend.gd` with the code from the example above.
+1. **Create the file**: `scripts/physics/pybullet_backend.gd` with the code from the example above.
 
 2. **Open Godot editor**. The `_static_init()` fires, registering with ModuleRegistry.
 
 3. **Open PhysicsSelector** in your UI. The selector calls `ModuleRegistry.get_available("physics")`, which iterates all registered physics backends, calls `get_module_name()` and `is_available()` on each, and returns a sorted list (available first).
 
-4. **GazeboBackend appears** in the radio list. If Gazebo is installed, it shows as available. If not, it shows "Gazebo (ROS2) (Unavailable)" with the requirements text.
+4. **PyBulletBackend appears** in the radio list. If PyBullet is installed, it shows as available. If not, it shows "PyBullet (Unavailable)" with the requirements text.
 
-5. **User selects Gazebo and clicks Apply**. The selector emits `backend_selected("GazeboBackend")`.
+5. **User selects PyBullet and clicks Apply**. The selector emits `backend_selected("PyBulletBackend")`.
 
 6. **Your code creates the instance**:
    ```gdscript
-   var backend = ModuleRegistry.create("physics", "GazeboBackend", {"topic": "/gazebo/link_states"})
-   backend.initialize({"topic": "/gazebo/link_states"})
+   var backend = ModuleRegistry.create("physics", "PyBulletBackend", {"gravity": Vector3(0, -9.81, 0)})
+   backend.initialize({"gravity": Vector3(0, -9.81, 0)})
    ```
    `ModuleRegistry.create()` instantiates the GDScript and calls `initialize(config)` if the instance has that method.
 

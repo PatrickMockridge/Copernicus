@@ -111,15 +111,19 @@ Before adding any code to Copernicus, ask:
 
 ---
 
-## Architecture Layers
+## The three layers
 
-| Layer | Description | Examples |
+The architecture is a kernel with two kinds of extension (see `spec/00-kernel.md`):
+
+| Layer | What it is | Examples |
 |-------|-------------|----------|
-| **Core** | Essential robot visualization and design | URDF import, joint control, basic physics |
-| **Addons** | Optional integrations, swap-in backends | ROS2 bridge, GPU sensors, industrial plugins |
-| **External** | Standalone tools, external simulators | Isaac Sim, Gazebo, MoveIt |
+| **Kernel** | always present, non-negotiable | viewport, terminal, screen schema, AI assistant, wallet + RaaS |
+| **Plugins** | opt-in UI apps (screens + commands) | robots library, marketplace, coordination, VCS, RaaS |
+| **Backends** | swappable robotics capability behind `tool <x>` | physics, IK, sensors, nav, RL, industrial, ROS 2, Omniverse |
 
-Core is minimal. Addons are optional. External integrations are encouraged to stay external.
+The kernel runs with nothing else enabled. Plugins add surfaces; backends add capability. Nothing in the
+kernel imports a plugin or backend by name — they register through `ModuleRegistry` and are reached by
+id (`spec/13-backend-interface.md`).
 
 ---
 

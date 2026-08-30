@@ -1,6 +1,7 @@
 # Industrial Robot Plugin
 
-ROS-Industrial plugin for Copernicus, providing connectivity to industrial robot controllers from MOTOMAN, ABB, FANUC, and Universal Robots.
+An industrial-robotics **backend** (spec 13), selected via `tool industrial`, providing connectivity to
+real industrial robot controllers (MOTOMAN, OPC-UA).
 
 ---
 
@@ -20,10 +21,7 @@ The industrial plugin bridges Copernicus with real industrial robot hardware, en
 |---------|----------|--------|
 | **MockIndustrial** | None (testing) | Always available |
 | **MOTOMAN** | INRC4 (TCP 50230) | Requires hardware |
-| **OPC-UA** | OPC-UA | Coming soon |
-| **ABB** | EtherNet/IP | Planned |
-| **Universal Robots** | RTDB | Planned |
-| **FANUC** | KAREL | Planned |
+| **OPC-UA** | OPC-UA | Requires hardware |
 
 ---
 

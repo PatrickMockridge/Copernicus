@@ -120,25 +120,15 @@ all joints to 0°, and **Reach** runs inverse kinematics. Joints are also access
 
 ## Understanding the Architecture
 
-Copernicus uses a layered architecture:
+Copernicus is an operating system for robotics (see [`spec/00-kernel.md`](spec/00-kernel.md)):
 
-```
-┌────────────────────────────────────────────┐
-│              Your Robot Code               │
-├────────────────────────────────────────────┤
-│         Copernicus Core Modules            │
-│  (URDF import, joint control, physics)     │
-├────────────────────────────────────────────┤
-│            Godot Engine                     │
-│   (3D rendering, physics, scene tree)      │
-└────────────────────────────────────────────┘
+- **Kernel** (always present): viewport, terminal, screen schema, AI assistant, wallet + RaaS.
+- **Apps** (plugins): the robot library, marketplace, coordination, version control, RaaS.
+- **Robots** (backends, via `tool <x>`): physics, IK, sensors, navigation, RL, industrial, ROS 2, Omniverse.
+- **Economic layer**: blockchain + RaaS.
 
-         Optional Integrations
-┌────────────────┐ ┌────────────────┐ ┌────────────┐
-│   godot_ros2   │ │  GPU Backend   │ │  Hyperobject│
-│   (ROS 2)      │ │  (PyTorch)     │ │  (AO)      │
-└────────────────┘ └────────────────┘ └────────────┘
-```
+The kernel runs with nothing else enabled. See the [architecture](03-architecture.md) and
+[design philosophy](design-philosophy.md) for the full picture.
 
 ---
 

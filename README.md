@@ -123,7 +123,7 @@ Copernicus
 │   ├── gpu/ ik/ nav/ physics/ sensors/   # domain backends
 │   └── test_*.gd              # headless tests
 ├── scenes/                    # main.tscn + selectors + demos
-├── addons/                    # godot_ros2, GameAI, hyperobject, rchain, industrial, ...
+├── addons/                    # godot_ros2, rchain, industrial (GameAI/hyperobject dormant)
 └── docs/                      # spec/, terminal manuals, feature guides
 ```
 

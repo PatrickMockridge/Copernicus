@@ -53,33 +53,6 @@ PASS: Chat response received
 --- Test 4: Generate Behavior ---
 ```
 
-### ROS Coder Test
-
-```bash
-cd project
-godot --headless scenes/ros_coder.tscn
-```
-
-Or open via main AI panel by clicking "ROS Coder" button.
-
-**Expected output:**
-```
-ROS2 Python Coder window opens with:
-- File browser (left panel, 180px)
-- Code editor with Python syntax highlighting
-- Prompt bar: [Preset dropdown] [prompt input] [Generate] [Run] [Save] [Launch] [Deploy]
-- Console output panel (bottom)
-- Placeholder Python code in editor on first open
-```
-
-**Verified working (headless mode):**
-- Scene loads without errors
-- Generate launch file produces valid Python launch code
-- Run executes Python code locally via `python3`
-- Save writes to selected workspace file
-- Deploy constructs SSH command correctly (needs real robot config to test fully)
-- Python syntax highlighting via `set_language("python")` works
-
 ### ROS 2 Bridge
 
 ```bash
@@ -103,16 +76,10 @@ ros2 topic list
 |------|---------|
 | `scenes/test_blockchain.tscn` | Blockchain integration test |
 | `scripts/test_blockchain.gd` | Blockchain test script |
-| `scenes/test_ai.tscn` | AI/Minimax integration test |
-| `scripts/test_ai.gd` | AI test script |
-| `scenes/ros_coder.tscn` | ROS2 Python Coder IDE |
-| `addons/ROSCoder/ros_coder.gd` | ROS Coder main controller |
-| `addons/ROSCoder/ui/code_editor.gd` | CodeEdit wrapper |
-| `addons/ROSCoder/ui/ai_prompt_bar.gd` | Preset selector + action buttons |
-| `addons/ROSCoder/ui/file_tree.gd` | Workspace file browser |
-| `addons/ROSCoder/ui/console_output.gd` | Terminal-style console |
-| `addons/ROSCoder/ui/python_syntax_highlighter.gd` | Python syntax highlighting (optional - CodeEdit has built-in `set_language("python")`) |
-| `addons/ROSCoder/coders/python_coder.gd` | AI code generation for rclpy |
+| `scenes/test_ai.tscn` | AI test (legacy) |
+| `scripts/test_ai.gd` | AI test script (legacy) |
+| `scripts/test_ai_client.gd` | AI client test |
+| `scripts/test_ai_tools.gd` | AI tools test |
 
 ## Known Issues
 
@@ -138,7 +105,7 @@ The `godot_ros2` addon was previously disabled due to systemic circular type dep
 - All sensor files (stub implementations)
 - All robot/simulation files (unused)
 - All arweave files (separate blockchain system, not ROS2)
-- `ros2/file_manager.gd` (moved to ROS Coder if needed)
+- `ros2/file_manager.gd` (removed — ROS Coder is dormant)
 - Various stub actuator, controller, and plugin files
 
 **Limitation:** The addon now uses untyped variables internally, losing compile-time type safety. Runtime behavior is unchanged.

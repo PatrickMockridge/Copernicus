@@ -1,6 +1,8 @@
 # Marketplace Module
 
-Copernicus includes a decentralized marketplace for trading robot designs, components, and environments using AO Hyperobjects and Arweave storage.
+The marketplace buys, sells, and lists robot designs. It **defaults to RChain** — a listing is a
+capability transfer (register the robot, issue the capability); asset blobs are stored on Arweave. The
+AO/Arweave backend described below is **dormant**.
 
 ## Overview
 
@@ -60,15 +62,15 @@ var listings = marketplace.load_listings()
 
 Features sample data for testing without real blockchain.
 
-### AO Marketplace (Production)
+### AO Marketplace (Dormant)
+
+> Dormant — the AO/Arweave marketplace is kept for reference only. The live backend is RChain.
 
 ```gdscript
-var marketplace = AOMarketplace.new()
+var marketplace = AOMarketplace.new()  # dormant
 marketplace.initialize({"ao": ao_sdk, "wallet": wallet})
 var listings = marketplace.load_listings()
 ```
-
-Real decentralized marketplace using AO Hyperobjects.
 
 ### RChain Marketplace (Coordination)
 
@@ -290,10 +292,9 @@ The marketplace integrates with the existing robot publishing:
 | Scenario | Backend |
 |---------|---------|
 | Testing without wallet | MockMarketplace |
-| No AR tokens | MockMarketplace |
-| Production use | AOMarketplace |
-| Small transactions | AOMarketplace |
+| Production use | RChainMarketplace |
 | On-chain capability coordination | RChainMarketplace |
+| Legacy AO/Arweave | AOMarketplace (dormant) |
 
 ---
 

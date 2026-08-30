@@ -1,6 +1,8 @@
 # Blockchain Integration
 
-Publish robot designs to Arweave and trade them as AO Hyperobjects. Copernicus makes it easy — **few clicks to turn your robot into a tradeable item**.
+Publish a robot design by uploading its files to Arweave (blob storage) and registering it on RChain.
+The AO Hyperobject flow described in this file is **legacy/dormant**; the current on-chain path is
+RChain — see [`docs/rchain/design.md`](../rchain/design.md).
 
 ## Architecture
 

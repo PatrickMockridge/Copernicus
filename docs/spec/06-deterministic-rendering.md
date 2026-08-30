@@ -93,7 +93,7 @@ An overlay is anchored (`PRESET_FULL_RECT` or explicit offsets). A modal backdro
 | `UiLabel` | BODY → expand + wrap; else ellipsis (§R2) |
 | `UiCard` | inner `VBoxContainer` anchored `PRESET_FULL_RECT` with `SPACE` margins; title expands |
 | `UiConsole` | output `TextEdit` `SIZE_EXPAND_FILL` + `LINE_WRAPPING_BOUNDARY` |
-| `UiStageRail`/`PanelContainer`s | explicit `panel` stylebox (no engine-default theme) |
+| `PanelContainer`s | explicit `panel` stylebox (no engine-default theme) |
 | `UiActivityBar` | fixed 48px rail, `SIZE_EXPAND_FILL` vertical |
 | `UiStatusBar` | fixed 28px bar, left expands / right hugs |
 | `ViewportToolbar` | `PanelContainer` overlay, `SIZE_SHRINK_BEGIN` both axes |

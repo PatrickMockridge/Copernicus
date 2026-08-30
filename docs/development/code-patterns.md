@@ -57,36 +57,26 @@ func _on_bridge_connection_completed(success: bool) -> void:
 
 Godot headless doesn't register autoloads as `Engine.get_singleton()` — they return null. Use preload + new() instead.
 
-### Pattern: Loading AI Classes
+### Pattern: Loading the AI agent
 
 ```gdscript
-const GameAI = preload("res://addons/GameAI/core/ai.gd")
-const ROSAI = preload("res://addons/GameAI/integrations/ros/ros_ai.gd")
-const Result = preload("res://addons/GameAI/core/result.gd")
+const AgentController = preload("res://scripts/ai/agent.gd")
 
-var _gameai: Node
-var _rosai: Node
-
-func _init_ai_instances() -> void:
-    _gameai = GameAI.new()
-    _rosai = ROSAI.new()
-    add_child(_gameai)
-    add_child(_rosai)
-    _rosai.set_ai(_gameai)
+func _run(task: String, history: Array) -> Dictionary:
+    var agent := AgentController.new()
+    return agent.run(task, history)   # {ok, error, text, messages, events}
 ```
 
-### Pattern: Using Result Type
+### Pattern: Using Result
 
 ```gdscript
-const Result = preload("res://addons/GameAI/core/result.gd")
+const Result = preload("res://addons/primitives/result.gd")
 
-func _on_response(result: Result) -> void:
-    if result.is_ok():
-        var value = result.ok_value()
-        process_success(value)
+func _on_response(r: Result) -> void:
+    if r.is_ok():
+        process_success(r.get_data())
     else:
-        var err = result.err_value()
-        handle_error(err)
+        handle_error(r.get_error())
 ```
 
 ---
@@ -137,34 +127,18 @@ func some_function() -> Result:
 
 ## Signal-Based Callbacks (async communication without coroutines)
 
-### Pattern: AI Response Handling
+### Pattern: Replaying agent events on the main thread
 
 ```gdscript
-signal behavior_generated(result: Result)
-
-func _connect_signals() -> void:
-    _rosai.behavior_generated.connect(_on_behavior_generated)
-
-func _on_behavior_generated(result: Result) -> void:
-    if result.is_ok():
-        var content = result.ok_value()
-        if content is Dictionary:
-            content = content.get("content", str(content))
-        _code_output.text = str(content)
-    else:
-        var err = result.err_value()
-        _code_output.text = "Error: " + str(err)
-```
-
-### Pattern: Multiple Signal Connections
-
-```gdscript
-func _connect_signals() -> void:
-    _rosai.behavior_generated.connect(_on_behavior_generated)
-    _rosai.sensor_processor_generated.connect(_on_sensor_processor_generated)
-    _rosai.controller_generated.connect(_on_controller_generated)
-    _rosai.topic_explained.connect(_on_topic_explained)
-    _rosai.diagnosis_completed.connect(_on_diagnosis_completed)
+func _on_run_done(result) -> void:
+    if result == null:
+        _show_error("worker returned nothing")
+        return
+    if not result.get("ok", false):
+        _show_error(str(result.get("error", "")))
+        return
+    for e in result.get("events", []):
+        _apply_event(e)   # message / tool_called / tool_result
 ```
 
 ---

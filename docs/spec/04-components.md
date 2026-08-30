@@ -9,12 +9,11 @@ gallery. This document is the conformance checklist.
 ```
 MainShell (Control) — renders the whole Workbench Loop
 ├── UiBrief                (objective + live verdict)
-├── UiStageRail            (six-stage progression)
 ├── MenuBar
 ├── UiActivityBar          (modes + utilities)
 ├── UiSideBar              (mode-specific content)
 ├── UiEditorGroup (UiTabBar + host)
-│   ├── CompositeWorkspace   [Design/Test: 3D viewer + JointPanel]
+│   ├── CompositeWorkspace   [Design/Test: 3D viewer]
 │   ├── RobotGallery         [Acquire]
 │   ├── VcsPanel             [Design: versioning]
 │   ├── MarketplacePanel     [Acquire+Publish]
@@ -63,9 +62,6 @@ Purpose: atomic text. Props: `text, kind{TITLE,HEADING,BODY,SMALL,MONO}, tone{PR
 ### UiButton (`Button`)
 Purpose: atomic action. Props: `text, variant{PRIMARY,SECONDARY,GHOST,ICON}`. Contract: `setup` applies the variant stylebox; `pressed` fires.
 
-### UiField (`VBoxContainer`)
-Purpose: labeled input. Props: `label,value,placeholder,secret`. Events: `changed(text)`. Contract: `value()` returns the input text; `get_input()` non-null.
-
 ### UiSection (`Label`) — uppercase small muted header. UiSeparator (`HSeparator`) — 1px border line. UiSpacer (`Control`) — flexible filler.
 
 ### UiTitleBar (`PanelContainer`)
@@ -87,15 +83,12 @@ Purpose: icon rail. Props: `entries[{id,glyph,title}]`. Events: `activity_select
 ### UiConsole (`UiPanel`)
 Purpose: terminal. Events: `command_submitted(text)`. Contract: `echo(line)` appends and autoscrolls; `clear()` empties output.
 
-### UiModal (`Control`)
-Purpose: the single modal. Slots: `content()`. Events: `closed`. Contract: Esc emits `closed` and frees.
+### ModalLayer (`scripts/ui/modal_layer.gd`) — the single modal: dim backdrop + `content()` slot; Esc closes.
 
 ### UiChecklistItem (`HBoxContainer`) — `label,ok,actual,expect` pass/fail row.
 
 ### UiBrief (`UiPanel`)
 Purpose: objective + live checklist. Contract: renders `ScenarioService.active` title/brief; re-renders on `verdict_changed`; `_checks_host` has one row per verdict check.
-
-### UiStageRail (`PanelContainer`) — six stages; `set_active(stage)` highlights one.
 
 ### UiManual (`UiPanel`) — lists `docs/*.md`, shows selected doc.
 
@@ -121,6 +114,6 @@ Contract: `is_available()`, `get_module_name()`, `get_module_category()` are sta
 
 `MainShell`, `CompositeWorkspace`, `RobotGallery`, `MarketplacePanel`, `WalletPanel`,
 `CoordinationPanel`, `VcsPanel`, `AiAssistantPanel`, `PublishPanel`, `RaasLauncher`, `CommandPalette`,
-`BaseSelector`. Each is a `UiPanel` (or `UiModal`) composition of the above; **no inline styling**, no
+`BaseSelector`. Each is a `UiPanel` composition of the above; **no inline styling**, no
 `make_*`, no raw `Node.new()` styling. Contract: each view is reachable via `NavigationModel`; each
 subscribes to its backend's signals (never polls return values); no view opens a separate window.

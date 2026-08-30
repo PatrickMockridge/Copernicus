@@ -2,6 +2,9 @@
 
 NVIDIA Omniverse integration for USD pipeline, digital twin connectivity, and Isaac ecosystem interoperability.
 
+The Omniverse/USD connector is a robotics **backend** (spec 13), selected with `tool omni` — not a
+hard-wired feature.
+
 ---
 
 ## Overview

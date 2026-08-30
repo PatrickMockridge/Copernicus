@@ -15,7 +15,7 @@ Copernicus has a small, explicit set of top-level state dimensions. There is no 
 | Mode | single value | derived from active `Scenario` | design · test · publish · operate |
 | Open tabs | ordered set | shell editor host | which views are open, in order |
 | Panel | boolean | shell | terminal / side bar visible |
-| Overlay | stack | `UiModal` | transient, dims the work |
+| Overlay | stack | `ModalLayer` | transient, dims the work |
 | Work state | per-view | each view caches itself | robot, joint config, form inputs |
 
 **Invariant:** route, mode, tabs, panel, and overlay are independent dimensions. Changing one does not
@@ -67,7 +67,7 @@ The robot/3D scene, joint configuration, and form inputs survive any navigation 
 **viewer is persistent** — never freed on a tab switch.
 
 **Contract:** after `navigate(away)` → `navigate(viewer)`, the same `RobotViewerController` instance
-and the same `_robot_root` are present; joint slider values are unchanged.
+and the same `_robot_root` are present; joint rotations are unchanged.
 
 ## 4. Tab / dropdown / window taxonomy
 
@@ -78,14 +78,14 @@ and the same `_robot_root` are present; joint slider values are unchanged.
 | **Panel** (docked, bottom/side) | a toggleable companion | Terminal, Joint panel, Sensor list |
 | **Window** (separate OS window) | **only** on explicit user action | "Detach viewport" to a second monitor |
 
-**Default rule: nothing opens its own window.** A selector is a dropdown or `UiModal`; a detail view is
+**Default rule: nothing opens its own window.** A selector is a dropdown or `ModalLayer`; a detail view is
 a tab or an in-tree overlay; a demo is a tab. "Must be its own window" applies only to a user-requested
 detach, and it is always reversible (re-attach).
 
 ## 5. WYSIWYG principles
 
 1. **The work is always visible.** The 3D viewport is the anchor and is never hidden by navigation.
-   Every edit (joint slider, sensor toggle) reflects immediately in the viewport.
+   Every edit (joint rotation, sensor toggle) reflects immediately in the viewport.
 2. **Test at any time.** The Test surface (sensors, demos, run/ROS2) is one action away from any
    state; the Brief's checklist reflects test results live. Testing never requires "leaving" the work.
 3. **No hidden state.** The status bar, Brief, and StageRail always reflect current state; a form
@@ -116,7 +116,7 @@ without touching the shell; no plugin code calls `change_scene_to_file` or `root
 ## 8. Conformance checklist
 
 - `grep -rn "change_scene_to_file" scripts/` → zero.
-- `grep -rn "root.add_child\|get_tree().root.add_child" scripts/` → only `UiModal`/allowed overlays.
+- `grep -rn "root.add_child\|get_tree().root.add_child" scripts/` → only `ModalLayer`/allowed overlays.
 - `test_state.gd` asserts G1–G4 and the contract table.
 - Component gallery renders the chrome (menu · tabs · terminal · status bar) in isolation.
 - `test_rchain.gd`, `test_scenarios.gd`, `test_navigation.gd` all pass (no regression).

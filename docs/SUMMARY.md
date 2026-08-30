@@ -68,5 +68,4 @@
   - [Code patterns](development/code-patterns.md)
   - [Contributing](development/contributing.md)
   - [Testing](testing.md)
-  - [AI code generation](ai/ai-codegen.md)
   - [License](license.md)

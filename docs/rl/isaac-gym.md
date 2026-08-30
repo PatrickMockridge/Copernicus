@@ -2,6 +2,8 @@
 
 GPU-accelerated reinforcement learning using NVIDIA Isaac Gym for multi-robot training with thousands of parallel environments.
 
+Isaac Gym is one **experimental** RL backend, selected with `tool gpu` (spec 13).
+
 ---
 
 ## Overview

@@ -1,27 +1,16 @@
 # Quick Start Guide
 
-Get Copernicus running in 2 minutes with the TurtleBot demo.
-
-## The Fastest Way to Try Copernicus
-
-**No ROS2 required!** The turtle demo works out of the box:
+Copernicus is an operating system for robotics: a kernel (editor + terminal) with apps and robots
+around it. Start the kernel shell:
 
 ```bash
-godot scenes/turtle_demo.tscn
+godot scenes/main.tscn
 ```
 
-### What You'll See
+This opens the 3D editor on top and the terminal at the bottom. Type `load arm6` or `load turtlebot` to
+load a robot, `list` to see every command, or read the [interface manual](interface-user-manual.md).
 
-1. A green turtlebot robot in a walled arena
-2. Click anywhere on the ground (gray plane)
-3. Watch the robot plan a path and navigate to your click
-
-### How It Works
-
-- **Native mode**: Robot uses Godot's VehicleBody3D physics + A* path planner
-- **ROS2 mode**: Click "Switch to ROS2 Mode" to connect to real turtlesim in ROS2
-
----
+The scenes below are standalone demos you can also run directly (no ROS 2 required).
 
 ## Step-by-Step: Running Demos
 
@@ -57,16 +46,14 @@ godot scenes/physics_demo.tscn
 
 Differential drive robot with WASD keyboard controls.
 
-### 4. Main Interface
+### 4. The kernel shell
 
 ```bash
 godot scenes/main.tscn
 ```
 
-AI-powered code generation panel with:
-- Behavior generation
-- ROS topic explanations
-- Issue debugging
+The kernel: the 3D editor on top, the terminal (command line + log) at the bottom, and the screen rail
+down the left. This is the main entry point.
 
 ### 5. Joint Control
 
@@ -122,7 +109,7 @@ Copernicus/
 │   └── physics/         # Physics backend plugins
 ├── addons/
 │   ├── godot_ros2/      # ROS2 bridge
-│   └── GameAI/          # AI code generation
+│   └── rchain/          # RChain crypto
 └── docs/
     └── quick-start.md    # This file
 ```

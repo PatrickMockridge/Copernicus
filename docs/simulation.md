@@ -1,10 +1,10 @@
-# ROS 2 Simulation for Copernicus
+# Simulation
 
-ROS 2 simulator for Copernicus with sensors, actuators, and Godot-native physics.
-
-> **What Copernicus IS:** A fast 3D editor for visualizing robots, testing joint configurations, and streaming sensor data to/from ROS 2.
->
-> **What Copernicus IS NOT:** A physics research simulator. For research-grade simulation, use Isaac Sim or Gazebo. Copernicus is designed to be a design tool that exports to those full simulators.
+Simulation in Copernicus is a **backend choice**, not the product. Physics fidelity is selected with
+`tool physics` — Godot-native (Jolt) for design iteration, PyBullet / PyBullet-CUDA for research-grade
+manipulation, and (via the ROS 2 bridge) external simulators. See
+[`spec/13-backend-interface.md`](spec/13-backend-interface.md) and
+[`spec/00-kernel.md`](spec/00-kernel.md).
 
 ---
 
