@@ -1,122 +1,247 @@
-# Copernicus Interface — User Manual
+# Copernicus — User Manual
 
-Copernicus is a robot design interface. Its window is laid out like a classic **dungeon-scroller** —
-the kind of game that dominated home computers in the 1980s. Not the swords-and-sorcery *theme*: the
-**layout logic**. This manual explains that logic, because once you see it, the whole interface makes
-sense.
+Welcome to Copernicus. This manual is written the way the old home-computer manuals were: it assumes
+you're meeting this software for the first time, and it takes you by the hand — one idea at a time —
+until the whole thing feels natural.
 
-## 1. What a dungeon-scroller is (and why it matters here)
+Take your time. Everything in Copernicus fits together, and once you see how, it all clicks.
 
-A dungeon-scroller (Ultima, Wizardry, The Bard's Tale, Dungeon Master, Eye of the Beholder) is a
-turn-based game with a very specific shape:
+---
 
-- **One screen you're always looking at** — the "world" (a first-person corridor, a top-down map, or a
-  party standing in a room). You never lose sight of where you are.
-- **A scrolling event log** — a strip of text that records what just happened ("A door opens", "The
-  goblin attacks", "You found a key"). You always know what the last action *did*.
-- **A column of commands** — a rail of buttons/verbs down one edge (Open, Use, Cast, Examine, Talk).
-  You *do* things by issuing verbs.
-- **Self-contained sub-screens** — opening your inventory, map, character sheet, or journal takes you
-  to a whole new screen, then you come *back*.
+## Chapter 1 — What Copernicus is
 
-That shape is a 40-year-old, battle-tested way to answer three questions at once: *where am I?*,
-*what just happened?*, and *what can I do next?* — without the user having to hunt through floating
-windows.
+Copernicus is a **robot design interface**. You use it to load a robot, look at it, move its joints,
+watch what its sensors see, drive it around, and — when you're ready — publish your design and put it
+to work. It is built on Godot 4, the free game engine.
 
-Copernicus keeps exactly this shape, but the "world" is a robot, the "log" is a terminal, and the
-"verbs" are the commands you type or click.
+The important thing to understand is the *shape* of the program. It is laid out like a classic
+**dungeon-crawler game** — the kind of game that filled home computers in the 1980s. Not the swords
+and monsters: the *arrangement*.
 
-## 2. The layout
+A dungeon-crawler always gives you the same three things on one screen:
+
+- **The world** — the one thing you're always looking at.
+- **The log** — a strip of text that tells you what just happened.
+- **The commands** — a row of things you can do next.
+
+Copernicus keeps that arrangement exactly, but the "world" is a robot, the "log" is a terminal, and the
+"commands" are words you type (or buttons you press). This is a forty-year-old, well-worn way to lay
+out a tool, because it answers three questions at once: *where am I?*, *what just happened?*, and *what
+can I do next?* — without you ever having to hunt through a pile of floating windows.
+
+---
+
+## Chapter 2 — The screen
+
+When Copernicus starts, you see one window. From left to right, top to bottom, it looks like this:
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  menu bar                                                  │
-├───┬────────┬──────────────────────────────┬───────────────┤
-│   │        │                              │               │
-│ r │ journal│            stage             │   assistant   │
-│ a │ (side  │    (the 3D robot editor —    │   (the AI,    │
-│ i │  bar)  │     the screen you open)     │    toggleable)│
-│ l │        │                              │               │
-│   │        ├──────────────────────────────┤               │
-│   │        │            log               │               │
-│   │        │   (the terminal — always     │               │
-│   │        │    docked at the bottom)     │               │
-├───┴────────┴──────────────────────────────┴───────────────┤
-│  status bar                                                │
-└────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  menu bar                                                    │
+├────┬────────┬───────────────────────────────┬────────────────┤
+│    │        │                               │                │
+│rail│journal │            stage              │   assistant    │
+│    │ (side  │   (the robot, in 3D)          │   (the AI)     │
+│    │  bar)  │                               │                │
+│    │        ├───────────────────────────────┤                │
+│    │        │            log                │                │
+│    │        │   (the terminal)              │                │
+├────┴────────┴───────────────────────────────┴────────────────┤
+│  status bar                                                  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-| Region | What it is |
+Here is each part, in plain words:
+
+- **The rail** (far left) — a column of small icons. These are your *screens*: the different places you
+  can go. Click one to switch to it.
+- **The journal** (side bar) — context for whatever you're doing. When you're designing, it shows your
+  current objective and its checklist.
+- **The stage** (centre) — the main area. This is where the 3D robot appears. It's the "world".
+- **The assistant** (right) — the AI helper. It stays tucked away until you want it.
+- **The log** (bottom) — the terminal. This is the heart of the program, and Chapter 3 is all about it.
+- **The status bar** (bottom edge) — a back button, a breadcrumb showing where you are, and small
+  readouts (mode, wallet, node, ROS 2, frames-per-second).
+
+Don't memorise all of that yet. Just know: **watch the stage, talk to the log, switch screens from the
+rail.**
+
+---
+
+## Chapter 3 — The terminal (the log, and the verbs)
+
+This is the part worth reading slowly, because it's the trick that makes Copernicus feel different —
+and, with a little use, wonderfully simple.
+
+**The terminal is not an optional extra. It is the command line and the log rolled into one.** It is
+styled after a Commodore 64: blue screen, UPPERCASE text, a solid blinking block for a cursor.
+
+Here is the key idea:
+
+> **Everything you can do in Copernicus is a word.** The buttons and menus just type those words for you.
+
+If you want to open the Marketplace, you can click its rail icon, *or* you can type:
+
+```
+> open marketplace
+```
+
+Both do exactly the same thing. The terminal echoes what you typed, does it, and prints the result. That
+is why it sits permanently at the bottom of the window — it is the running record of your whole session,
+just like the message strip at the bottom of a dungeon-crawler.
+
+### Your first three words
+
+Open the terminal (it's already there at the bottom) and type these, pressing Enter after each:
+
+```
+> list
+```
+
+This prints the whole command catalogue, grouped by category. Then:
+
+```
+> help load
+```
+
+This prints what the `load` command does and how to use it. Then:
+
+```
+> clear
+```
+
+This wipes the screen. That's the pattern for every command: **type a word, see what it does.**
+
+If you type a word Copernicus doesn't know, it tells you — with a `?` before the message, in the style
+of old BASIC:
+
+```
+> florb
+?UNKNOWN COMMAND
+```
+
+Errors are loud on purpose. If something goes wrong, the terminal tells you.
+
+---
+
+## Chapter 4 — Your first robot
+
+Let's do something real. Type:
+
+```
+> load arm6
+```
+
+A 6-jointed robot arm appears in the stage. That's a *built-in robot* — Copernicus ships with a small
+library of them. Try a couple more:
+
+```
+> load turtlebot
+> load quadruped
+> load drone
+```
+
+Each one replaces the last. Now let's look at one properly. Load the arm again:
+
+```
+> load arm6
+```
+
+To look around the robot, use the mouse:
+
+| Do this | To do this |
 |---|---|
-| **Rail** (left) | The command rail — a column of icons, grouped by section. Click one to open that screen. |
-| **Journal** (side) | The active screen's context (for the editor, the current objective and its checklist). |
-| **Stage** (center) | The main area. The 3D editor lives here, and each screen replaces it while it's open. |
-| **Assistant** (right) | The AI assistant — a persistent, toggleable panel. |
-| **Log** (bottom) | The terminal — always docked, always recording what happened. |
-| **Status bar** | Back button, breadcrumb, and system readouts (mode, wallet, node, ROS2, FPS). |
+| **Left-drag** | orbit around the robot |
+| **Middle-drag** (or `WASD` / arrow keys) | pan |
+| **Mouse wheel** | zoom in and out |
+| **Left-click** a part | select it (it highlights) |
 
-## 3. The logic — verbs first
+Two more handy words:
 
-This is the part that takes a little getting used to, and it's the heart of the design:
+```
+> wireframe on
+> grid off
+```
 
-**The terminal is the source of truth; the GUI is a layer on top of it.**
+`wireframe` shows the robot as a flat, see-through cage (good for seeing the skeleton). `grid` toggles
+the floor grid. Try `wireframe off` and `grid on` to put them back.
 
-Every thing you can do in Copernicus is a **verb** in the terminal. `open marketplace`, `load
-turtlebot`, `wireframe`, `grid`, `sensors lidar on`. The buttons, the rail, and the menu all do the
-*same thing* as typing the verb — they just save you the typing.
+---
 
-Concretely: clicking the **Marketplace** icon in the rail and typing `open marketplace` in the
-terminal are the same action. The terminal echoes what you did and reports the result. This is why the
-terminal sits permanently at the bottom of the window — it is the **log**, the running record of your
-session, exactly like the event strip in a dungeon-scroller.
+## Chapter 5 — The screens (the rail)
 
-The C64-style look (blue screen, uppercase, block cursor) is deliberate: it's the same retro verb
-grammar that dungeon-scrollers grew up alongside. See the [terminal manual](terminal-user-manual.md)
-for the full command list.
+The rail down the left side is your map of the program. Each icon is a **screen** — a different place to
+go. From top to bottom, grouped loosely by purpose:
 
-## 4. The screens
-
-The rail (left) groups the screens by what they're for:
-
-| Screen | Section | What it's for |
-|---|---|---|
-| **Editor** | design | The 3D robot view — load, select, and move robots. This is "the world". |
-| **Robots** | design | Browse the built-in robot library and load one. |
-| **Wallet** | publish | Your identity and funds (password keystore, on-chain operations). |
-| **Marketplace** | publish | Buy, sell, and list robot designs. |
-| **Coordination** | publish | Register robots and coordinate work on-chain. |
-| **RaaS** | operate | Robotics-as-a-Service demos. |
-| **Version Control** | utility | Git history and remotes for your designs. |
-| **AI Assistant** | (right panel) | The agentic Claude assistant — it edits files in a workspace for you. |
-
-Open a screen by clicking its rail icon, or with `open <id>` in the terminal. Press **Back** (the ◀ in
-the status bar) or `back` to return to where you were.
-
-## 5. The terminal
-
-The terminal is both the command line and the log. It's Commodore-64 flavoured: blue, uppercase,
-block cursor. Type `help` to list commands, or `help <command>` for details. See the
-[terminal user manual](terminal-user-manual.md) for everything it can do.
-
-## 6. Why this shape
-
-| Dungeon-scroller | Copernicus |
+| Screen | What it's for |
 |---|---|
-| the world | the 3D robot editor |
-| the event log | the terminal |
-| the command rail | the left toolbar |
-| the inventory / map / journal | the screens (marketplace, vcs, robots, …) |
-| the character sheet / quest log | the side bar (objective + checklist) |
-| the sage / helper | the AI assistant |
+| **Editor** | The 3D robot view — the "world". |
+| **Robots** | Browse the built-in robot library and pick one. |
+| **Wallet** | Your identity and funds (on-chain). |
+| **Marketplace** | Buy, sell, and list robot designs. |
+| **Coordination** | Register robots and take on jobs. |
+| **RaaS** | Robotics-as-a-Service demos. |
+| **Version Control** | Git history and remotes for your work. |
+| **Settings** | Your AI key and endpoint, wallet import, and more. |
 
-A robot-design session *is* a turn-based loop: look at the robot, issue a command, read what happened,
-repeat. A persistent view + an event log + a verb rail is exactly the interface for that loop — it's
-why the genre convention has survived forty years, and why it fits this tool better than a grid of
-floating dashboard panels.
+To open any screen, click its icon — or type `open <name>`, for example `open wallet`.
 
-## 7. Further reading
+To go back to where you were, click the **◀ back** button in the status bar, or type `back`. The
+breadcrumb in the status bar shows your path, so you always know where you are.
 
-- [Terminal user manual](terminal-user-manual.md)
-- [Viewport user manual](viewport-user-manual.md) — the 3D editor's camera, selection, and modes
-- [AI assistant user manual](ai-assistant-user-manual.md)
-- [Design philosophy](design-philosophy.md) — the developer-facing rationale
+---
+
+## Chapter 6 — The Workbench Loop (your quest)
+
+Copernicus guides you through a **ten-step journey** from "first light" to a shipped, validated design.
+You'll see it in the side bar when you're on the Editor screen: an objective and a checklist.
+
+The ten steps, in order:
+
+1. **First Light** — load a robot.
+2. **Set the Pose** — move the arm and zero it.
+3. **Reach the Target** — make the arm reach a marker (inverse kinematics).
+4. **See What It Sees** — turn on its sensors.
+5. **Make It Move** — drive it.
+6. **Wire It to ROS 2** — connect the bridge.
+7. **Register It** — register it on-chain.
+8. **Put It On the Market** — list it.
+9. **Run It For Hire** — take a job and settle the fee.
+10. **Ship** — a validated, published design.
+
+Each step is an objective with a checklist; finish the checklist and the next step unlocks. You can see
+where you are at any time by typing:
+
+```
+> mode
+```
+
+The whole thing is explained, step by step, in the two case studies:
+[the robot arm](case-study-robot-arm.md) and [the TurtleBot](case-study-turtlebot.md).
+
+---
+
+## Chapter 7 — The helper and the treasury
+
+Two more parts round out the program:
+
+**The AI assistant** (right-hand panel) is your coding companion. Tell it what to build and it reads and
+edits the files in a workspace for you. Toggle it with the **AI** button in the top-right of the
+viewport, or `open ai`. You'll need to set an API key first — see [the AI manual](ai-assistant-user-manual.md).
+
+**The wallet** is your on-chain identity. It's the second most important screen after the Editor, because
+it holds your funds. You can create a key, or import one you already have — see
+[the wallet spec](rchain/wallet-spec.md) and the Settings screen.
+
+---
+
+## Chapter 8 — Where to go next
+
+- [The terminal manual](terminal-user-manual.md) — every command, in full.
+- [The viewport manual](viewport-user-manual.md) — camera, selection, modes, and shortcuts.
+- [The AI assistant manual](ai-assistant-user-manual.md).
+- [The feature index](features.md) — one line per feature, with links to the deep guides.
+- [The case studies](case-study-robot-arm.md) — work through the arm and the TurtleBot end to end.
+
+That's the whole of Copernicus. **Watch the stage, talk to the log, switch screens from the rail** — and
+type a word whenever you're unsure. `help` is always there.
