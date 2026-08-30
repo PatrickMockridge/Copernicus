@@ -2,6 +2,8 @@
 
 [Introduction](README.md)
 
+[AI entrypoint](ai-entrypoint.md)
+
 - [The Kernel](spec/00-kernel.md)
 
 - [Specification]()

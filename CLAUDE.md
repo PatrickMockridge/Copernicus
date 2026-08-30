@@ -1,62 +1,32 @@
-# Copernicus - Robot Design Interface
+# Copernicus
 
-## Project Overview
+Open-source **operating system for robotics** built on Godot 4. A small **kernel** (viewport, terminal,
+screen schema, AI assistant, wallet + RaaS) sits in the middle; **apps (plugins)** run on it; **robots
+(backends)** plug in via ROS 2; a **blockchain + RaaS** layer takes a design from simulation into a real
+robot.
 
-**Copernicus** is an open-source robot design interface built on Godot 4. Named after Nicolaus Copernicus who placed the Sun at the center of the solar system, it places the **open-source community** at the center of robot development.
+> **Full orientation:** [`docs/ai-entrypoint.md`](docs/ai-entrypoint.md) (and `AGENTS.md`). The formal
+> anchor is [`docs/spec/00-kernel.md`](docs/spec/00-kernel.md).
 
-Just as NVIDIA uses Unity for Isaac Sim, Copernicus uses Godot - a free, open-source game engine with exceptional 3D capabilities. But Copernicus is designed to be something more: a **modular, forkable ecosystem** where anyone can contribute modules, create PRs, and extend functionality.
+## Rules
 
-## Architecture Philosophy
+- Backends extend `CopernicusModule`, self-register in `_static_init()` via `ModuleRegistry.register`,
+  and are reached only through `ModuleRegistry.create`. Never import a backend class directly;
+  `is_available()` must be an honest runtime check.
+- Everything is a verb in the terminal; the GUI types the words.
+- Styling uses `UiTheme` tokens — no raw colors.
 
-Copernicus leverages what Godot does natively:
-- **3D rendering** with meshes, materials, lighting
-- **UI** for interactive controls (sliders, panels)
-- **Scene tree management** for robot hierarchy
-- **Native physics** (VehicleBody3D, joints) for basic simulation
-- **ROS2 bridge** for sensor data streaming
-
-Copernicus is NOT:
-- A physics research simulator (use Isaac Sim/Gazebo for that)
-- An IK solver (use MoveIt)
-- A motion planner (use Nav2)
-
-**What Copernicus IS:**
-- A fast 3D editor for visualizing robot models
-- An interactive tool for testing joint configurations
-- A ROS2 data source for sensor streams
-- A design viewer that exports to full simulators
-
-## Key Directories
-
-- `scripts/` - Core GDScript modules
-- `scenes/` - Godot scene files (.tscn)
-- `addons/godot_ros2/` - ROS2 bridge for sensor/control
-- `addons/hyperobject/` - AO Hyperobject SDK for tradeable assets
-- `docs/` - Documentation
-
-## Core Scripts
-
-| File | Purpose |
-|------|---------|
-| `urdf_to_godot.gd` | URDF parser → Godot scene tree |
-| `robot_viewer_controller.gd` | 3D viewer with orbit camera |
-| `physics_demo.gd` | VehicleBody3D differential drive |
-| `joint_panel.gd` | Interactive joint slider UI |
-| `lidar_debug.gd` | LIDAR ray visualization |
-| `camera_debug.gd` | Camera frustum visualization |
-| `imu_debug.gd` | IMU axes visualization |
-
-## Modularity
-
-Copernicus is designed to be extended:
-- Fork the repo and create domain-specific modules
-- PR contributions welcome for new robot types, sensors, visualizations
-- Each module is self-contained where possible
-- Use Godot's addon system for optional extensions
-
-## Commands
+## Run / test
 
 ```bash
-godot scenes/robot_viewer.tscn    # View robot model
-godot scenes/physics_demo.tscn     # Drive vehicle with WASD
+godot scenes/main.tscn
+godot --headless --script res://scripts/test_cli.gd     # also test_navigation, test_scenarios,
+                                                        # test_state, test_shell, test_ik,
+                                                        # test_shortcuts, test_mesh, test_rchain
+mdbook build
 ```
+
+## Dead / dormant (avoid)
+
+`GameAI`, `ROSAI`, `ROSCoder`, `AO`/`Arweave`/`Hyperobject`, `CopernicusTheme`,
+`UiField`/`UiModal`/`UiStageRail`, `joint_panel.gd`, `context_menu_requested`.
